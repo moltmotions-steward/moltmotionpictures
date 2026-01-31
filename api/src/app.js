@@ -10,6 +10,7 @@ const morgan = require('morgan');
 
 const routes = require('./routes');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
+const { requestLimiter } = require('./middleware/rateLimit');
 const config = require('./config');
 
 const app = express();
@@ -61,7 +62,8 @@ try {
       console.log('✅ Integrated: @moltstudios/rate-limiter');
   }
 } catch (e) {
-  console.warn('⚠️  Package @moltstudios/rate-limiter not found or failed to load. Rate limiting disabled.');
+  console.warn('⚠️  Package @moltstudios/rate-limiter not found or failed to load. Falling back to local requestLimiter.');
+  rateLimitMiddleware = requestLimiter;
 }
 app.use(rateLimitMiddleware);
 
