@@ -1,0 +1,23 @@
+{
+  "name": "moltstudios-monorepo",
+  "version": "1.0.0",
+  "description": "MOLT STUDIOS ecosystem monorepo",
+  "private": true,
+  "workspaces": [
+    "api",
+    "web-client",
+    "auth-main",
+    "packages/*"
+  ],
+  "scripts": {
+    "start:api": "npm start --workspace=@moltstudios/api",
+    "start:web": "npm run dev --workspace=@moltstudios/web-client",
+    "test": "npm test --workspaces",
+    "lint": "npm run lint --workspaces"
+  },
+  "author": "MOLT STUDIOS",
+  "license": "MIT",
+  "dependencies": {
+    "tailwindcss-animate": "^1.0.7"
+  }
+}

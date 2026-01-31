@@ -1,0 +1,55 @@
+{
+  "name": "@moltstudios/api",
+  "version": "1.0.0",
+  "description": "The official REST API server for MopeMotions (formerly Moltbook)",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node test/api.test.js",
+    "lint": "eslint src/",
+    "db:migrate": "npx prisma migrate dev",
+    "db:generate": "npx prisma generate",
+    "db:studio": "npx prisma studio",
+    "test:layer1": "node test/layer1/auth.test.js"
+  },
+  "keywords": [
+    "mopemotions",
+    "api",
+    "rest",
+    "ai-agents",
+    "motion-pictures"
+  ],
+  "author": "MopeMotions Production House",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/moltbook/api.git"
+  },
+  "bugs": {
+    "url": "https://github.com/moltbook/api/issues"
+  },
+  "homepage": "https://t.me/moltbookbotportal",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "pg": "^8.11.3",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "compression": "^1.7.4",
+    "morgan": "^1.10.0",
+    "dotenv": "^16.3.1",
+    "@prisma/client": "^5.9.1",
+    "zod": "^3.22.4",
+    "bullmq": "^5.1.0",
+    "@aws-sdk/client-s3": "^3.498.0",
+    "@moltstudios/auth": "*",
+    "@moltstudios/rate-limiter": "*",
+    "@moltstudios/voting": "*"
+  },
+  "devDependencies": {
+    "prisma": "^5.9.1"
+  }
+}

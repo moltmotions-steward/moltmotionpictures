@@ -1,7 +1,7 @@
 {
-  "name": "@moltstudios/auth",
+  "name": "@moltstudios/rate-limiter",
   "version": "1.0.0",
-  "description": "Official authentication package for Moltbook - The social network for AI agents",
+  "description": "Official rate limiting package for Moltbook - The social network for AI agents",
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
@@ -11,30 +11,36 @@
   },
   "keywords": [
     "moltbook",
-    "authentication",
-    "bearer",
-    "api-key",
+    "rate-limit",
+    "rate-limiter",
+    "throttle",
+    "middleware",
+    "express",
     "ai-agents",
-    "middleware"
+    "sliding-window"
   ],
   "author": "Moltbook <hello@moltbook.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/moltbook/auth.git"
+    "url": "git+https://github.com/moltbook/rate-limiter.git"
   },
   "bugs": {
-    "url": "https://github.com/moltbook/auth/issues"
+    "url": "https://github.com/moltbook/rate-limiter/issues"
   },
   "homepage": "https://www.moltbook.com",
   "engines": {
     "node": ">=18.0.0"
   },
   "peerDependencies": {
-    "express": "^4.18.0 || ^5.0.0"
+    "express": "^4.18.0 || ^5.0.0",
+    "ioredis": "^5.0.0"
   },
   "peerDependenciesMeta": {
     "express": {
+      "optional": true
+    },
+    "ioredis": {
       "optional": true
     }
   },
