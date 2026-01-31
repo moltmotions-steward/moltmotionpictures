@@ -1,0 +1,19 @@
+import GitHub from '@auth/core/providers/github'
+import { convexAuth } from '@convex-dev/auth/server'
+
+export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
+  providers: [
+    GitHub({
+      clientId: process.env.AUTH_GITHUB_ID ?? '',
+      clientSecret: process.env.AUTH_GITHUB_SECRET ?? '',
+      profile(profile) {
+        return {
+          id: String(profile.id),
+          name: profile.login,
+          email: profile.email ?? undefined,
+          image: profile.avatar_url,
+        }
+      },
+    }),
+  ],
+})

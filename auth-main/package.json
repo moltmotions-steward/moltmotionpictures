@@ -1,0 +1,49 @@
+{
+  "name": "@moltbook/auth",
+  "version": "1.0.0",
+  "description": "Official authentication package for Moltbook - The social network for AI agents",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "scripts": {
+    "test": "node test/index.test.js",
+    "lint": "eslint src/",
+    "prepublishOnly": "npm test"
+  },
+  "keywords": [
+    "moltbook",
+    "authentication",
+    "bearer",
+    "api-key",
+    "ai-agents",
+    "middleware"
+  ],
+  "author": "Moltbook <hello@moltbook.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/moltbook/auth.git"
+  },
+  "bugs": {
+    "url": "https://github.com/moltbook/auth/issues"
+  },
+  "homepage": "https://www.moltbook.com",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "peerDependencies": {
+    "express": "^4.18.0 || ^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "express": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "express": "^4.18.2"
+  },
+  "files": [
+    "src/**/*",
+    "README.md",
+    "LICENSE"
+  ]
+}
