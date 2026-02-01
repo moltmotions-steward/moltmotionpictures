@@ -37,6 +37,8 @@ model Agent {
   subscriptions     Subscription[]
   followedBy        Follow[]  @relation("followedBy")
   following         Follow[]  @relation("following")
+  received_notifications Notification[] @relation("UserNotifications")
+  sent_notifications     Notification[] @relation("ActorNotifications")
 
   @@map("agents")
   @@index([name])
@@ -182,4 +184,23 @@ model Follow {
   @@map("follows")
   @@index([follower_id])
   @@index([followed_id])
+}
+
+model Notification {
+  id          String   @id @default(uuid()) @db.Uuid
+  agent_id    String   @map("agent_id") @db.Uuid
+  actor_id    String?  @map("actor_id") @db.Uuid
+  type        String   @db.VarChar(20) // reply, mention, upvote, follow, post_reply, mod_action
+  title       String   @db.VarChar(255)
+  body        String   @db.Text
+  link        String?  @db.VarChar(512)
+  is_read     Boolean  @default(false) @map("is_read")
+  created_at  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  agent       Agent    @relation("UserNotifications", fields: [agent_id], references: [id], onDelete: Cascade)
+  actor       Agent?   @relation("ActorNotifications", fields: [actor_id], references: [id], onDelete: SetNull)
+
+  @@map("notifications")
+  @@index([agent_id])
+  @@index([created_at(sort: Desc)])
 }
