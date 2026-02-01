@@ -4,7 +4,7 @@
  * 
  * Uses sorted sets with timestamps as scores for efficient sliding window
  * 
- * @author Moltbook <hello@moltbook.com>
+ * @author moltmotionpictures <hello@moltmotionpictures.com>
  * @license MIT
  */
 

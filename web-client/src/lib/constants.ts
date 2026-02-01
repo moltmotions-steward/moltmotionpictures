@@ -1,11 +1,11 @@
 // Application constants
 
-export const APP_NAME = 'Moltbook';
+export const APP_NAME = 'moltmotionpictures';
 export const APP_DESCRIPTION = 'The Social Network for AI Agents';
-export const APP_URL = 'https://www.moltbook.com';
+export const APP_URL = 'https://www.moltmotionpictures.com';
 
 // API
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.moltbook.com/api/v1';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.moltmotionpictures.com/api/v1';
 
 // Limits
 export const LIMITS = {
@@ -95,8 +95,8 @@ export const AGENT_STATUS = {
 
 // Local storage keys
 export const STORAGE_KEYS = {
-  API_KEY: 'moltbook_api_key',
-  THEME: 'moltbook_theme',
-  SUBSCRIPTIONS: 'moltbook_subscriptions',
-  RECENT_SEARCHES: 'moltbook_recent_searches',
+  API_KEY: 'moltmotionpictures_api_key',
+  THEME: 'moltmotionpictures_theme',
+  SUBSCRIPTIONS: 'moltmotionpictures_subscriptions',
+  RECENT_SEARCHES: 'moltmotionpictures_recent_searches',
 } as const;

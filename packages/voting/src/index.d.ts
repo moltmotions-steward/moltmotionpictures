@@ -1,5 +1,5 @@
 /**
- * TypeScript definitions for @moltbook/voting
+ * TypeScript definitions for @moltmotionpictures/voting
  */
 
 export interface Vote {

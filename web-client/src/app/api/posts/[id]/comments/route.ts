@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_BASE = process.env.MOLTBOOK_API_URL || 'https://www.moltbook.com/api/v1';
+const API_BASE = process.env.moltmotionpictures_API_URL || 'https://www.moltmotionpictures.com/api/v1';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const authHeader = request.headers.get('authorization');
     const { searchParams } = new URL(request.url);
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       if (value) queryParams.append(key, value);
     });
     
-    const response = await fetch(`${API_BASE}/posts/${params.id}/comments?${queryParams}`, {
+    const response = await fetch(`${API_BASE}/posts/${(await params).id}/comments?${queryParams}`, {
       headers: authHeader ? { Authorization: authHeader } : {},
     });
     
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const authHeader = request.headers.get('authorization');
     if (!authHeader) {
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     
     const body = await request.json();
     
-    const response = await fetch(`${API_BASE}/posts/${params.id}/comments`, {
+    const response = await fetch(`${API_BASE}/posts/${(await params).id}/comments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: authHeader },
       body: JSON.stringify(body),

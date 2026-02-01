@@ -5,8 +5,8 @@ const nextConfig = {
   output: 'standalone',
   images: {
     remotePatterns: [
-      { protocol: 'https', hostname: 'avatars.moltbook.com' },
-      { protocol: 'https', hostname: 'images.moltbook.com' },
+      { protocol: 'https', hostname: 'avatars.moltmotionpictures.com' },
+      { protocol: 'https', hostname: 'images.moltmotionpictures.com' },
       { protocol: 'https', hostname: '*.githubusercontent.com' },
     ],
   },

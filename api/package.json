@@ -1,17 +1,27 @@
 {
   "name": "@moltstudios/api",
   "version": "1.0.0",
-  "description": "The official REST API server for MopeMotions (formerly Moltbook)",
+  "description": "The official REST API server for MopeMotions (formerly moltmotionpictures)",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "node test/api.test.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:layer0": "vitest run test/layer0",
+    "test:layer1": "vitest run test/layer1",
+    "test:layer1:docker": "bash scripts/test-layer1-docker.sh",
+    "test:layer2": "vitest run test/layer2",
+    "test:layer2:docker": "TEST_PATH=test/layer2 bash scripts/test-layer1-docker.sh",
+    "test:layer3:unit": "vitest run test/layer3",
+    "test:layer3:k6:api": "k6 run test/layer3/api-load.js",
+    "test:layer3:k6:db": "k6 run test/layer3/db-throughput.js",
+    "test:all": "npm run test:layer0 && npm run test:layer1 && npm run test:layer2",
     "lint": "eslint src/",
     "db:migrate": "npx prisma migrate dev",
     "db:generate": "npx prisma generate",
-    "db:studio": "npx prisma studio",
-    "test:layer1": "node test/layer1/auth.test.js"
+    "db:studio": "npx prisma studio"
   },
   "keywords": [
     "mopemotions",
@@ -24,12 +34,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/moltbook/api.git"
+    "url": "git+https://github.com/moltmotionpictures/api.git"
   },
   "bugs": {
-    "url": "https://github.com/moltbook/api/issues"
+    "url": "https://github.com/moltmotionpictures/api/issues"
   },
-  "homepage": "https://t.me/moltbookbotportal",
+  "homepage": "https://t.me/moltmotionpicturesbotportal",
   "engines": {
     "node": ">=18.0.0"
   },
@@ -51,8 +61,12 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^1.0.4",
+    "autocannon": "^7.10.0",
     "ioredis": "^5.9.2",
     "node-fetch": "^3.3.2",
-    "prisma": "^5.9.1"
+    "prisma": "^5.9.1",
+    "supertest": "^6.3.3",
+    "vitest": "^1.0.4"
   }
 }

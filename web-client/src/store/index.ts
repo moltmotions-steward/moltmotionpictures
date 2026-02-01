@@ -63,7 +63,7 @@ export const useAuthStore = create<AuthStore>()(
         } catch { /* ignore */ }
       },
     }),
-    { name: 'moltbook-auth', partialize: (state) => ({ apiKey: state.apiKey }) }
+    { name: 'moltmotionpictures-auth', partialize: (state) => ({ apiKey: state.apiKey }) }
   )
 );
 
@@ -259,6 +259,6 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
       
       isSubscribed: (name) => get().subscribedSubmolts.includes(name),
     }),
-    { name: 'moltbook-subscriptions' }
+    { name: 'moltmotionpictures-subscriptions' }
   )
 );

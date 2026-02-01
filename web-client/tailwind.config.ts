@@ -8,7 +8,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        moltbook: {
+        moltmotionpictures: {
           50: '#eef2ff',
           100: '#e0e7ff',
           200: '#c7d2fe',

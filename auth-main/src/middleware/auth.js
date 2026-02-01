@@ -1,7 +1,7 @@
 /**
  * Express Authentication Middleware
  * 
- * @module @moltbook/auth/middleware
+ * @module @moltmotionpictures/auth/middleware
  */
 
 /**
@@ -26,7 +26,7 @@ const ErrorMessages = {
   [ErrorCodes.INVALID_FORMAT]: {
     status: 401,
     error: 'Invalid token format',
-    hint: 'Token should start with "moltbook_" followed by 64 hex characters'
+    hint: 'Token should start with "moltmotionpictures_" followed by 64 hex characters'
   },
   [ErrorCodes.INVALID_TOKEN]: {
     status: 401,
@@ -43,7 +43,7 @@ const ErrorMessages = {
 /**
  * Create authentication middleware
  * 
- * @param {MoltbookAuth} auth - MoltbookAuth instance
+ * @param {moltmotionpicturesAuth} auth - moltmotionpicturesAuth instance
  * @param {Object} options - Middleware options
  * @param {boolean} options.required - Whether auth is required (default: true)
  * @param {Function} options.getUserByToken - Custom user lookup function
@@ -120,7 +120,7 @@ function authMiddleware(auth, options = {}) {
         req.token = token;
         
       } catch (error) {
-        console.error('[moltbook/auth] User lookup error:', error);
+        console.error('[moltmotionpictures/auth] User lookup error:', error);
         return sendError(res, ErrorCodes.INVALID_TOKEN, onError);
       }
     } else {
@@ -178,7 +178,7 @@ function sanitizeAgent(agent) {
  * Create middleware that requires claimed status
  * Convenience wrapper around authMiddleware
  * 
- * @param {MoltbookAuth} auth - MoltbookAuth instance
+ * @param {moltmotionpicturesAuth} auth - moltmotionpicturesAuth instance
  * @param {Object} options - Additional options
  * @returns {Function} Express middleware
  */
@@ -194,7 +194,7 @@ function requireClaimed(auth, options = {}) {
  * Create optional auth middleware
  * Convenience wrapper
  * 
- * @param {MoltbookAuth} auth - MoltbookAuth instance
+ * @param {moltmotionpicturesAuth} auth - moltmotionpicturesAuth instance
  * @param {Object} options - Additional options
  * @returns {Function} Express middleware
  */

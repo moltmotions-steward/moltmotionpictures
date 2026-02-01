@@ -1,8 +1,8 @@
 /**
  * Express Rate Limit Middleware
  * 
- * @module @moltbook/rate-limiter/middleware
- * @author Moltbook <hello@moltbook.com>
+ * @module @moltmotionpictures/rate-limiter/middleware
+ * @author moltmotionpictures <hello@moltmotionpictures.com>
  * @license MIT
  */
 
@@ -88,7 +88,7 @@ function rateLimitMiddleware(limiter, options = {}) {
       const key = await Promise.resolve(keyGenerator(req));
       
       if (!key) {
-        console.warn('[moltbook/rate-limiter] No key generated, skipping rate limit');
+        console.warn('[moltmotionpictures/rate-limiter] No key generated, skipping rate limit');
         return next();
       }
 
@@ -119,7 +119,7 @@ function rateLimitMiddleware(limiter, options = {}) {
 
       next();
     } catch (error) {
-      console.error('[moltbook/rate-limiter] Error:', error);
+      console.error('[moltmotionpictures/rate-limiter] Error:', error);
       // On error, allow request through (fail open)
       next();
     }
@@ -186,7 +186,7 @@ function rateLimitStatus(limiter, options = {}) {
       
       next();
     } catch (error) {
-      console.error('[moltbook/rate-limiter] Status check error:', error);
+      console.error('[moltmotionpictures/rate-limiter] Status check error:', error);
       next();
     }
   };

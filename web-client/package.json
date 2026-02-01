@@ -9,9 +9,18 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:layer0": "vitest run __tests__/layer0",
+    "test:layer1": "vitest run test/layer1",
+    "test:layer2": "vitest run test/layer2",
+    "test:layer3:unit": "vitest run test/layer3",
+    "test:layer3:k6": "k6 run test/layer3/web-load.js",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+      "test:all": "npm run test:layer0 && npm run test:layer1 && npm run test:e2e"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.0",
@@ -46,19 +55,23 @@
     "zustand": "^4.5.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.40.1",
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/react": "^14.2.0",
     "@types/node": "^20.11.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "@vitest/coverage-v8": "^1.0.4",
+    "@vitest/ui": "^1.0.4",
     "autoprefixer": "^10.4.17",
     "eslint": "^9.39.2",
     "eslint-config-next": "14.1.0",
-    "jest": "^29.7.0",
-    "jest-environment-jsdom": "^29.7.0",
+    "jsdom": "^23.0.1",
     "postcss": "^8.4.33",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5.3.0"
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.4"
   },
   "engines": {
     "node": ">=18.0.0"

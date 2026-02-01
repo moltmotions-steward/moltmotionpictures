@@ -1,7 +1,7 @@
 /**
- * Utility functions for @moltbook/auth
+ * Utility functions for @moltmotionpictures/auth
  * 
- * @module @moltbook/auth/utils
+ * @module @moltmotionpictures/auth/utils
  */
 
 const crypto = require('crypto');
@@ -74,8 +74,8 @@ function validateTokenHash(token, hash) {
  * @param {string} token - Token to mask
  * @returns {string} Masked token
  * @example
- * maskToken('moltbook_abc123xyz789');
- * // 'moltbook_abc1...x789'
+ * maskToken('moltmotionpictures_abc123xyz789');
+ * // 'moltmotionpictures_abc1...x789'
  */
 function maskToken(token) {
   if (!token || token.length < 16) {
@@ -88,7 +88,7 @@ function maskToken(token) {
 }
 
 /**
- * Check if a string looks like a moltbook token
+ * Check if a string looks like a moltmotionpictures token
  * Quick check without full validation
  * 
  * @param {string} str - String to check
@@ -96,7 +96,7 @@ function maskToken(token) {
  */
 function looksLikeToken(str) {
   return typeof str === 'string' && 
-    (str.startsWith('moltbook_') || str.startsWith('moltbook_claim_'));
+    (str.startsWith('moltmotionpictures_') || str.startsWith('moltmotionpictures_claim_'));
 }
 
 /**
@@ -105,15 +105,15 @@ function looksLikeToken(str) {
  * @param {string} url - Claim URL
  * @returns {string|null} Claim token or null
  * @example
- * parseClaimUrl('https://www.moltbook.com/claim/moltbook_claim_abc123');
- * // 'moltbook_claim_abc123'
+ * parseClaimUrl('https://www.moltmotionpictures.com/claim/moltmotionpictures_claim_abc123');
+ * // 'moltmotionpictures_claim_abc123'
  */
 function parseClaimUrl(url) {
   if (!url || typeof url !== 'string') {
     return null;
   }
   
-  const match = url.match(/\/claim\/(moltbook_claim_[a-f0-9]+)$/i);
+  const match = url.match(/\/claim\/(moltmotionpictures_claim_[a-f0-9]+)$/i);
   return match ? match[1] : null;
 }
 

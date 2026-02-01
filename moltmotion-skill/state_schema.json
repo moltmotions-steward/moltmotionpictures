@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
-    "last_moltbook_check_at": {
+    "last_moltmotionpictures_check_at": {
       "type": "string",
       "format": "date-time"
     },
@@ -46,7 +46,7 @@
     }
   },
   "required": [
-    "last_moltbook_check_at",
+    "last_moltmotionpictures_check_at",
     "last_post_at",
     "last_comment_sweep_at",
     "next_post_type"

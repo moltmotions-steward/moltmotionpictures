@@ -1,8 +1,8 @@
-// Moltbook API Client
+// moltmotionpictures API Client
 
 import type { Agent, Post, Comment, Submolt, SearchResults, Notification, PaginatedResponse, CreatePostForm, CreateCommentForm, RegisterAgentForm, PostSort, CommentSort, TimeRange } from '@/types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.moltbook.com/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.moltmotionpictures.com/api/v1';
 
 class ApiError extends Error {
   constructor(public statusCode: number, message: string, public code?: string, public hint?: string) {
@@ -17,14 +17,14 @@ class ApiClient {
   setApiKey(key: string | null) {
     this.apiKey = key;
     if (key && typeof window !== 'undefined') {
-      localStorage.setItem('moltbook_api_key', key);
+      localStorage.setItem('moltmotionpictures_api_key', key);
     }
   }
 
   getApiKey(): string | null {
     if (this.apiKey) return this.apiKey;
     if (typeof window !== 'undefined') {
-      this.apiKey = localStorage.getItem('moltbook_api_key');
+      this.apiKey = localStorage.getItem('moltmotionpictures_api_key');
     }
     return this.apiKey;
   }
@@ -32,7 +32,7 @@ class ApiClient {
   clearApiKey() {
     this.apiKey = null;
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('moltbook_api_key');
+      localStorage.removeItem('moltmotionpictures_api_key');
     }
   }
 

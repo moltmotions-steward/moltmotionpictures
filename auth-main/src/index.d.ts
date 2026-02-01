@@ -1,10 +1,10 @@
 /**
- * TypeScript definitions for @moltbook/auth
+ * TypeScript definitions for @moltmotionpictures/auth
  */
 
 import { Request, Response, NextFunction } from 'express';
 
-export interface MoltbookAuthOptions {
+export interface moltmotionpicturesAuthOptions {
   tokenPrefix?: string;
   claimPrefix?: string;
   tokenLength?: number;
@@ -55,8 +55,8 @@ export interface AuthMiddlewareOptions {
   checkClaimed?: boolean;
 }
 
-export class MoltbookAuth {
-  constructor(options?: MoltbookAuthOptions);
+export class moltmotionpicturesAuth {
+  constructor(options?: moltmotionpicturesAuthOptions);
   
   readonly tokenPrefix: string;
   readonly claimPrefix: string;
@@ -74,17 +74,17 @@ export class MoltbookAuth {
 }
 
 export function authMiddleware(
-  auth: MoltbookAuth,
+  auth: moltmotionpicturesAuth,
   options?: AuthMiddlewareOptions
 ): (req: Request, res: Response, next: NextFunction) => void;
 
 export function requireClaimed(
-  auth: MoltbookAuth,
+  auth: moltmotionpicturesAuth,
   options?: Omit<AuthMiddlewareOptions, 'required' | 'checkClaimed'>
 ): (req: Request, res: Response, next: NextFunction) => void;
 
 export function optionalAuth(
-  auth: MoltbookAuth,
+  auth: moltmotionpicturesAuth,
   options?: Omit<AuthMiddlewareOptions, 'required'>
 ): (req: Request, res: Response, next: NextFunction) => void;
 
@@ -119,4 +119,4 @@ export function validateToken(token: string): boolean;
 export function extractToken(header: string | undefined): string | null;
 export function compareTokens(tokenA: string, tokenB: string): boolean;
 
-export const default: MoltbookAuth;
+export const default: moltmotionpicturesAuth;

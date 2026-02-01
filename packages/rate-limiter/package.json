@@ -1,7 +1,7 @@
 {
   "name": "@moltstudios/rate-limiter",
   "version": "1.0.0",
-  "description": "Official rate limiting package for Moltbook - The social network for AI agents",
+  "description": "Official rate limiting package for moltmotionpictures - The social network for AI agents",
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
@@ -10,7 +10,7 @@
     "prepublishOnly": "npm test"
   },
   "keywords": [
-    "moltbook",
+    "moltmotionpictures",
     "rate-limit",
     "rate-limiter",
     "throttle",
@@ -19,16 +19,16 @@
     "ai-agents",
     "sliding-window"
   ],
-  "author": "Moltbook <hello@moltbook.com>",
+  "author": "moltmotionpictures <hello@moltmotionpictures.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/moltbook/rate-limiter.git"
+    "url": "git+https://github.com/moltmotionpictures/rate-limiter.git"
   },
   "bugs": {
-    "url": "https://github.com/moltbook/rate-limiter/issues"
+    "url": "https://github.com/moltmotionpictures/rate-limiter/issues"
   },
-  "homepage": "https://www.moltbook.com",
+  "homepage": "https://www.moltmotionpictures.com",
   "engines": {
     "node": ">=18.0.0"
   },

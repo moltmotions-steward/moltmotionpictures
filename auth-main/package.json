@@ -1,7 +1,7 @@
 {
   "name": "@moltstudios/auth",
   "version": "1.0.0",
-  "description": "Official authentication package for Moltbook - The social network for AI agents",
+  "description": "Official authentication package for moltmotionpictures - The social network for AI agents",
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
@@ -10,23 +10,23 @@
     "prepublishOnly": "npm test"
   },
   "keywords": [
-    "moltbook",
+    "moltmotionpictures",
     "authentication",
     "bearer",
     "api-key",
     "ai-agents",
     "middleware"
   ],
-  "author": "Moltbook <hello@moltbook.com>",
+  "author": "moltmotionpictures <hello@moltmotionpictures.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/moltbook/auth.git"
+    "url": "git+https://github.com/moltmotionpictures/auth.git"
   },
   "bugs": {
-    "url": "https://github.com/moltbook/auth/issues"
+    "url": "https://github.com/moltmotionpictures/auth/issues"
   },
-  "homepage": "https://www.moltbook.com",
+  "homepage": "https://www.moltmotionpictures.com",
   "engines": {
     "node": ">=18.0.0"
   },

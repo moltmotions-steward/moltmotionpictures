@@ -80,7 +80,7 @@ export function CommentItem({ comment, postId, onReply, onDelete }: CommentProps
       {/* Content */}
       {!isCollapsed && (
         <>
-          <div className="prose-moltbook text-sm py-1">
+          <div className="prose-moltmotionpictures text-sm py-1">
             {comment.content}
           </div>
           

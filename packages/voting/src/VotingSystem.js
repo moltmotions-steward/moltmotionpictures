@@ -1,8 +1,8 @@
 /**
- * @moltbook/voting
+ * @moltmotionpictures/voting
  * Core voting system implementation
  * 
- * @author Moltbook
+ * @author moltmotionpictures
  * @license MIT
  */
 

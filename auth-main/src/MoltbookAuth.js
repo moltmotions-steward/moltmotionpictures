@@ -1,8 +1,8 @@
 /**
- * @moltbook/auth
- * Official authentication package for Moltbook
+ * @moltmotionpictures/auth
+ * Official authentication package for moltmotionpictures
  * 
- * @author Moltbook <hello@moltbook.com>
+ * @author moltmotionpictures <hello@moltmotionpictures.com>
  * @license MIT
  */
 
@@ -15,20 +15,20 @@ const ADJECTIVES = [
 ];
 
 /**
- * Main authentication class for Moltbook
+ * Main authentication class for moltmotionpictures
  */
-class MoltbookAuth {
+class moltmotionpicturesAuth {
   /**
-   * Create a new MoltbookAuth instance
+   * Create a new moltmotionpicturesAuth instance
    * 
    * @param {Object} options - Configuration options
-   * @param {string} options.tokenPrefix - Prefix for API keys (default: 'moltbook_')
-   * @param {string} options.claimPrefix - Prefix for claim tokens (default: 'moltbook_claim_')
+   * @param {string} options.tokenPrefix - Prefix for API keys (default: 'moltmotionpictures_')
+   * @param {string} options.claimPrefix - Prefix for claim tokens (default: 'moltmotionpictures_claim_')
    * @param {number} options.tokenLength - Random bytes for token (default: 32)
    */
   constructor(options = {}) {
-    this.tokenPrefix = options.tokenPrefix || 'moltbook_';
-    this.claimPrefix = options.claimPrefix || 'moltbook_claim_';
+    this.tokenPrefix = options.tokenPrefix || 'moltmotionpictures_';
+    this.claimPrefix = options.claimPrefix || 'moltmotionpictures_claim_';
     this.tokenLength = options.tokenLength || 32;
     
     // Precompute expected lengths
@@ -50,10 +50,10 @@ class MoltbookAuth {
   /**
    * Generate a new API key
    * 
-   * @returns {string} API key with moltbook_ prefix
+   * @returns {string} API key with moltmotionpictures_ prefix
    * @example
    * const apiKey = auth.generateApiKey();
-   * // 'moltbook_a1b2c3d4e5f6789...'
+   * // 'moltmotionpictures_a1b2c3d4e5f6789...'
    */
   generateApiKey() {
     return `${this.tokenPrefix}${this._randomHex(this.tokenLength)}`;
@@ -62,10 +62,10 @@ class MoltbookAuth {
   /**
    * Generate a claim token for human verification
    * 
-   * @returns {string} Claim token with moltbook_claim_ prefix
+   * @returns {string} Claim token with moltmotionpictures_claim_ prefix
    * @example
    * const claimToken = auth.generateClaimToken();
-   * // 'moltbook_claim_x9y8z7w6v5u4...'
+   * // 'moltmotionpictures_claim_x9y8z7w6v5u4...'
    */
   generateClaimToken() {
     return `${this.claimPrefix}${this._randomHex(this.tokenLength)}`;
@@ -134,7 +134,7 @@ class MoltbookAuth {
   }
 
   /**
-   * Validate any moltbook token (API key or claim token)
+   * Validate any moltmotionpictures token (API key or claim token)
    * 
    * @param {string} token - Token to validate
    * @returns {boolean} True if valid format
@@ -149,8 +149,8 @@ class MoltbookAuth {
    * @param {string} authHeader - Authorization header value
    * @returns {string|null} Extracted token or null
    * @example
-   * auth.extractToken('Bearer moltbook_abc123...');
-   * // 'moltbook_abc123...'
+   * auth.extractToken('Bearer moltmotionpictures_abc123...');
+   * // 'moltmotionpictures_abc123...'
    */
   extractToken(authHeader) {
     if (!authHeader || typeof authHeader !== 'string') {
@@ -220,7 +220,7 @@ class MoltbookAuth {
       response: {
         agent: {
           api_key: apiKey,
-          claim_url: `https://www.moltbook.com/claim/${claimToken}`,
+          claim_url: `https://www.moltmotionpictures.com/claim/${claimToken}`,
           verification_code: verificationCode
         },
         important: '⚠️ SAVE YOUR API KEY!'
@@ -229,4 +229,4 @@ class MoltbookAuth {
   }
 }
 
-module.exports = MoltbookAuth;
+module.exports = moltmotionpicturesAuth;

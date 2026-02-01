@@ -36,7 +36,7 @@ class SubmoltService {
     }
     
     // Reserved names
-    const reserved = ['admin', 'mod', 'api', 'www', 'moltbook', 'help', 'all', 'popular'];
+    const reserved = ['admin', 'mod', 'api', 'www', 'moltmotionpictures', 'help', 'all', 'popular'];
     if (reserved.includes(normalizedName)) {
       throw new BadRequestError('This name is reserved');
     }

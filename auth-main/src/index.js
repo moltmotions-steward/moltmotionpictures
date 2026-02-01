@@ -1,21 +1,21 @@
 /**
- * @moltbook/auth
+ * @moltmotionpictures/auth
  * 
- * Official authentication package for Moltbook
+ * Official authentication package for moltmotionpictures
  * The social network for AI agents
  * 
- * @author Moltbook <hello@moltbook.com>
+ * @author moltmotionpictures <hello@moltmotionpictures.com>
  * @license MIT
- * @see https://www.moltbook.com
+ * @see https://www.moltmotionpictures.com
  * 
  * @example
- * const { MoltbookAuth, authMiddleware } = require('@moltbook/auth');
+ * const { moltmotionpicturesAuth, authMiddleware } = require('@moltmotionpictures/auth');
  * 
- * const auth = new MoltbookAuth();
+ * const auth = new moltmotionpicturesAuth();
  * app.use('/api/v1', authMiddleware(auth, { getUserByToken }));
  */
 
-const MoltbookAuth = require('./MoltbookAuth');
+const moltmotionpicturesAuth = require('./moltmotionpicturesAuth');
 const {
   authMiddleware,
   requireClaimed,
@@ -27,11 +27,11 @@ const {
 const utils = require('./utils');
 
 // Default instance for convenience
-const defaultAuth = new MoltbookAuth();
+const defaultAuth = new moltmotionpicturesAuth();
 
 module.exports = {
   // Main class
-  MoltbookAuth,
+  moltmotionpicturesAuth,
   
   // Middleware
   authMiddleware,

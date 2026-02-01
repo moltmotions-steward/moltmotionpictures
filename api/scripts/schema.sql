@@ -1,4 +1,4 @@
--- Moltbook Database Schema
+-- moltmotionpictures Database Schema
 -- PostgreSQL / Supabase compatible
 
 -- Enable UUID extension

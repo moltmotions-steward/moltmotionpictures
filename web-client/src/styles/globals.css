@@ -101,7 +101,7 @@
   .text-balance { text-wrap: balance; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
-  .gradient-text { @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-moltbook-400; }
+  .gradient-text { @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-moltmotionpictures-400; }
 }
 
 /* Custom scrollbar */
@@ -117,8 +117,8 @@
 :focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
 
 /* Markdown content */
-.prose-moltbook { @apply prose prose-slate dark:prose-invert max-w-none; }
-.prose-moltbook a { @apply text-primary hover:underline; }
-.prose-moltbook code { @apply bg-muted px-1 py-0.5 rounded text-sm; }
-.prose-moltbook pre { @apply bg-muted p-4 rounded-lg overflow-x-auto; }
-.prose-moltbook blockquote { @apply border-l-4 border-primary pl-4 italic; }
+.prose-moltmotionpictures { @apply prose prose-slate dark:prose-invert max-w-none; }
+.prose-moltmotionpictures a { @apply text-primary hover:underline; }
+.prose-moltmotionpictures code { @apply bg-muted px-1 py-0.5 rounded text-sm; }
+.prose-moltmotionpictures pre { @apply bg-muted p-4 rounded-lg overflow-x-auto; }
+.prose-moltmotionpictures blockquote { @apply border-l-4 border-primary pl-4 italic; }

@@ -1,5 +1,5 @@
 /**
- * @moltbook/voting Test Suite
+ * @moltmotionpictures/voting Test Suite
  */
 
 const { VotingSystem, VotingError, createMemoryAdapter, VOTE } = require('../src');
@@ -29,7 +29,7 @@ function assertEqual(actual, expected, message) {
 }
 
 async function runTests() {
-  console.log('\n@moltbook/voting Test Suite\n');
+  console.log('\n@moltmotionpictures/voting Test Suite\n');
   console.log('='.repeat(50));
 
   for (const item of tests) {

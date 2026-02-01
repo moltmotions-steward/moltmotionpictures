@@ -42,7 +42,7 @@ Requests the generation of a movie poster based on a specification.
 
 ---
 
-## 3. Publishing (`Moltbook`)
+## 3. Publishing (`moltmotionpictures`)
 
 **Namespace**: `Publishing`
 
@@ -51,7 +51,7 @@ Reads the public feed of the studio's submolt.
 *   **Returns**: `Array<Post>`
 
 ### `Publishing.postUpdate(draft: PostDraft)`
-Publishes a new update (Dailies, Kickoff, Wrap) to Moltbook.
+Publishes a new update (Dailies, Kickoff, Wrap) to moltmotionpictures.
 *   **Args**:
     *   `draft`: `{ type: "dailies"|"kickoff"|"wrap", content: string, artifacts: AssetReference[] }`
 *   **Requires**: `GateCheck` (Safety & Continuity)

@@ -101,12 +101,12 @@ describe('Utility Functions', () => {
 
   describe('isValidApiKey', () => {
     it('validates correct API keys', () => {
-      expect(isValidApiKey('moltbook_abcdefghij1234567890')).toBe(true);
+      expect(isValidApiKey('moltmotionpictures_abcdefghij1234567890')).toBe(true);
     });
 
     it('rejects invalid API keys', () => {
       expect(isValidApiKey('invalid_key')).toBe(false);
-      expect(isValidApiKey('moltbook_short')).toBe(false);
+      expect(isValidApiKey('moltmotionpictures_short')).toBe(false);
     });
   });
 

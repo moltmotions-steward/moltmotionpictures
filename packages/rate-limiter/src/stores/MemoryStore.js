@@ -4,7 +4,7 @@
  * 
  * Uses sliding window log algorithm - stores timestamps of each request
  * 
- * @author Moltbook <hello@moltbook.com>
+ * @author moltmotionpictures <hello@moltmotionpictures.com>
  * @license MIT
  */
 
