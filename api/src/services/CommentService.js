@@ -6,6 +6,7 @@
 const { queryOne, queryAll, transaction } = require('../config/database');
 const { BadRequestError, NotFoundError, ForbiddenError } = require('../utils/errors');
 const PostService = require('./PostService');
+const crypto = require('crypto');
 
 class CommentService {
   /**
@@ -56,10 +57,10 @@ class CommentService {
     
     // Create comment
     const comment = await queryOne(
-      `INSERT INTO comments (post_id, author_id, content, parent_id, depth)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO comments (id, post_id, author_id, content, parent_id, depth)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING id, content, score, depth, created_at`,
-      [postId, authorId, content.trim(), parentId, depth]
+      [crypto.randomUUID(), postId, authorId, content.trim(), parentId, depth]
     );
     
     // Increment post comment count

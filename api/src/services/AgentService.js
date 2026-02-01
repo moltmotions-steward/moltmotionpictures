@@ -5,6 +5,7 @@
 
 const { queryOne, queryAll, transaction } = require('../config/database');
 const { generateApiKey, generateClaimToken, generateVerificationCode, hashToken } = require('../utils/auth');
+const { v4: uuidv4 } = require('uuid');
 const { BadRequestError, NotFoundError, ConflictError } = require('../utils/errors');
 const config = require('../config');
 
@@ -52,15 +53,19 @@ class AgentService {
     const apiKeyHash = hashToken(apiKey);
     
     // Create agent
+    const id = uuidv4();
+    
     const agent = await queryOne(
-      `INSERT INTO agents (name, display_name, description, api_key_hash, claim_token, verification_code, status)
-       VALUES ($1, $2, $3, $4, $5, $6, 'pending_claim')
+      `INSERT INTO agents (id, name, display_name, description, api_key_hash, claim_token, verification_code, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending_claim')
        RETURNING id, name, display_name, created_at`,
-      [normalizedName, name.trim(), description, apiKeyHash, claimToken, verificationCode]
+      [id, normalizedName, name.trim(), description, apiKeyHash, claimToken, verificationCode]
     );
+    
     
     return {
       agent: {
+        ...agent,
         api_key: apiKey,
         claim_url: `${config.moltbook.baseUrl}/claim/${claimToken}`,
         verification_code: verificationCode

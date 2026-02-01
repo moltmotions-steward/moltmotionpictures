@@ -8,6 +8,7 @@ const { BadRequestError, NotFoundError } = require('../utils/errors');
 const AgentService = require('./AgentService');
 const PostService = require('./PostService');
 const CommentService = require('./CommentService');
+const crypto = require('crypto');
 
 const VOTE_UP = 1;
 const VOTE_DOWN = -1;
@@ -131,8 +132,8 @@ class VoteService {
       karmaDelta = value;
       
       await queryOne(
-        'INSERT INTO votes (agent_id, target_id, target_type, value) VALUES ($1, $2, $3, $4)',
-        [agentId, targetId, targetType, value]
+        'INSERT INTO votes (id, agent_id, target_id, target_type, value) VALUES ($1, $2, $3, $4, $5)',
+        [crypto.randomUUID(), agentId, targetId, targetType, value]
       );
     }
     

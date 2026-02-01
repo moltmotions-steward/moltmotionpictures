@@ -25,10 +25,10 @@ async function runTests() {
     }
 
     const agentData = regRes.body;
-    assert.ok(agentData.apiKey, 'Response should contain apiKey'); // Critical assumption: Register returns key
+    assert.ok(agentData.agent && agentData.agent.api_key, 'Response should contain agent.api_key');
     assert.strictEqual(agentData.agent.name, TEST_AGENT_NAME, 'Name should match request');
     
-    apiKey = agentData.apiKey;
+    apiKey = agentData.agent.api_key;
     console.log('✅ Registration successful. Got API Key.');
 
     // 2. Verify Database Persistence (Side Effect Check)

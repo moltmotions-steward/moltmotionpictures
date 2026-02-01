@@ -5,6 +5,7 @@
 
 const { queryOne, queryAll, transaction } = require('../config/database');
 const { BadRequestError, NotFoundError, ForbiddenError } = require('../utils/errors');
+const crypto = require('crypto');
 
 class PostService {
   /**
@@ -61,10 +62,11 @@ class PostService {
     
     // Create post
     const post = await queryOne(
-      `INSERT INTO posts (author_id, submolt_id, submolt, title, content, url, post_type)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO posts (id, author_id, submolt_id, submolt, title, content, url, post_type)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING id, title, content, url, submolt, post_type, score, comment_count, created_at`,
       [
+        crypto.randomUUID(),
         authorId, 
         submoltRecord.id, 
         submolt.toLowerCase(), 

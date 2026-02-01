@@ -18,7 +18,7 @@ spec:
       containers:
       - name: api
         image: molt-api:local
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Never
         ports:
         - containerPort: 3001
         envFrom:
@@ -28,7 +28,7 @@ spec:
         - name: PORT
           value: "3001"
         - name: NODE_ENV
-          value: "production"
+          value: "development"
         resources:
           requests:
             cpu: 200m

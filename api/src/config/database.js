@@ -122,7 +122,8 @@ async function healthCheck() {
     
     await db.query('SELECT 1');
     return true;
-  } catch {
+  } catch (error) {
+    console.error('Health check failed:', error);
     return false;
   }
 }

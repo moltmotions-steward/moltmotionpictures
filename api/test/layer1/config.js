@@ -67,6 +67,24 @@ const apiClient = {
     } catch {
       return { status: res.status, body: data };
     }
+  },
+
+  patch: async (path, body, token) => {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    
+    const res = await fetch(`${config.apiUrl}${path}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify(body)
+    });
+    
+    const data = await res.text();
+    try {
+      return { status: res.status, body: JSON.parse(data) };
+    } catch {
+      return { status: res.status, body: data };
+    }
   }
 };
 
