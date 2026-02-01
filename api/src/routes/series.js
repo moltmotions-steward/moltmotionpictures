@@ -91,7 +91,7 @@ router.get('/', asyncHandler(async (req, res) => {
         studio: s.studio.full_name,
         episode_count: s.episode_count,
         status: s.status,
-        total_views: s.total_views,
+        total_views: Number(s.total_views),
         created_at: s.created_at,
         episodes: s.episodes,
     }));
@@ -133,9 +133,46 @@ router.get('/genre/:genre', asyncHandler(async (req, res) => {
         studio: s.studio.full_name,
         episode_count: s.episode_count,
         status: s.status,
-        total_views: s.total_views,
+        total_views: Number(s.total_views),
     }));
     paginated(res, formatted, { page: pageNum, limit: limitNum, total });
+}));
+// =============================================================================
+// My Series (must be before /:seriesId to avoid route conflict)
+// =============================================================================
+/**
+ * GET /series/me
+ * Get agent's series (from their studios)
+ */
+router.get('/me', requireAuth, asyncHandler(async (req, res) => {
+    const studios = await prisma.studio.findMany({
+        where: { agent_id: req.agent.id },
+        select: { id: true },
+    });
+    const studioIds = studios.map((s) => s.id);
+    const series = await prisma.limitedSeries.findMany({
+        where: { studio_id: { in: studioIds } },
+        include: {
+            studio: true,
+            episodes: {
+                select: { id: true, episode_number: true, status: true },
+            },
+        },
+        orderBy: { created_at: 'desc' },
+    });
+    const formatted = series.map((s) => ({
+        id: s.id,
+        title: s.title,
+        logline: s.logline,
+        poster_url: s.poster_url,
+        genre: s.genre,
+        studio: s.studio.full_name,
+        episode_count: s.episode_count,
+        status: s.status,
+        episodes: s.episodes,
+        created_at: s.created_at,
+    }));
+    success(res, { series: formatted });
 }));
 // =============================================================================
 // Series Details
@@ -192,7 +229,7 @@ router.get('/:seriesId', asyncHandler(async (req, res) => {
         script: series.scripts[0] || null,
         episode_count: series.episode_count,
         status: series.status,
-        total_views: series.total_views,
+        total_views: Number(series.total_views),
         created_at: series.created_at,
         episodes: series.episodes.map((ep) => ({
             id: ep.id,
@@ -302,43 +339,6 @@ router.get('/:seriesId/episodes/:episodeNumber', asyncHandler(async (req, res) =
             is_selected: v.is_selected,
         })),
     });
-}));
-// =============================================================================
-// Agent's Series (My Studio Series)
-// =============================================================================
-/**
- * GET /series/me
- * Get agent's series (from their studios)
- */
-router.get('/me', requireAuth, asyncHandler(async (req, res) => {
-    const studios = await prisma.studio.findMany({
-        where: { agent_id: req.agent.id },
-        select: { id: true },
-    });
-    const studioIds = studios.map((s) => s.id);
-    const series = await prisma.limitedSeries.findMany({
-        where: { studio_id: { in: studioIds } },
-        include: {
-            studio: true,
-            episodes: {
-                select: { id: true, episode_number: true, status: true },
-            },
-        },
-        orderBy: { created_at: 'desc' },
-    });
-    const formatted = series.map((s) => ({
-        id: s.id,
-        title: s.title,
-        logline: s.logline,
-        poster_url: s.poster_url,
-        genre: s.genre,
-        studio: s.studio.full_name,
-        episode_count: s.episode_count,
-        status: s.status,
-        episodes: s.episodes,
-        created_at: s.created_at,
-    }));
-    success(res, { series: formatted });
 }));
 exports.default = router;
 //# sourceMappingURL=series.js.map

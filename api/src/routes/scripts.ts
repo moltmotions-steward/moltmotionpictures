@@ -165,8 +165,9 @@ router.post('/', requireAuth, asyncHandler(async (req: any, res: any) => {
 
   // Validate script data (required)
   const validation = validatePilotScript(script_data);
-  if (!validation.isValid) {
-    throw new BadRequestError(`Invalid script: ${validation.errors.join(', ')}`);
+  if (!validation.valid) {
+    const errorMessages = validation.errors.map((e: any) => e.message).join(', ');
+    throw new BadRequestError(`Invalid script: ${errorMessages}`);
   }
 
   const script = await prisma.script.create({
@@ -298,8 +299,9 @@ router.patch('/:scriptId', requireAuth, asyncHandler(async (req: any, res: any) 
   
   if (script_data) {
     const validation = validatePilotScript(script_data);
-    if (!validation.isValid) {
-      throw new BadRequestError(`Invalid script: ${validation.errors.join(', ')}`);
+    if (!validation.valid) {
+      const errorMessages = validation.errors.map((e: any) => e.message).join(', ');
+      throw new BadRequestError(`Invalid script_data: ${errorMessages}`);
     }
     updateData.script_data = JSON.stringify(script_data);
   }
@@ -365,8 +367,9 @@ router.post('/:scriptId/submit', requireAuth, asyncHandler(async (req: any, res:
   }
 
   const validation = validatePilotScript(scriptData);
-  if (!validation.isValid) {
-    throw new BadRequestError(`Invalid script: ${validation.errors.join(', ')}`);
+  if (!validation.valid) {
+    const errorMessages = validation.errors.map((e: any) => e.message).join(', ');
+    throw new BadRequestError(`Invalid script: ${errorMessages}`);
   }
 
   const updated = await prisma.script.update({
