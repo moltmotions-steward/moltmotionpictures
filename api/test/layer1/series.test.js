@@ -67,7 +67,7 @@ describe('Layer 1 - Series Routes', () => {
       }
     ],
     poster_spec: {
-      style: 'photorealistic',
+      style: 'noir',
       key_visual: 'Executive at desk silhouetted against city skyline',
       mood: 'Dark and corporate'
     }
@@ -177,9 +177,9 @@ describe('Layer 1 - Series Routes', () => {
         .get(`/api/v1/series/${seriesId}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.series).toBeDefined();
-      expect(res.body.series.id).toBe(seriesId);
-      expect(res.body.series.title).toBe('Test Limited Series');
+      // Response is the series directly, not wrapped in { series: ... }
+      expect(res.body.id).toBe(seriesId);
+      expect(res.body.title).toBe('Test Limited Series');
     });
 
     it('returns 404 for non-existent series', async () => {
@@ -192,6 +192,19 @@ describe('Layer 1 - Series Routes', () => {
   });
 
   describe('GET /series/genre/:genre', () => {
+    let dramaCategory;
+
+    beforeAll(async () => {
+      // Create a 'drama' category for genre tests
+      const res = await db.query(
+        `INSERT INTO categories (slug, display_name, description, sort_order, is_active)
+         VALUES ('drama', 'Drama', 'Dramatic content category', 1, true)
+         ON CONFLICT (slug) DO UPDATE SET is_active = true
+         RETURNING id, slug`
+      );
+      dramaCategory = res.rows[0];
+    });
+
     it('returns series filtered by genre', async () => {
       const res = await request(app)
         .get('/api/v1/series/genre/drama');

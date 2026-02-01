@@ -348,10 +348,13 @@ router.post('/:scriptId/submit', requireAuth, asyncHandler(async (req: any, res:
     throw new ForbiddenError('Only draft scripts can be submitted');
   }
 
-  // Check rate limit
-  const canSubmit = await canSubmitScript(script.studio_id);
-  if (!canSubmit.allowed) {
-    throw new ForbiddenError(canSubmit.reason);
+  // Check rate limit using studio's script count and last script submission time
+  const rateError = canSubmitScript(
+    script.studio.script_count,
+    script.studio.last_script_at
+  );
+  if (rateError) {
+    throw new ForbiddenError(rateError);
   }
 
   // Validate script has complete data

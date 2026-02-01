@@ -62,6 +62,7 @@ exports.getVotingDashboard = getVotingDashboard;
 const client_1 = require("@prisma/client");
 const SeriesVotingService = __importStar(require("./SeriesVotingService"));
 const ScriptService = __importStar(require("./ScriptService"));
+const EpisodeProductionService_1 = require("./EpisodeProductionService");
 const prisma = new client_1.PrismaClient();
 // Default configuration
 const DEFAULT_CONFIG = {
@@ -213,10 +214,21 @@ async function runCronTick() {
     const closedResults = await checkAndClosePeriods();
     // 3. Ensure there are upcoming periods
     await ensureUpcomingPeriods();
+    // 4. Process pending productions (generate clips for winning scripts)
+    const productionService = (0, EpisodeProductionService_1.getEpisodeProductionService)();
+    const productionResults = await productionService.processPendingProductions();
+    // 5. Poll pending clip generations
+    const pollResults = await productionService.pollPendingGenerations();
+    // 6. Close expired clip voting
+    await closeExpiredClipVoting();
     return {
         opened: openedCount,
         closed: closedResults,
         created: 0, // Would need to track from ensureUpcomingPeriods
+        production: {
+            processed: productionResults.processed,
+            completed: pollResults.completed,
+        },
     };
 }
 // ─────────────────────────────────────────────────────────────────────────────

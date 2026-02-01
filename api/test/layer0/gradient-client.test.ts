@@ -132,7 +132,7 @@ describe('GradientClient', () => {
           model: 'llama3.3-70b-instruct',
           messages: [{ role: 'user', content: 'Hello' }],
         })
-      ).rejects.toThrow(GradientError);
+      ).rejects.toThrow('Rate limit exceeded');
     });
   });
 
@@ -429,10 +429,10 @@ describe('GradientClient', () => {
           messages: [{ role: 'user', content: 'Hello' }],
         });
         expect.fail('Should have thrown');
-      } catch (error) {
-        expect(error).toBeInstanceOf(GradientError);
-        expect((error as GradientError).code).toBe('invalid_model');
-        expect((error as GradientError).statusCode).toBe(400);
+      } catch (error: any) {
+        expect(error.name).toBe('GradientError');
+        expect(error.code).toBe('invalid_model');
+        expect(error.statusCode).toBe(400);
       }
     });
   });

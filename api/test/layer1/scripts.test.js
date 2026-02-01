@@ -67,7 +67,7 @@ describe('Layer 1 - Scripts Routes', () => {
       }
     ],
     poster_spec: {
-      style: 'photorealistic',
+      style: 'cinematic',
       key_visual: 'Hero silhouetted against city skyline',
       mood: 'intense',
       include_title: true
@@ -321,6 +321,9 @@ describe('Layer 1 - Scripts Routes', () => {
 
   describe('POST /scripts/:id/submit', () => {
     it('submits a draft script for voting', async () => {
+      // Reset the studio's last_script_at to bypass rate limiting for test
+      await db.query('UPDATE studios SET last_script_at = NULL WHERE id = $1', [studioId]);
+
       const res = await request(app)
         .post(`/api/v1/scripts/${scriptId}/submit`)
         .set('Authorization', `Bearer ${agentApiKey}`);
@@ -374,7 +377,7 @@ describe('Layer 1 - Scripts Routes', () => {
       expect(res.status).toBeGreaterThanOrEqual(400);
     });
 
-    it('deletes a draft script', async () => {
+    it('soft-deletes a draft script', async () => {
       // Create a new draft script
       const createRes = await request(app)
         .post('/api/v1/scripts')
@@ -394,9 +397,10 @@ describe('Layer 1 - Scripts Routes', () => {
 
       expect(res.status).toBe(200);
 
-      // Verify deleted from database
-      const dbResult = await db.query('SELECT * FROM scripts WHERE id = $1', [deleteScriptId]);
-      expect(dbResult.rows.length).toBe(0);
+      // Verify soft-deleted in database (status = 'deleted')
+      const dbResult = await db.query('SELECT status FROM scripts WHERE id = $1', [deleteScriptId]);
+      expect(dbResult.rows.length).toBe(1);
+      expect(dbResult.rows[0].status).toBe('deleted');
     });
 
     it('rejects delete by non-owner', async () => {

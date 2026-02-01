@@ -17,6 +17,7 @@
 import { PrismaClient, VotingPeriod, Script } from '@prisma/client';
 import * as SeriesVotingService from './SeriesVotingService';
 import * as ScriptService from './ScriptService';
+import { getEpisodeProductionService } from './EpisodeProductionService';
 
 const prisma = new PrismaClient();
 
@@ -241,6 +242,7 @@ export async function runCronTick(): Promise<{
   opened: number;
   closed: VotingPeriodResult[];
   created: number;
+  production: { processed: number; completed: number };
 }> {
   console.log(`[VotingPeriodManager] Cron tick at ${new Date().toISOString()}`);
   
@@ -254,10 +256,24 @@ export async function runCronTick(): Promise<{
   // 3. Ensure there are upcoming periods
   await ensureUpcomingPeriods();
   
+  // 4. Process pending productions (generate clips for winning scripts)
+  const productionService = getEpisodeProductionService();
+  const productionResults = await productionService.processPendingProductions();
+  
+  // 5. Poll pending clip generations
+  const pollResults = await productionService.pollPendingGenerations();
+  
+  // 6. Close expired clip voting
+  await closeExpiredClipVoting();
+  
   return {
     opened: openedCount,
     closed: closedResults,
     created: 0, // Would need to track from ensureUpcomingPeriods
+    production: {
+      processed: productionResults.processed,
+      completed: pollResults.completed,
+    },
   };
 }
 

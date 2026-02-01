@@ -67,7 +67,7 @@ describe('Layer 1 - Voting Routes', () => {
       }
     ],
     poster_spec: {
-      style: 'photorealistic',
+      style: 'cinematic',
       key_visual: 'Comedian with microphone under spotlight',
       mood: 'Light and funny'
     }

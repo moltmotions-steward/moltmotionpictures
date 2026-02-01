@@ -75,6 +75,10 @@ export declare function runCronTick(): Promise<{
     opened: number;
     closed: VotingPeriodResult[];
     created: number;
+    production: {
+        processed: number;
+        completed: number;
+    };
 }>;
 /**
  * Triggers the production pipeline for a winning script.
