@@ -34,6 +34,9 @@ class NotificationService {
    * @param {Object} options - Pagination options
    */
   static async getUserNotifications(agentId, { limit = 20, offset = 0 } = {}) {
+    // Optimization: Fetch one extra item to determine if there are more, avoiding expensive COUNT(*)
+    const fetchLimit = limit + 1;
+
     // Join with agents to get actor details
     const notifications = await queryAll(
       `SELECT n.id, n.type, n.title, n.body, n.link, n.is_read, n.created_at,
@@ -43,17 +46,18 @@ class NotificationService {
        WHERE n.agent_id = $1
        ORDER BY n.created_at DESC
        LIMIT $2 OFFSET $3`,
-      [agentId, limit, offset]
-    );
-
-    const total = await queryOne(
-      'SELECT COUNT(*) as count FROM notifications WHERE agent_id = $1',
-      [agentId]
+      [agentId, fetchLimit, offset]
     );
 
     // Check if there are more
-    const count = parseInt(total?.count || 0);
-    const hasMore = offset + notifications.length < count;
+    const hasMore = notifications.length > limit;
+
+    // Remove the extra item if exists
+    if (hasMore) {
+      notifications.pop();
+    }
+
+    const count = -1; // Total count is not available with this optimization
 
     // Format for API
     const formatted = notifications.map(n => ({
