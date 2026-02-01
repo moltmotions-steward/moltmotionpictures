@@ -372,21 +372,20 @@ export const listRecentVersions = query({
       .take(limit * 2)
     const entries = versions.filter((version) => !version.softDeletedAt).slice(0, limit)
 
+    const skills = await Promise.all(entries.map((version) => ctx.db.get(version.skillId)))
+    const owners = await Promise.all(
+      skills.map((skill) => (skill ? ctx.db.get(skill.ownerUserId) : null)),
+    )
+
     const results: Array<{
       version: Doc<'skillVersions'>
       skill: Doc<'skills'> | null
       owner: Doc<'users'> | null
-    }> = []
-
-    for (const version of entries) {
-      const skill = await ctx.db.get(version.skillId)
-      if (!skill) {
-        results.push({ version, skill: null, owner: null })
-        continue
-      }
-      const owner = await ctx.db.get(skill.ownerUserId)
-      results.push({ version, skill, owner })
-    }
+    }> = entries.map((version, i) => ({
+      version,
+      skill: skills[i] ?? null,
+      owner: owners[i] ?? null,
+    }))
 
     return results
   },
