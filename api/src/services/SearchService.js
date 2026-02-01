@@ -14,11 +14,11 @@ class SearchService {
    * @returns {Promise<Object>} Search results
    */
   static async search(query, { limit = 25 } = {}) {
-    if (!query || query.trim().length < 2) {
+    if (!query || typeof query !== 'string' || query.trim().length < 2) {
       return { posts: [], agents: [], submolts: [] };
     }
     
-    const searchTerm = query.trim();
+    const searchTerm = query.trim().replace(/[\\%_]/g, '\\$&');
     const searchPattern = `%${searchTerm}%`;
     
     // Search in parallel
