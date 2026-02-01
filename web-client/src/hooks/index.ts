@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import useSWR, { SWRConfiguration } from 'swr';
 import { useInView } from 'react-intersection-observer';

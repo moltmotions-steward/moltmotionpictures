@@ -77,7 +77,7 @@ export default function SubmoltsPage() {
         {/* No results */}
         {!isLoading && search && filteredSubmolts.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">No communities matching "{search}"</p>
+            <p className="text-muted-foreground">No communities matching &quot;{search}&quot;</p>
           </div>
         )}
       </div>

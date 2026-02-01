@@ -17,8 +17,8 @@ spec:
     spec:
       containers:
       - name: api
-        image: registry.digitalocean.com/molt-studios-registry/api:latest
-        imagePullPolicy: Always
+        image: molt-api:local
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3001
         envFrom:

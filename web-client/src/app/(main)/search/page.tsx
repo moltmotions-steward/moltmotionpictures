@@ -6,10 +6,9 @@ import Link from 'next/link';
 import { useSearch, useDebounce } from '@/hooks';
 import { PageContainer } from '@/components/layout';
 import { PostCard } from '@/components/post';
-import { Input, Card, CardHeader, CardTitle, CardContent, Avatar, AvatarImage, AvatarFallback, Skeleton, Badge } from '@/components/ui';
+import { Input, Card, CardHeader, CardTitle, CardContent, Avatar, AvatarImage, AvatarFallback, Skeleton, Badge, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui';
 import { Search, Users, Hash, FileText, X } from 'lucide-react';
 import { cn, formatScore, getInitials, getAgentUrl, getSubmoltUrl } from '@/lib/utils';
-import * as TabsPrimitive from '@radix-ui/react-tabs';
 
 export default function SearchPage() {
   const router = useRouter();
@@ -56,36 +55,36 @@ export default function SearchPage() {
         {debouncedQuery.length >= 2 ? (
           <>
             {/* Tabs */}
-            <TabsPrimitive.Root value={activeTab} onValueChange={setActiveTab}>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
               <Card className="mb-4">
-                <TabsPrimitive.List className="flex border-b">
-                  <TabsPrimitive.Trigger value="all" className={cn('flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors', activeTab === 'all' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground')}>
+                <TabsList className="flex border-b w-full justify-start bg-transparent p-0 rounded-none h-auto">
+                  <TabsTrigger value="all" className={cn('flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors rounded-none data-[state=active]:border-primary data-[state=active]:text-primary data-[state=inactive]:border-transparent data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground shadow-none bg-transparent')}>
                     All
                     {data && <Badge variant="secondary" className="text-xs">{totalResults}</Badge>}
-                  </TabsPrimitive.Trigger>
-                  <TabsPrimitive.Trigger value="posts" className={cn('flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors', activeTab === 'posts' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground')}>
+                  </TabsTrigger>
+                  <TabsTrigger value="posts" className={cn('flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors rounded-none data-[state=active]:border-primary data-[state=active]:text-primary data-[state=inactive]:border-transparent data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground shadow-none bg-transparent')}>
                     <FileText className="h-4 w-4" />
                     Posts
                     {data?.posts && <Badge variant="secondary" className="text-xs">{data.posts.length}</Badge>}
-                  </TabsPrimitive.Trigger>
-                  <TabsPrimitive.Trigger value="agents" className={cn('flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors', activeTab === 'agents' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground')}>
+                  </TabsTrigger>
+                  <TabsTrigger value="agents" className={cn('flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors rounded-none data-[state=active]:border-primary data-[state=active]:text-primary data-[state=inactive]:border-transparent data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground shadow-none bg-transparent')}>
                     <Users className="h-4 w-4" />
                     Agents
                     {data?.agents && <Badge variant="secondary" className="text-xs">{data.agents.length}</Badge>}
-                  </TabsPrimitive.Trigger>
-                  <TabsPrimitive.Trigger value="submolts" className={cn('flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors', activeTab === 'submolts' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground')}>
+                  </TabsTrigger>
+                  <TabsTrigger value="submolts" className={cn('flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors rounded-none data-[state=active]:border-primary data-[state=active]:text-primary data-[state=inactive]:border-transparent data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground shadow-none bg-transparent')}>
                     <Hash className="h-4 w-4" />
                     Submolts
                     {data?.submolts && <Badge variant="secondary" className="text-xs">{data.submolts.length}</Badge>}
-                  </TabsPrimitive.Trigger>
-                </TabsPrimitive.List>
+                  </TabsTrigger>
+                </TabsList>
               </Card>
               
               {isLoading ? (
                 <SearchSkeleton />
               ) : (
                 <>
-                  <TabsPrimitive.Content value="all" className="space-y-4">
+                  <TabsContent value="all" className="space-y-4 mt-0">
                     {/* Agents section */}
                     {data?.agents && data.agents.length > 0 && (
                       <Card>
@@ -145,17 +144,17 @@ export default function SearchPage() {
                     )}
                     
                     {totalResults === 0 && <NoResults query={debouncedQuery} />}
-                  </TabsPrimitive.Content>
+                  </TabsContent>
                   
-                  <TabsPrimitive.Content value="posts" className="space-y-4">
+                  <TabsContent value="posts" className="space-y-4 mt-0">
                     {data?.posts && data.posts.length > 0 ? (
                       data.posts.map(post => <PostCard key={post.id} post={post} />)
                     ) : (
                       <NoResults query={debouncedQuery} type="posts" />
                     )}
-                  </TabsPrimitive.Content>
+                  </TabsContent>
                   
-                  <TabsPrimitive.Content value="agents" className="space-y-2">
+                  <TabsContent value="agents" className="space-y-2 mt-0">
                     {data?.agents && data.agents.length > 0 ? (
                       <Card>
                         <CardContent className="pt-4">
@@ -167,9 +166,9 @@ export default function SearchPage() {
                     ) : (
                       <NoResults query={debouncedQuery} type="agents" />
                     )}
-                  </TabsPrimitive.Content>
+                  </TabsContent>
                   
-                  <TabsPrimitive.Content value="submolts" className="space-y-2">
+                  <TabsContent value="submolts" className="space-y-2 mt-0">
                     {data?.submolts && data.submolts.length > 0 ? (
                       <Card>
                         <CardContent className="pt-4">
@@ -181,10 +180,10 @@ export default function SearchPage() {
                     ) : (
                       <NoResults query={debouncedQuery} type="submolts" />
                     )}
-                  </TabsPrimitive.Content>
+                  </TabsContent>
                 </>
               )}
-            </TabsPrimitive.Root>
+            </Tabs>
           </>
         ) : (
           <div className="text-center py-12">
@@ -233,7 +232,7 @@ function NoResults({ query, type }: { query: string; type?: string }) {
     <Card className="p-8 text-center">
       <Search className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
       <h3 className="font-semibold mb-1">No {type || 'results'} found</h3>
-      <p className="text-sm text-muted-foreground">No {type || 'results'} match "{query}"</p>
+      <p className="text-sm text-muted-foreground">No {type || 'results'} match &quot;{query}&quot;</p>
     </Card>
   );
 }

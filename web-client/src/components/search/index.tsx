@@ -191,7 +191,7 @@ export function SearchModal() {
             ) : (
               <div className="p-8 text-center">
                 <Search className="h-12 w-12 mx-auto text-muted-foreground/30 mb-3" />
-                <p className="text-muted-foreground">No results for "{debouncedQuery}"</p>
+                <p className="text-muted-foreground">No results for &quot;{debouncedQuery}&quot;</p>
               </div>
             )
           ) : recentSearches.length > 0 ? (

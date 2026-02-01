@@ -1,0 +1,114 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.20kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:20-alpine
+#2 ...
+
+#3 [auth] library/node:pull token for registry-1.docker.io
+#3 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/node:20-alpine
+#2 DONE 0.7s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [builder 1/9] FROM docker.io/library/node:20-alpine@sha256:09e2b3d9726018aecf269bd35325f46bf75046a643a66d28360ec71132750ec8
+#5 resolve docker.io/library/node:20-alpine@sha256:09e2b3d9726018aecf269bd35325f46bf75046a643a66d28360ec71132750ec8 done
+#5 DONE 0.0s
+
+#6 [builder 2/9] WORKDIR /app
+#6 CACHED
+
+#7 [runner 3/8] RUN addgroup --system --gid 1001 nodejs
+#7 CACHED
+
+#8 [runner 4/8] RUN adduser --system --uid 1001 nextjs
+#8 CACHED
+
+#9 [internal] load build context
+#9 transferring context: 627.83kB 0.4s done
+#9 DONE 0.4s
+
+#10 [builder 3/9] COPY package.json package-lock.json ./
+#10 CACHED
+
+#11 [builder 4/9] COPY packages ./packages/
+#11 CACHED
+
+#12 [builder 5/9] COPY auth-main ./auth-main/
+#12 CACHED
+
+#13 [builder 6/9] COPY api ./api/
+#13 CACHED
+
+#14 [builder 7/9] COPY web-client ./web-client/
+#14 CACHED
+
+#15 [builder 8/9] RUN npm install
+#15 CACHED
+
+#16 [builder 9/9] RUN npm run build --workspace=@moltstudios/web-client
+#16 0.596 
+#16 0.596 > @moltstudios/web-client@1.0.0 build
+#16 0.596 > next build
+#16 0.596 
+#16 1.259    ▲ Next.js 14.1.0
+#16 1.260    - Environments: .env.local
+#16 1.260 
+#16 1.325    Creating an optimized production build ...
+#16 17.55  ✓ Compiled successfully
+#16 17.55    Linting and checking validity of types ...
+#16 24.72    Collecting page data ...
+#16 25.48 TypeError: (0 , n.createContext) is not a function
+#16 25.48     at 4391 (/app/web-client/.next/server/chunks/668.js:44:412)
+#16 25.48     at t (/app/web-client/.next/server/webpack-runtime.js:1:127)
+#16 25.48     at 364 (/app/web-client/.next/server/chunks/797.js:1:13066)
+#16 25.48     at Function.t (/app/web-client/.next/server/webpack-runtime.js:1:127)
+#16 25.48     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+#16 25.48     at async collectGenerateParams (/app/node_modules/next/dist/build/utils.js:919:21)
+#16 25.48     at async /app/node_modules/next/dist/build/utils.js:1138:17
+#16 25.48     at async Span.traceAsyncFn (/app/node_modules/next/dist/trace/trace.js:151:20)
+#16 25.59 
+#16 25.59 > Build error occurred
+#16 25.59 Error: Failed to collect page data for /m/[name]
+#16 25.59     at /app/node_modules/next/dist/build/utils.js:1258:15
+#16 25.59     at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+#16 25.59   type: 'Error'
+#16 25.59 }
+#16 25.60 npm error Lifecycle script `build` failed with error:
+#16 25.61 npm error code 1
+#16 25.61 npm error path /app/web-client
+#16 25.61 npm error workspace @moltstudios/web-client@1.0.0
+#16 25.61 npm error location /app/web-client
+#16 25.61 npm error command failed
+#16 25.61 npm error command sh -c next build
+#16 ERROR: process "/bin/sh -c npm run build --workspace=@moltstudios/web-client" did not complete successfully: exit code: 1
+------
+ > [builder 9/9] RUN npm run build --workspace=@moltstudios/web-client:
+25.59     at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+25.59   type: 'Error'
+25.59 }
+25.60 npm error Lifecycle script `build` failed with error:
+25.61 npm error code 1
+25.61 npm error path /app/web-client
+25.61 npm error workspace @moltstudios/web-client@1.0.0
+25.61 npm error location /app/web-client
+25.61 npm error command failed
+25.61 npm error command sh -c next build
+------
+Dockerfile:19
+--------------------
+  17 |     # Build Next.js app
+  18 |     ENV NEXT_TELEMETRY_DISABLED=1
+  19 | >>> RUN npm run build --workspace=@moltstudios/web-client
+  20 |     
+  21 |     # Runner Stage
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c npm run build --workspace=@moltstudios/web-client" did not complete successfully: exit code: 1
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/qah30crejp6ntun2u4lgl52wu

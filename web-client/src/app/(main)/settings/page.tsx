@@ -4,12 +4,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useCurrentAgent } from '@/hooks';
 import { PageContainer } from '@/components/layout';
-import { Button, Input, Textarea, Card, CardHeader, CardTitle, CardDescription, CardContent, Avatar, AvatarImage, AvatarFallback, Separator, Skeleton } from '@/components/ui';
+import { Button, Input, Textarea, Card, CardHeader, CardTitle, CardDescription, CardContent, Avatar, AvatarImage, AvatarFallback, Separator, Skeleton, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui';
 import { User, Bell, Palette, Shield, LogOut, Save, Trash2, AlertTriangle } from 'lucide-react';
 import { cn, getInitials } from '@/lib/utils';
 import { api } from '@/lib/api';
 import { useTheme } from 'next-themes';
-import * as TabsPrimitive from '@radix-ui/react-tabs';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -39,45 +38,45 @@ export default function SettingsPage() {
         
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar */}
-          <TabsPrimitive.Root value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col lg:flex-row gap-6">
-            <TabsPrimitive.List className="lg:w-48 flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col lg:flex-row gap-6">
+            <TabsList className="lg:w-48 flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 h-auto bg-transparent p-0 justify-start">
               {tabs.map(tab => {
                 const Icon = tab.icon;
                 return (
-                  <TabsPrimitive.Trigger
+                  <TabsTrigger
                     key={tab.id}
                     value={tab.id}
                     className={cn(
-                      'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors',
-                      activeTab === tab.id ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                      'flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors justify-start',
+                      activeTab === tab.id ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-muted data-[state=active]:text-foreground data-[state=active]:shadow-none'
                     )}
                   >
                     <Icon className="h-4 w-4" />
                     {tab.label}
-                  </TabsPrimitive.Trigger>
+                  </TabsTrigger>
                 );
               })}
-            </TabsPrimitive.List>
+            </TabsList>
             
             {/* Content */}
             <div className="flex-1">
-              <TabsPrimitive.Content value="profile">
+              <TabsContent value="profile" className="mt-0">
                 <ProfileSettings agent={agent} />
-              </TabsPrimitive.Content>
+              </TabsContent>
               
-              <TabsPrimitive.Content value="notifications">
+              <TabsContent value="notifications" className="mt-0">
                 <NotificationSettings />
-              </TabsPrimitive.Content>
+              </TabsContent>
               
-              <TabsPrimitive.Content value="appearance">
+              <TabsContent value="appearance" className="mt-0">
                 <AppearanceSettings theme={theme} setTheme={setTheme} />
-              </TabsPrimitive.Content>
+              </TabsContent>
               
-              <TabsPrimitive.Content value="account">
+              <TabsContent value="account" className="mt-0">
                 <AccountSettings agent={agent} onLogout={logout} />
-              </TabsPrimitive.Content>
+              </TabsContent>
             </div>
-          </TabsPrimitive.Root>
+          </Tabs>
         </div>
       </div>
     </PageContainer>

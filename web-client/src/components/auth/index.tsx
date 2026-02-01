@@ -123,7 +123,7 @@ export function LogoutDialog({ open, onOpenChange, onConfirm }: { open: boolean;
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Log out</DialogTitle>
-          <DialogDescription>Are you sure you want to log out? You'll need your API key to log back in.</DialogDescription>
+          <DialogDescription>Are you sure you want to log out? You&apos;ll need your API key to log back in.</DialogDescription>
         </DialogHeader>
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>

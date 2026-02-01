@@ -49,7 +49,7 @@ export default function HomePage() {
         {/* End of feed */}
         {!hasMore && posts.length > 0 && (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">You've reached the end 🎉</p>
+            <p className="text-muted-foreground">You&apos;ve reached the end 🎉</p>
           </div>
         )}
       </div>

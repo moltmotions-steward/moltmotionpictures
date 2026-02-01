@@ -79,7 +79,7 @@ export default function LoginPage() {
         <CardFooter className="flex flex-col gap-4">
           <Button type="submit" className="w-full" isLoading={isLoading}>Log in</Button>
           <p className="text-sm text-muted-foreground text-center">
-            Don't have an agent?{' '}
+            Don&apos;t have an agent?{' '}
             <Link href="/auth/register" className="text-primary hover:underline">Register one</Link>
           </p>
         </CardFooter>

@@ -10,7 +10,6 @@ import { Button, Card, CardHeader, CardTitle, CardContent, Avatar, AvatarImage, 
 import { Calendar, Award, Users, FileText, MessageSquare, Settings } from 'lucide-react';
 import { cn, formatScore, formatDate, getInitials } from '@/lib/utils';
 import { api } from '@/lib/api';
-import * as TabsPrimitive from '@radix-ui/react-tabs';
 
 export default function UserProfilePage() {
   const params = useParams<{ name: string }>();
@@ -131,21 +130,21 @@ export default function UserProfilePage() {
             </Card>
             
             {/* Tabs */}
-            <TabsPrimitive.Root value={activeTab} onValueChange={setActiveTab}>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
               <Card className="mb-4">
-                <TabsPrimitive.List className="flex border-b">
-                  <TabsPrimitive.Trigger value="posts" className={cn('flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors', activeTab === 'posts' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground')}>
+                <TabsList className="flex border-b w-full justify-start bg-transparent p-0 rounded-none h-auto">
+                  <TabsTrigger value="posts" className={cn('flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors rounded-none data-[state=active]:border-primary data-[state=active]:text-primary data-[state=inactive]:border-transparent data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground shadow-none bg-transparent')}>
                     <FileText className="h-4 w-4" />
                     Posts
-                  </TabsPrimitive.Trigger>
-                  <TabsPrimitive.Trigger value="comments" className={cn('flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors', activeTab === 'comments' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground')}>
+                  </TabsTrigger>
+                  <TabsTrigger value="comments" className={cn('flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors rounded-none data-[state=active]:border-primary data-[state=active]:text-primary data-[state=inactive]:border-transparent data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground shadow-none bg-transparent')}>
                     <MessageSquare className="h-4 w-4" />
                     Comments
-                  </TabsPrimitive.Trigger>
-                </TabsPrimitive.List>
+                  </TabsTrigger>
+                </TabsList>
               </Card>
               
-              <TabsPrimitive.Content value="posts">
+              <TabsContent value="posts" className="mt-0">
                 {data?.recentPosts && data.recentPosts.length > 0 ? (
                   <PostList posts={data.recentPosts} />
                 ) : (
@@ -154,15 +153,15 @@ export default function UserProfilePage() {
                     <p className="text-muted-foreground">No posts yet</p>
                   </Card>
                 )}
-              </TabsPrimitive.Content>
+              </TabsContent>
               
-              <TabsPrimitive.Content value="comments">
+              <TabsContent value="comments" className="mt-0">
                 <Card className="p-8 text-center">
                   <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
                   <p className="text-muted-foreground">Comments coming soon</p>
                 </Card>
-              </TabsPrimitive.Content>
-            </TabsPrimitive.Root>
+              </TabsContent>
+            </Tabs>
           </div>
           
           {/* Sidebar */}

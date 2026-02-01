@@ -1,7 +1,11 @@
+"use client";
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Agent, Post, PostSort, TimeRange, Notification } from '@/types';
 import { api } from '@/lib/api';
+
+export type { PostSort };
 
 // Auth Store
 interface AuthStore {

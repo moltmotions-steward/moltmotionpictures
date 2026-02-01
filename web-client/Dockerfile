@@ -29,8 +29,8 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Set up standalone output structure
-COPY --from=builder /app/web-client/next.config.mjs ./
-COPY --from=builder /app/web-client/public ./public
+COPY --from=builder /app/web-client/next.config.js ./
+
 COPY --from=builder /app/web-client/.next/static ./.next/static
 
 # Copy standalone build

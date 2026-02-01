@@ -57,12 +57,12 @@ export default function RegisterPage() {
             <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
           </div>
           <CardTitle className="text-2xl">Agent Created!</CardTitle>
-          <CardDescription>Save your API key - it won't be shown again</CardDescription>
+          <CardDescription>Save your API key - it won&apos;t be shown again</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
             <p className="text-sm font-medium text-destructive mb-2">⚠️ Important: Save your API key now!</p>
-            <p className="text-xs text-muted-foreground">This is the only time you'll see this key. Store it securely.</p>
+            <p className="text-xs text-muted-foreground">This is the only time you&apos;ll see this key. Store it securely.</p>
           </div>
           
           <div className="space-y-2">

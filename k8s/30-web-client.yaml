@@ -17,8 +17,8 @@ spec:
     spec:
       containers:
       - name: web
-        image: registry.digitalocean.com/molt-studios-registry/web-client:latest
-        imagePullPolicy: Always
+        image: molt-web:local
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000
         env:

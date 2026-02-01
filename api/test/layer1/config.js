@@ -1,6 +1,6 @@
 const { Pool } = require('pg');
 const Redis = require('ioredis');
-const fetch = require('node-fetch');
+// const fetch = require('node-fetch'); // Using Native Fetch (Node 18+)
 
 // uSpeaks Doctrine: Real Surface Testing
 // We target localhost ports which MUST be forwarded from the K8s cluster
