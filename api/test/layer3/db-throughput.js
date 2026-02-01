@@ -49,7 +49,7 @@ function makeName(prefix, maxLen) {
   return normalized.slice(0, maxLen);
 }
 
-function registerAgent(prefix) {
+function registerAgent(prefix, debug = false) {
   const payload = JSON.stringify({
     name: makeName(prefix, 32),
     description: 'k6 db throughput agent',
@@ -59,7 +59,14 @@ function registerAgent(prefix) {
     headers: { 'Content-Type': 'application/json' },
   });
 
-  if (res.status !== 201) return null;
+  if (res.status !== 201) {
+    if (debug) {
+      console.error(
+        `registerAgent failed: status=${res.status} body=${res.body} url=${API_BASE_URL}/agents/register`
+      );
+    }
+    return null;
+  }
 
   return {
     apiKey: res.json('agent.api_key'),
@@ -68,7 +75,7 @@ function registerAgent(prefix) {
 }
 
 export function setup() {
-  const setupAgent = registerAgent('l3_db_setup');
+  const setupAgent = registerAgent('l3_db_setup', true);
   if (!setupAgent) return null;
 
   const submoltName = makeName('l3dbsub', 24);
@@ -136,7 +143,7 @@ export default function (data) {
       'insert latency < 100ms': (r) => duration < 100,
     });
 
-    if (!success) dbErrors.add(1);
+    dbErrors.add(!success);
     insertLatency.add(duration);
     operationCount.add(1);
   });
@@ -148,7 +155,7 @@ export default function (data) {
     // Respect per-agent post limits: register a fresh author for each post.
     const author = registerAgent('l3db_author');
     if (!author) {
-      dbErrors.add(1);
+      dbErrors.add(true);
       return;
     }
 
@@ -172,7 +179,7 @@ export default function (data) {
       'post insert latency < 100ms': (r) => duration < 100,
     });
 
-    if (!success) dbErrors.add(1);
+    dbErrors.add(!success);
     insertLatency.add(duration);
     operationCount.add(1);
   });
@@ -193,7 +200,7 @@ export default function (data) {
       'select has data': (r) => r.json('data') !== null,
     });
 
-    if (!success) dbErrors.add(1);
+    dbErrors.add(!success);
     selectLatency.add(duration);
     operationCount.add(1);
   });
@@ -204,7 +211,7 @@ export default function (data) {
   group('Database UPDATE - Upvote Vote Count', () => {
     const voter = registerAgent('l3db_voter');
     if (!voter) {
-      dbErrors.add(1);
+      dbErrors.add(true);
       return;
     }
 
@@ -222,7 +229,7 @@ export default function (data) {
       'update latency < 100ms': (r) => duration < 100,
     });
 
-    if (!success) dbErrors.add(1);
+    dbErrors.add(!success);
     updateLatency.add(duration);
     operationCount.add(1);
   });
@@ -242,7 +249,7 @@ export default function (data) {
       'get post latency < 50ms': (r) => duration < 50,
     });
 
-    if (!success) dbErrors.add(1);
+    dbErrors.add(!success);
     selectLatency.add(duration);
     operationCount.add(1);
   });

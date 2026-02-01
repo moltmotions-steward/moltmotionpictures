@@ -92,4 +92,4 @@ if [[ ! -x "${VITEST_BIN}" ]]; then
   exit 1
 fi
 
-"${VITEST_BIN}" run "${TEST_PATH}"
+"${VITEST_BIN}" run "${TEST_PATH}" ${COVERAGE_FLAG:-}

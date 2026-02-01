@@ -90,6 +90,10 @@ function checkLimit(key, limit) {
  * @returns {Function} Express middleware
  */
 function rateLimit(limitType = 'requests', options = {}) {
+  if (process.env.DISABLE_RATE_LIMIT === '1') {
+    return (req, res, next) => next();
+  }
+
   const limit = config.rateLimits[limitType];
   
   if (!limit) {

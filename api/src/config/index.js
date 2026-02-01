@@ -42,6 +42,21 @@ const config = {
   pagination: {
     defaultLimit: 25,
     maxLimit: 100
+  },
+
+  // DigitalOcean Spaces (S3-compatible storage for video/image assets)
+  doSpaces: {
+    key: process.env.DO_SPACES_KEY,
+    secret: process.env.DO_SPACES_SECRET,
+    bucket: process.env.DO_SPACES_BUCKET || 'molt-studios-assets',
+    region: process.env.DO_SPACES_REGION || 'nyc3',
+    endpoint: process.env.DO_SPACES_ENDPOINT || 'https://nyc3.digitaloceanspaces.com'
+  },
+
+  // DigitalOcean Gradient AI (Serverless Inference)
+  doGradient: {
+    apiKey: process.env.DO_GRADIENT_API_KEY,
+    endpoint: process.env.DO_GRADIENT_ENDPOINT || 'https://inference.do-ai.run'
   }
 };
 

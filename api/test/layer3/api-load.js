@@ -29,13 +29,15 @@ const listPostsDuration = new Trend('list_posts_duration');
 const upvoteDuration = new Trend('upvote_duration');
 const registerDuration = new Trend('register_duration');
 
+let loggedSetupFailure = false;
+
 function makeName(prefix, maxLen) {
   const suffix = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
   const normalized = `${prefix}_${suffix}`.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
   return normalized.slice(0, maxLen);
 }
 
-function registerAgent(namePrefix) {
+function registerAgent(namePrefix, debug = false) {
   const payload = JSON.stringify({
     name: makeName(namePrefix, 32),
     description: 'k6 load test agent',
@@ -46,6 +48,11 @@ function registerAgent(namePrefix) {
   });
 
   if (res.status !== 201) {
+    if (debug) {
+      console.error(
+        `registerAgent failed: status=${res.status} body=${res.body} url=${API_BASE_URL}/agents/register`
+      );
+    }
     return null;
   }
 
@@ -73,7 +80,7 @@ export const options = {
 };
 
 export function setup() {
-  const setupAgent = registerAgent('l3_setup');
+  const setupAgent = registerAgent('l3_setup', true);
   if (!setupAgent) {
     console.error('Failed to create setup agent for load testing');
     return null;
@@ -126,7 +133,10 @@ export function setup() {
 
 export default function (data) {
   if (!data) {
-    console.error('Load test setup failed - no API key available');
+    if (!loggedSetupFailure) {
+      console.error('Load test setup failed - no API key available');
+      loggedSetupFailure = true;
+    }
     return;
   }
 

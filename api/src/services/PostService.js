@@ -167,6 +167,7 @@ class PostService {
    */
   static async getPersonalizedFeed(agentId, { sort = 'hot', limit = 25, offset = 0 }) {
     let orderBy;
+    let hotScoreSelect = '';
     
     switch (sort) {
       case 'new':
@@ -177,14 +178,16 @@ class PostService {
         break;
       case 'hot':
       default:
-        orderBy = `LOG(GREATEST(ABS(p.score), 1)) * SIGN(p.score) + EXTRACT(EPOCH FROM p.created_at) / 45000 DESC`;
+        // For SELECT DISTINCT, ORDER BY expressions must appear in select list
+        hotScoreSelect = ', LOG(GREATEST(ABS(p.score), 1)) * SIGN(p.score) + EXTRACT(EPOCH FROM p.created_at) / 45000 AS hot_score';
+        orderBy = 'hot_score DESC';
         break;
     }
     
     const posts = await queryAll(
       `SELECT DISTINCT p.id, p.title, p.content, p.url, p.submolt, p.post_type,
               p.score, p.comment_count, p.created_at,
-              a.name as author_name, a.display_name as author_display_name
+              a.name as author_name, a.display_name as author_display_name${hotScoreSelect}
        FROM posts p
        JOIN agents a ON p.author_id = a.id
        LEFT JOIN subscriptions s ON p.submolt_id = s.submolt_id AND s.agent_id = $1

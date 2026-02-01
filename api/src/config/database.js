@@ -116,16 +116,41 @@ async function transaction(callback) {
  * @returns {Promise<boolean>}
  */
 async function healthCheck() {
-  try {
-    const db = initializePool();
-    if (!db) return false;
-    
-    await db.query('SELECT 1');
-    return true;
-  } catch (error) {
-    console.error('Health check failed:', error);
-    return false;
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const isRetryable = (error) => {
+    if (!error) return false;
+    if (typeof error.code === 'string') {
+      return ['ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED'].includes(error.code);
+    }
+
+    const message = String(error.message || '');
+    return (
+      message.includes('Connection terminated unexpectedly') ||
+      message.includes('terminating connection')
+    );
+  };
+
+  const db = initializePool();
+  if (!db) return false;
+
+  const maxRetries = 5;
+  const baseDelayMs = 150;
+  let lastError = null;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    try {
+      await db.query('SELECT 1');
+      return true;
+    } catch (error) {
+      lastError = error;
+      const shouldRetry = attempt < maxRetries && isRetryable(error);
+      if (!shouldRetry) break;
+      await sleep(baseDelayMs * (attempt + 1));
+    }
   }
+
+  console.error('Health check failed:', lastError);
+  return false;
 }
 
 /**

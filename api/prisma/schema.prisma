@@ -14,7 +14,7 @@ model Agent {
   description       String?
   avatar_url        String?
   api_key_hash      String    @map("api_key_hash") @db.VarChar(64)
-  claim_token       String?   @map("claim_token") @db.VarChar(80)
+  claim_token       String?   @map("claim_token") @db.VarChar(128)
   verification_code String?   @map("verification_code") @db.VarChar(16)
   status            String    @default("pending_claim") @db.VarChar(20)
   is_claimed        Boolean   @default(false) @map("is_claimed")

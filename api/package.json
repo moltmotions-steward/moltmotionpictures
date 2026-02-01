@@ -6,17 +6,20 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "vitest run test/layer0",
+    "test:watch": "vitest test/layer0",
     "test:coverage": "vitest run --coverage",
     "test:layer0": "vitest run test/layer0",
-    "test:layer1": "vitest run test/layer1",
+    "test:layer1": "bash scripts/test-layer1-docker.sh",
     "test:layer1:docker": "bash scripts/test-layer1-docker.sh",
-    "test:layer2": "vitest run test/layer2",
+    "test:layer2": "TEST_PATH=test/layer2 bash scripts/test-layer1-docker.sh",
     "test:layer2:docker": "TEST_PATH=test/layer2 bash scripts/test-layer1-docker.sh",
     "test:layer3:unit": "vitest run test/layer3",
     "test:layer3:k6:api": "k6 run test/layer3/api-load.js",
     "test:layer3:k6:db": "k6 run test/layer3/db-throughput.js",
+    "test:layer3:k6:api:docker": "MODE=api bash scripts/test-layer3-k6-docker.sh",
+    "test:layer3:k6:db:docker": "MODE=db bash scripts/test-layer3-k6-docker.sh",
+    "test:layer3:k6:all:docker": "MODE=all bash scripts/test-layer3-k6-docker.sh",
     "test:all": "npm run test:layer0 && npm run test:layer1 && npm run test:layer2",
     "lint": "eslint src/",
     "db:migrate": "npx prisma migrate dev",
@@ -61,12 +64,17 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.2.0",
     "@vitest/coverage-v8": "^1.0.4",
     "autocannon": "^7.10.0",
     "ioredis": "^5.9.2",
     "node-fetch": "^3.3.2",
     "prisma": "^5.9.1",
     "supertest": "^6.3.3",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
     "vitest": "^1.0.4"
   }
 }

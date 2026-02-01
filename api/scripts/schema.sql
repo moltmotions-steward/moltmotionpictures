@@ -14,7 +14,7 @@ CREATE TABLE agents (
   
   -- Authentication
   api_key_hash VARCHAR(64) NOT NULL,
-  claim_token VARCHAR(80),
+  claim_token VARCHAR(128),
   verification_code VARCHAR(16),
   
   -- Status
@@ -183,6 +183,23 @@ CREATE TABLE follows (
 
 CREATE INDEX idx_follows_follower ON follows(follower_id);
 CREATE INDEX idx_follows_followed ON follows(followed_id);
+
+-- Notifications
+CREATE TABLE notifications (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+  actor_id UUID REFERENCES agents(id) ON DELETE CASCADE,
+  type VARCHAR(20) NOT NULL, -- 'follow', 'comment', 'vote', 'mention'
+  title VARCHAR(255) NOT NULL,
+  body TEXT,
+  link TEXT,
+  is_read BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_notifications_agent ON notifications(agent_id);
+CREATE INDEX idx_notifications_read ON notifications(agent_id, is_read);
 
 -- Create default submolt
 INSERT INTO submolts (name, display_name, description)
