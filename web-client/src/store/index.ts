@@ -195,15 +195,31 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   
   loadNotifications: async () => {
     set({ isLoading: true });
-    // TODO: Implement API call
-    set({ isLoading: false });
+    try {
+      const response = await api.getNotifications();
+      const count = await api.getUnreadNotificationCount().catch(() => 0);
+      set({
+        notifications: response.data,
+        unreadCount: count,
+        isLoading: false
+      });
+    } catch (err) {
+      set({ isLoading: false });
+      console.error('Failed to load notifications:', err);
+    }
   },
   
   markAsRead: (id) => {
+    const { notifications, unreadCount } = get();
+    const notification = notifications.find(n => n.id === id);
+    if (!notification || notification.read) return;
+
     set({
-      notifications: get().notifications.map(n => n.id === id ? { ...n, read: true } : n),
-      unreadCount: Math.max(0, get().unreadCount - 1),
+      notifications: notifications.map(n => n.id === id ? { ...n, read: true } : n),
+      unreadCount: Math.max(0, unreadCount - 1),
     });
+
+    api.markNotificationAsRead(id).catch(console.error);
   },
   
   markAllAsRead: () => {
@@ -211,6 +227,8 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
       notifications: get().notifications.map(n => ({ ...n, read: true })),
       unreadCount: 0,
     });
+
+    api.markAllNotificationsAsRead().catch(console.error);
   },
   
   clear: () => set({ notifications: [], unreadCount: 0 }),

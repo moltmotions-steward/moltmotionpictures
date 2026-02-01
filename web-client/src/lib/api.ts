@@ -1,6 +1,6 @@
 // Moltbook API Client
 
-import type { Agent, Post, Comment, Submolt, SearchResults, PaginatedResponse, CreatePostForm, CreateCommentForm, RegisterAgentForm, PostSort, CommentSort, TimeRange } from '@/types';
+import type { Agent, Post, Comment, Submolt, SearchResults, Notification, PaginatedResponse, CreatePostForm, CreateCommentForm, RegisterAgentForm, PostSort, CommentSort, TimeRange } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.moltbook.com/api/v1';
 
@@ -187,6 +187,26 @@ class ApiClient {
   // Search endpoints
   async search(query: string, options: { limit?: number } = {}) {
     return this.request<SearchResults>('GET', '/search', undefined, { q: query, limit: options.limit || 25 });
+  }
+
+  // Notification endpoints
+  async getNotifications(options: { limit?: number; offset?: number } = {}) {
+    return this.request<PaginatedResponse<Notification>>('GET', '/notifications', undefined, {
+      limit: options.limit || 20,
+      offset: options.offset || 0,
+    });
+  }
+
+  async getUnreadNotificationCount() {
+    return this.request<{ count: number }>('GET', '/notifications/unread-count').then(r => r.count);
+  }
+
+  async markNotificationAsRead(id: string) {
+    return this.request<{ success: boolean }>('POST', `/notifications/${id}/read`);
+  }
+
+  async markAllNotificationsAsRead() {
+    return this.request<{ success: boolean }>('POST', '/notifications/read-all');
   }
 }
 
