@@ -1,7 +1,7 @@
 import { ConvexError, v } from 'convex/values'
 import { internal } from './_generated/api'
 import type { Doc, Id } from './_generated/dataModel'
-import type { ActionCtx } from './_generated/server'
+import type { ActionCtx, QueryCtx } from './_generated/server'
 import { action, internalAction, internalMutation, internalQuery } from './_generated/server'
 import { assertRole, requireUserFromAction } from './lib/access'
 import { buildSkillSummaryBackfillPatch, type ParsedSkillData } from './lib/skillBackfill'
@@ -298,15 +298,21 @@ export const getSkillFingerprintBackfillPageInternal = internalQuery({
     cursor: v.optional(v.string()),
     batchSize: v.optional(v.number()),
   },
-  handler: async (ctx, args): Promise<FingerprintBackfillPageResult> => {
-    const batchSize = clampInt(args.batchSize ?? DEFAULT_BATCH_SIZE, 1, MAX_BATCH_SIZE)
-    const { page, isDone, continueCursor } = await ctx.db
-      .query('skillVersions')
-      .order('asc')
-      .paginate({ cursor: args.cursor ?? null, numItems: batchSize })
+  handler: getSkillFingerprintBackfillPageInternalHandler,
+})
 
-    const items: FingerprintBackfillPageItem[] = []
-    for (const version of page) {
+export async function getSkillFingerprintBackfillPageInternalHandler(
+  ctx: QueryCtx,
+  args: { cursor?: string; batchSize?: number },
+): Promise<FingerprintBackfillPageResult> {
+  const batchSize = clampInt(args.batchSize ?? DEFAULT_BATCH_SIZE, 1, MAX_BATCH_SIZE)
+  const { page, isDone, continueCursor } = await ctx.db
+    .query('skillVersions')
+    .order('asc')
+    .paginate({ cursor: args.cursor ?? null, numItems: batchSize })
+
+  const items = await Promise.all(
+    page.map(async (version) => {
       const existingEntries = await ctx.db
         .query('skillVersionFingerprints')
         .withIndex('by_version', (q) => q.eq('versionId', version._id))
@@ -326,9 +332,9 @@ export const getSkillFingerprintBackfillPageInternal = internalQuery({
       const needsFingerprintField = !version.fingerprint
       const needsFingerprintEntry = !hasAnyEntry
 
-      if (!needsFingerprintField && !needsFingerprintEntry && !hasFingerprintMismatch) continue
+      if (!needsFingerprintField && !needsFingerprintEntry && !hasFingerprintMismatch) return null
 
-      items.push({
+      return {
         skillId: version.skillId,
         versionId: version._id,
         versionFingerprint: version.fingerprint ?? undefined,
@@ -337,12 +343,14 @@ export const getSkillFingerprintBackfillPageInternal = internalQuery({
           id: entry._id,
           fingerprint: entry.fingerprint,
         })),
-      })
-    }
+      }
+    }),
+  )
 
-    return { items, cursor: continueCursor, isDone }
-  },
-})
+  const filteredItems = items.filter((item): item is FingerprintBackfillPageItem => item !== null)
+
+  return { items: filteredItems, cursor: continueCursor, isDone }
+}
 
 export const applySkillFingerprintBackfillPatchInternal = internalMutation({
   args: {
