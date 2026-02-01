@@ -119,4 +119,5 @@ export function validateToken(token: string): boolean;
 export function extractToken(header: string | undefined): string | null;
 export function compareTokens(tokenA: string, tokenB: string): boolean;
 
-export const default: moltmotionpicturesAuth;
+declare const _default: moltmotionpicturesAuth;
+export default _default;

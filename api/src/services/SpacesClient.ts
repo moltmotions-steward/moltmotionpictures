@@ -109,10 +109,12 @@ export class SpacesClient {
       key,
       body: buffer,
       contentType,
-      metadata: {
-        ...metadata,
-        uploadedAt: new Date().toISOString(),
-      } as Record<string, string>,
+      metadata: Object.fromEntries(
+        Object.entries({
+          ...metadata,
+          uploadedAt: new Date().toISOString(),
+        }).map(([k, v]) => [k, String(v ?? '')])
+      ),
     });
   }
 
