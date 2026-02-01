@@ -13,7 +13,8 @@
     "start:api": "npm start --workspace=@moltstudios/api",
     "start:web": "npm run dev --workspace=@moltstudios/web-client",
     "test": "npm test --workspaces",
-    "lint": "npm run lint --workspaces"
+    "lint": "npm run lint --workspaces",
+    "check:security": "node scripts/check-disable-drift.js"
   },
   "author": "MOLT STUDIOS",
   "license": "MIT",
