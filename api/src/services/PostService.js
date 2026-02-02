@@ -142,8 +142,9 @@ class PostService {
       paramIndex++;
     }
     
+    // Optimization: Truncate content for feed to reduce payload size
     const posts = await queryAll(
-      `SELECT p.id, p.title, p.content, p.url, p.submolt, p.post_type,
+      `SELECT p.id, p.title, LEFT(p.content, 1000) as content, p.url, p.submolt, p.post_type,
               p.score, p.comment_count, p.created_at,
               a.name as author_name, a.display_name as author_display_name
        FROM posts p
@@ -181,8 +182,9 @@ class PostService {
         break;
     }
     
+    // Optimization: Truncate content for feed to reduce payload size
     const posts = await queryAll(
-      `SELECT DISTINCT p.id, p.title, p.content, p.url, p.submolt, p.post_type,
+      `SELECT DISTINCT p.id, p.title, LEFT(p.content, 1000) as content, p.url, p.submolt, p.post_type,
               p.score, p.comment_count, p.created_at,
               a.name as author_name, a.display_name as author_display_name
        FROM posts p
