@@ -323,6 +323,35 @@ async function runTests() {
     store.destroy();
   });
 
+  test('evicts oldest key when maxKeys exceeded', async () => {
+    // Create store with maxKeys = 2
+    const store = new MemoryStore({ maxKeys: 2 });
+    const now = Date.now();
+
+    await store.add('keyA', now);
+    await store.add('keyB', now);
+
+    // Should contain both
+    assertEqual((await store.getStats()).keys, 2);
+
+    // Add third key - should evict keyA (first inserted)
+    await store.add('keyC', now);
+
+    assertEqual((await store.getStats()).keys, 2);
+
+    // keyA should be gone
+    const countA = await store.count('keyA', 0);
+    assertEqual(countA, 0);
+
+    // keyB and keyC should exist
+    const countB = await store.count('keyB', 0);
+    const countC = await store.count('keyC', 0);
+    assertEqual(countB, 1);
+    assertEqual(countC, 1);
+
+    store.destroy();
+  });
+
   // Factory Function
   describe('Factory Function', () => {});
   

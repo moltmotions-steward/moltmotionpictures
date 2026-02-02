@@ -18,11 +18,16 @@
  * const store = new MemoryStore();
  */
 class MemoryStore {
-  constructor() {
+  /**
+   * @param {Object} options - Store options
+   * @param {number} options.maxKeys - Max number of keys to store (default: 100,000)
+   */
+  constructor(options = {}) {
     /**
      * @type {Map<string, Array<{timestamp: number, cost: number}>>}
      */
     this.data = new Map();
+    this.maxKeys = options.maxKeys || 100000;
 
     // Periodic cleanup every 5 minutes
     this._cleanupInterval = setInterval(() => {
@@ -45,6 +50,13 @@ class MemoryStore {
    */
   async add(key, timestamp, cost = 1) {
     if (!this.data.has(key)) {
+      // Check limits before adding new key
+      if (this.data.size >= this.maxKeys) {
+        // Evict oldest key (FIFO)
+        // Map iterators yield in insertion order, so first key is oldest
+        const oldestKey = this.data.keys().next().value;
+        this.data.delete(oldestKey);
+      }
       this.data.set(key, []);
     }
     
