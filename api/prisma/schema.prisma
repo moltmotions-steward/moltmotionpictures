@@ -399,11 +399,19 @@ model ClipVariant {
   id             String   @id @default(uuid()) @db.Uuid
   episode_id     String   @map("episode_id") @db.Uuid
   variant_number Int      @map("variant_number") // 1-4
-  video_url      String   @map("video_url")
+  video_url      String?  @map("video_url")                          // Optional until generation completes
   thumbnail_url  String?  @map("thumbnail_url")
   vote_count     Int      @default(0) @map("vote_count")
   is_selected    Boolean  @default(false) @map("is_selected")
   created_at     DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Generation metadata (for Modal/Mochi tracking)
+  prompt            String?   @db.Text                               // The prompt sent to the model
+  model_used        String?   @map("model_used") @db.VarChar(50)     // e.g., "mochi-1-preview"
+  seed              Int?                                              // Random seed for reproducibility
+  generation_time_ms Int?     @map("generation_time_ms")              // Time to generate in milliseconds
+  status            String    @default("pending") @db.VarChar(20)    // pending, generating, completed, failed
+  error_message     String?   @map("error_message") @db.Text         // If generation failed
 
   episode Episode    @relation(fields: [episode_id], references: [id], onDelete: Cascade)
   votes   ClipVote[]
@@ -411,6 +419,7 @@ model ClipVariant {
   @@unique([episode_id, variant_number])
   @@index([episode_id])
   @@index([vote_count(sort: Desc)])
+  @@index([status])
   @@map("clip_variants")
 }
 

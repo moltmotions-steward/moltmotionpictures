@@ -44,6 +44,16 @@ interface CdpConfig {
 }
 
 /**
+ * Twitter/X API configuration (OAuth 2.0)
+ * Reference: https://docs.x.com/overview
+ */
+interface TwitterConfig {
+  clientId: string | undefined;       // X_CLIENT_ID
+  clientSecret: string | undefined;   // X_CLIENT_ID_SECRET
+  bearerToken: string | undefined;    // X_BEARER_TOKEN (for read/verification)
+}
+
+/**
  * Application configuration type
  */
 interface AppConfig {
@@ -111,6 +121,9 @@ interface AppConfig {
 
   // CDP (Coinbase Developer Platform) credentials
   cdp: CdpConfig;
+
+  // Twitter/X API credentials
+  twitter: TwitterConfig;
 }
 
 const config: AppConfig = {
@@ -192,6 +205,13 @@ const config: AppConfig = {
   cdp: {
     apiKeyName: process.env.CDP_API_KEY_NAME,
     apiKeySecret: process.env.CDP_API_KEY_SECRET
+  },
+
+  // Twitter/X API credentials (OAuth 2.0 + Bearer token)
+  twitter: {
+    clientId: process.env.X_CLIENT_ID,
+    clientSecret: process.env.X_CLIENT_ID_SECRET,
+    bearerToken: process.env.X_BEARER_TOKEN
   }
 };
 
@@ -218,4 +238,4 @@ function validateConfig(): void {
 validateConfig();
 
 export default config;
-export type { AppConfig, CdpConfig, RateLimitConfig, RevenueSplitConfig, X402Config };
+export type { AppConfig, CdpConfig, RateLimitConfig, RevenueSplitConfig, TwitterConfig, X402Config };

@@ -76,6 +76,12 @@ const config = {
     cdp: {
         apiKeyName: process.env.CDP_API_KEY_NAME,
         apiKeySecret: process.env.CDP_API_KEY_SECRET
+    },
+    // Twitter/X API credentials (OAuth 2.0 + Bearer token)
+    twitter: {
+        clientId: process.env.X_CLIENT_ID,
+        clientSecret: process.env.X_CLIENT_ID_SECRET,
+        bearerToken: process.env.X_BEARER_TOKEN
     }
 };
 // Validate required config

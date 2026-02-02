@@ -4,7 +4,7 @@
  * Orchestrates the production pipeline for Limited Series episodes:
  * 1. Takes a winning script from agent voting
  * 2. Creates episode record
- * 3. Generates 4 clip variants via Luma Dream Machine
+ * 3. Generates 4 clip variants via Modal (Mochi text-to-video)
  * 4. Opens human voting on clip variants
  * 
  * This is the core "assembly line" that turns scripts into watchable content.
@@ -14,6 +14,7 @@ import crypto from 'crypto';
 import { PrismaClient, LimitedSeries, Episode, ClipVariant } from '@prisma/client';
 import { GradientClient, getGradientClient } from './GradientClient';
 import { SpacesClient, getSpacesClient } from './SpacesClient';
+import { ModalVideoClient, getModalVideoClient, VideoGenerationResponse } from './ModalVideoClient';
 
 const prisma = new PrismaClient();
 
@@ -77,23 +78,25 @@ export interface EpisodeProductionResult {
 
 export class EpisodeProductionService {
   private gradient: GradientClient | null;
+  private modalVideo: ModalVideoClient | null;
   private spaces: SpacesClient | null;
   private readonly isConfigured: boolean;
 
-  private normalizeLumaClipSeconds(requestedSeconds?: number): 5 | 10 {
-    if (requestedSeconds === 10) return 10;
-    if (requestedSeconds === 5) return 5;
-    if (typeof requestedSeconds !== 'number' || !Number.isFinite(requestedSeconds)) return 10;
-    return requestedSeconds <= 5 ? 5 : 10;
-  }
-
-  constructor(gradient?: GradientClient, spaces?: SpacesClient) {
-    // Gracefully handle missing API keys
+  constructor(gradient?: GradientClient, spaces?: SpacesClient, modalVideo?: ModalVideoClient) {
+    // Gradient client for LLM calls (prompt refinement)
     try {
       this.gradient = gradient || getGradientClient();
     } catch {
       this.gradient = null;
-      console.warn('[EpisodeProduction] GradientClient not configured - clip generation disabled');
+      console.warn('[EpisodeProduction] GradientClient not configured - prompt refinement disabled');
+    }
+    
+    // Modal Video client for actual video generation
+    try {
+      this.modalVideo = modalVideo || getModalVideoClient();
+    } catch {
+      this.modalVideo = null;
+      console.warn('[EpisodeProduction] ModalVideoClient not configured - video generation disabled');
     }
     
     try {
@@ -103,7 +106,8 @@ export class EpisodeProductionService {
       console.warn('[EpisodeProduction] SpacesClient not configured - asset storage disabled');
     }
     
-    this.isConfigured = this.gradient !== null && this.spaces !== null;
+    // We need Modal for video gen and Spaces for storage; Gradient is optional for prompt refinement
+    this.isConfigured = this.modalVideo !== null && this.spaces !== null;
   }
 
   // ---------------------------------------------------------------------------
@@ -216,8 +220,19 @@ export class EpisodeProductionService {
   // ---------------------------------------------------------------------------
 
   /**
+   * Calculate number of frames based on desired duration.
+   * Mochi generates at 24fps.
+   */
+  private calculateFrames(durationSeconds: number): number {
+    // Clamp to reasonable range: 2-5 seconds
+    const clampedDuration = Math.max(2, Math.min(5, durationSeconds));
+    return Math.round(clampedDuration * 24);
+  }
+
+  /**
    * Initiates generation of 4 clip variants for an episode.
    * Uses different shot sequences and styles for variety.
+   * Now uses Modal + Mochi for text-to-video generation.
    */
   async initiateClipGeneration(
     episode: Episode,
@@ -233,59 +248,104 @@ export class EpisodeProductionService {
     // Generate 4 variants with different stylistic approaches
     const variants = this.generatePromptVariants(basePrompt, scriptData);
 
-    const requestedClipSeconds = scriptData?.shots?.[0]?.gen_clip_seconds;
-    const clipSeconds = this.normalizeLumaClipSeconds(requestedClipSeconds);
+    // Calculate frames based on script data (default ~3.5s)
+    const requestedClipSeconds = scriptData?.shots?.[0]?.gen_clip_seconds || 3.5;
+    const numFrames = this.calculateFrames(requestedClipSeconds);
 
     for (let i = 0; i < VARIANT_COUNT; i++) {
+      const prompt = variants[i] || basePrompt;
+      const seed = Date.now() + i;
+      const startTime = Date.now();
+      
       try {
-        const prompt = variants[i] || basePrompt;
-        
         console.log(`[EpisodeProduction] Generating variant ${i + 1} for episode ${episode.id}`);
         
-        // Call Luma Dream Machine via Gradient
-        const generation = await this.gradient!.generateShot(prompt, {
+        // Generate video using Modal + Mochi
+        const generation = await this.modalVideo!.generateShot(prompt, {
           aspectRatio: '16:9',
-          duration: clipSeconds, // Provider-limited (Luma typically 5–10s)
+          seed: seed, // Different seed per variant for variety
         });
+        
+        const generationTimeMs = Date.now() - startTime;
 
-        // Create clip variant record with generation ID
+        // Upload video to Spaces storage
+        const videoBuffer = Buffer.from(generation.video_base64, 'base64');
+        const uploadResult = await this.spaces!.upload({
+          key: `episodes/${episode.id}/variant-${i + 1}.mp4`,
+          body: videoBuffer,
+          contentType: 'video/mp4',
+          metadata: {
+            episodeId: episode.id,
+            variantNumber: String(i + 1),
+            prompt: prompt.slice(0, 500), // Truncate for metadata limits
+            generatedBy: 'mochi-modal',
+          },
+        });
+        const videoUrl = uploadResult.url;
+
+        // Create clip variant record with full generation metadata
         const clipVariant = await prisma.clipVariant.create({
           data: {
             episode_id: episode.id,
             variant_number: i + 1,
-            video_url: '', // Will be updated when generation completes
+            video_url: videoUrl,
             vote_count: 0,
             is_selected: false,
+            // Generation metadata
+            prompt: prompt,
+            model_used: 'mochi-1-preview',
+            seed: seed,
+            generation_time_ms: generationTimeMs,
+            status: 'completed',
           },
         });
 
         results.push({
           variantNumber: i + 1,
-          generationId: generation.id,
-          status: 'generating',
+          generationId: clipVariant.id, // Use clipVariant ID as generation ID
+          status: 'completed',
+          videoUrl: videoUrl,
         });
 
-        // Store generation ID for polling (we'll need to add this field to ClipVariant)
-        // For now, we'll use a separate tracking mechanism
-        await this.trackGeneration(clipVariant.id, generation.id);
+        console.log(`[EpisodeProduction] Variant ${i + 1} completed in ${(generationTimeMs / 1000).toFixed(1)}s: ${videoUrl}`);
 
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error(`[EpisodeProduction] Failed to generate variant ${i + 1}:`, error);
+        
+        // Create failed variant record with error information
+        const failedVariant = await prisma.clipVariant.create({
+          data: {
+            episode_id: episode.id,
+            variant_number: i + 1,
+            video_url: null,
+            vote_count: 0,
+            is_selected: false,
+            prompt: prompt,
+            model_used: 'mochi-1-preview',
+            seed: seed,
+            generation_time_ms: Date.now() - startTime,
+            status: 'failed',
+            error_message: errorMessage.slice(0, 1000), // Limit error length
+          },
+        });
+        
         results.push({
           variantNumber: i + 1,
-          generationId: '',
+          generationId: failedVariant.id,
           status: 'failed',
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: errorMessage,
         });
       }
     }
 
-    // Update episode status
-    const successCount = results.filter(r => r.status === 'generating').length;
+    // Update episode status based on results
+    const successCount = results.filter(r => r.status === 'completed').length;
     if (successCount > 0) {
+      // If we have at least one successful variant, move to clip_voting
       await prisma.episode.update({
         where: { id: episode.id },
-        data: { status: 'generating' },
+        data: { status: successCount === VARIANT_COUNT ? 'clip_voting' : 'generating' },
       });
     }
 
@@ -294,24 +354,25 @@ export class EpisodeProductionService {
 
   /**
    * Builds a video generation prompt from series/script data.
+   * Uses Gradient LLM for refinement if available, otherwise builds directly.
    */
   private async buildVideoPrompt(
     series: LimitedSeries,
     scriptData: ScriptData | null
   ): Promise<string> {
+    let basePrompt: string;
+
     if (!scriptData) {
-      // Fallback to generating from title/logline
-      return await this.gradient!.refineVideoPrompt(
-        `A ${series.genre} film scene. ${series.logline}`
-      );
-    }
+      // Simple fallback from title/logline
+      basePrompt = `A cinematic ${series.genre} film scene. ${series.logline}. 
+Professional cinematography, dramatic lighting, high production value.`;
+    } else {
+      // Build rich prompt from script data
+      const styleBible = scriptData.series_bible.global_style_bible;
+      const firstShot = scriptData.shots[0];
+      const arc = scriptData.arc;
 
-    // Build rich prompt from script data
-    const styleBible = scriptData.series_bible.global_style_bible;
-    const firstShot = scriptData.shots[0];
-    const arc = scriptData.arc;
-
-    const basePrompt = `
+      basePrompt = `
 ${styleBible}
 
 Opening scene: ${arc.beat_1}
@@ -322,9 +383,19 @@ Motion: ${firstShot?.prompt.motion || 'slow pan'}
 Mood: ${scriptData.poster_spec.mood || series.genre}
 
 Style: Cinematic ${scriptData.poster_spec.style}, professional color grading, atmospheric lighting.
-    `.trim();
+      `.trim();
+    }
 
-    return await this.gradient!.refineVideoPrompt(basePrompt);
+    // Use Gradient LLM to refine prompt if available
+    if (this.gradient) {
+      try {
+        return await this.gradient.refineVideoPrompt(basePrompt);
+      } catch (error) {
+        console.warn('[EpisodeProduction] Prompt refinement failed, using raw prompt:', error);
+      }
+    }
+
+    return basePrompt;
   }
 
   /**
@@ -351,33 +422,21 @@ Style: Cinematic ${scriptData.poster_spec.style}, professional color grading, at
   // ---------------------------------------------------------------------------
   // Generation Tracking & Polling
   // ---------------------------------------------------------------------------
+  // Generation Status (Simplified - Modal is synchronous)
+  // ---------------------------------------------------------------------------
 
   /**
-   * Tracks a video generation for later polling.
-   * Stores in a simple key-value structure (could be Redis in production).
+   * Check for episodes in 'generating' status and update if needed.
+   * Since Modal returns videos synchronously, this mainly handles edge cases
+   * where generation started but the episode status wasn't updated.
    */
-  private generationTracker: Map<string, string> = new Map();
-
-  private async trackGeneration(clipVariantId: string, generationId: string): Promise<void> {
-    this.generationTracker.set(clipVariantId, generationId);
-    
-    // Also store in database for persistence across restarts
-    // We'll use series_bible temporarily (or add a generation_id column)
-    // For now, log it
-    console.log(`[EpisodeProduction] Tracking generation: ${clipVariantId} -> ${generationId}`);
-  }
-
-  /**
-   * Polls pending generations and updates clip variants when complete.
-   * Called by the cron job.
-   */
-  async pollPendingGenerations(): Promise<{ completed: number; failed: number; skipped: boolean }> {
+  async checkPendingGenerations(): Promise<{ updated: number; skipped: boolean }> {
     // Skip if not configured
-    if (!this.isConfigured || !this.gradient) {
-      return { completed: 0, failed: 0, skipped: true };
+    if (!this.isConfigured) {
+      return { updated: 0, skipped: true };
     }
 
-    // Find episodes in 'generating' status
+    // Find episodes in 'generating' status that might need status updates
     const generatingEpisodes = await prisma.episode.findMany({
       where: { status: 'generating' },
       include: {
@@ -386,99 +445,45 @@ Style: Cinematic ${scriptData.poster_spec.style}, professional color grading, at
       take: 10,
     });
 
-    let completed = 0;
-    let failed = 0;
+    let updated = 0;
 
     for (const episode of generatingEpisodes) {
-      let allComplete = true;
-      let anyFailed = false;
-
-      for (const variant of episode.clip_variants) {
-        // Skip already processed variants
-        if (variant.video_url) continue;
-
-        const generationId = this.generationTracker.get(variant.id);
-        if (!generationId) {
-          console.warn(`[EpisodeProduction] No generation ID for variant ${variant.id}`);
-          continue;
-        }
-
-        try {
-          const status = await this.gradient.getVideoStatus(generationId);
-
-          if (status.status === 'completed' && status.video_url) {
-            // Download and store in Spaces
-            const storedUrl = await this.storeClipAsset(
-              episode.series_id,
-              episode.id,
-              variant.id,
-              status.video_url
-            );
-
-            await prisma.clipVariant.update({
-              where: { id: variant.id },
-              data: {
-                video_url: storedUrl,
-                thumbnail_url: status.thumbnail_url || null,
-              },
-            });
-
-            completed++;
-          } else if (status.status === 'failed') {
-            anyFailed = true;
-            failed++;
-          } else {
-            // Still generating
-            allComplete = false;
-          }
-        } catch (error) {
-          console.error(`[EpisodeProduction] Failed to poll variant ${variant.id}:`, error);
-          anyFailed = true;
-        }
-      }
-
-      // Update episode status if all variants are done
-      if (allComplete) {
+      // Count completed variants (have video_url)
+      const completedVariants = episode.clip_variants.filter(v => v.video_url && v.video_url.length > 0);
+      
+      if (completedVariants.length >= 4) {
+        // All variants complete - move to clip_voting
         await prisma.episode.update({
           where: { id: episode.id },
-          data: { status: anyFailed ? 'failed' : 'clip_voting' },
+          data: { status: 'clip_voting' },
         });
-
-        // If successful, update series status
-        if (!anyFailed) {
-          await prisma.limitedSeries.update({
-            where: { id: episode.series_id },
-            data: { status: 'active', episode_count: 1 },
+        
+        // Update series status
+        await prisma.limitedSeries.update({
+          where: { id: episode.series_id },
+          data: { status: 'active', episode_count: 1 },
+        });
+        
+        console.log(`[EpisodeProduction] Episode ${episode.id} moved to clip_voting`);
+        updated++;
+      } else if (episode.clip_variants.length >= 4 && completedVariants.length === 0) {
+        // All 4 variants created but none have URLs - might be failed
+        // Check if they're older than 30 minutes (generation timeout)
+        const createdAt = episode.clip_variants[0]?.created_at;
+        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+        
+        if (createdAt && new Date(createdAt) < thirtyMinutesAgo) {
+          await prisma.episode.update({
+            where: { id: episode.id },
+            data: { status: 'failed' },
           });
+          console.log(`[EpisodeProduction] Episode ${episode.id} marked as failed (timeout)`);
+          updated++;
         }
-
-        console.log(`[EpisodeProduction] Episode ${episode.id} generation complete, status: ${anyFailed ? 'failed' : 'clip_voting'}`);
       }
     }
 
-    return { completed, failed, skipped: false };
-  }
-
-  /**
-   * Downloads a video from URL and stores in DO Spaces.
-   */
-  private async storeClipAsset(
-    seriesId: string,
-    episodeId: string,
-    variantId: string,
-    sourceUrl: string
-  ): Promise<string> {
-    const path = `series/${seriesId}/episodes/${episodeId}/clips/${variantId}.mp4`;
-    
-    const asset = await this.spaces!.uploadFromUrl(sourceUrl, path, {
-      productionId: seriesId, // Use seriesId as productionId
-      assetType: 'video',
-      generatedBy: 'luma-dream-machine',
-      agentId: '', // System-generated
-      createdAt: new Date().toISOString(),
-    });
-
-    return asset.url;
+    return { updated, skipped: false };
   }
 }
 

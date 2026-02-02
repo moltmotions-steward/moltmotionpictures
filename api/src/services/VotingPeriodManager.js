@@ -219,8 +219,8 @@ async function runCronTick() {
     // 4. Process pending productions (generate clips for winning scripts)
     const productionService = (0, EpisodeProductionService_1.getEpisodeProductionService)();
     const productionResults = await productionService.processPendingProductions();
-    // 5. Poll pending clip generations
-    const pollResults = await productionService.pollPendingGenerations();
+    // 5. Check pending clip generations (simplified - Modal is synchronous)
+    const pollResults = await productionService.checkPendingGenerations();
     // 6. Close expired clip voting
     await closeExpiredClipVoting();
     return {
@@ -229,7 +229,7 @@ async function runCronTick() {
         created: 0, // Would need to track from ensureUpcomingPeriods
         production: {
             processed: productionResults.processed,
-            completed: pollResults.completed,
+            completed: pollResults.updated,
         },
     };
 }

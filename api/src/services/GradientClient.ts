@@ -17,6 +17,11 @@ import type {
   VideoGenerationRequest,
   VideoGenerationResponse,
   GradientApiError,
+  TTSRequest,
+  TTSAsyncResponse,
+  TTSResultResponse,
+  AudioGenerationRequest,
+  AudioGenerationResponse,
 } from '../types/gradient';
 import { GradientError } from '../types/gradient';
 
@@ -254,6 +259,124 @@ export class GradientClient {
       aspect_ratio: options.aspectRatio || '16:9',
       duration: options.duration || 5,
       camera_motion: options.cameraMotion as VideoGenerationRequest['camera_motion'],
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // TTS API (ElevenLabs via fal async-invoke)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Generate speech from text using ElevenLabs TTS via DigitalOcean
+   * Uses async-invoke pattern - starts job, returns request_id for polling
+   */
+  async generateTTS(
+    request: TTSRequest
+  ): Promise<TTSAsyncResponse> {
+    return this.request('/v1/async-invoke', {
+      method: 'POST',
+      body: JSON.stringify({
+        model_id: 'fal-ai/elevenlabs/tts/multilingual-v2',
+        input: {
+          text: request.text,
+          voice_id: request.voice_id,
+          model_id: request.model_id || 'eleven_multilingual_v2',
+        },
+        tags: [{ key: 'type', value: 'tts' }],
+      }),
+    });
+  }
+
+  /**
+   * Check status of an async job (TTS or audio generation)
+   */
+  async getAsyncJobStatus(requestId: string): Promise<TTSAsyncResponse> {
+    return this.request(`/v1/async-invoke/${requestId}/status`, {
+      method: 'GET',
+    });
+  }
+
+  /**
+   * Get result of completed async job
+   */
+  async getAsyncJobResult(requestId: string): Promise<TTSResultResponse> {
+    return this.request(`/v1/async-invoke/${requestId}`, {
+      method: 'GET',
+    });
+  }
+
+  /**
+   * Generate TTS and wait for completion (convenience method)
+   * Polls until complete or timeout
+   */
+  async generateTTSAndWait(
+    text: string,
+    options: {
+      voiceId?: string;
+      pollIntervalMs?: number;
+      timeoutMs?: number;
+    } = {}
+  ): Promise<TTSResultResponse> {
+    const pollInterval = options.pollIntervalMs || 2000;
+    const timeout = options.timeoutMs || 60000; // 1 minute default
+    const startTime = Date.now();
+
+    // Start the TTS job
+    const job = await this.generateTTS({
+      text,
+      voice_id: options.voiceId,
+    });
+
+    // Poll until complete
+    while (Date.now() - startTime < timeout) {
+      const status = await this.getAsyncJobStatus(job.request_id);
+      
+      if (status.status === 'COMPLETE') {
+        return this.getAsyncJobResult(job.request_id);
+      }
+      
+      if (status.status === 'FAILED') {
+        throw new GradientError(
+          'TTS generation failed',
+          'tts_failed',
+          'generation_error',
+          500
+        );
+      }
+
+      // Wait before next poll
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+    }
+
+    throw new GradientError(
+      'TTS generation timed out',
+      'timeout',
+      'timeout_error',
+      408
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Audio Generation API (Stable Audio via fal)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Generate audio/music from text prompt
+   */
+  async generateAudio(
+    request: AudioGenerationRequest
+  ): Promise<TTSAsyncResponse> {
+    return this.request('/v1/async-invoke', {
+      method: 'POST',
+      body: JSON.stringify({
+        model_id: 'fal-ai/stable-audio-25/text-to-audio',
+        input: {
+          prompt: request.prompt,
+          seconds_total: request.seconds_total || 30,
+          seed: request.seed,
+        },
+        tags: [{ key: 'type', value: 'audio' }],
+      }),
     });
   }
 

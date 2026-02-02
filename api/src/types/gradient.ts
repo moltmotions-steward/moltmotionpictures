@@ -100,7 +100,10 @@ export type GradientModel =
   // Vision
   | 'llama3.2-90b-vision-instruct'
   // Video (Luma Dream Machine)
-  | 'luma-dream-machine';
+  | 'luma-dream-machine'
+  // Audio (fal models via async-invoke)
+  | 'fal-ai/elevenlabs/tts/multilingual-v2'
+  | 'fal-ai/stable-audio-25/text-to-audio';
 
 // =============================================================================
 // Model Metadata
@@ -258,6 +261,42 @@ export interface VideoGenerationResponse {
   thumbnail_url?: string;
   duration?: number;
   error?: string;
+}
+
+// =============================================================================
+// TTS (Text-to-Speech) Types - ElevenLabs via fal
+// =============================================================================
+
+export interface TTSRequest {
+  text: string;
+  voice_id?: string;  // ElevenLabs voice ID
+  model_id?: string;  // e.g., 'eleven_multilingual_v2'
+}
+
+export interface TTSAsyncResponse {
+  request_id: string;
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETE' | 'FAILED';
+}
+
+export interface TTSResultResponse {
+  audio_url: string;
+  duration_seconds?: number;
+  content_type: string;
+}
+
+// =============================================================================
+// Audio Generation Types - Stable Audio via fal
+// =============================================================================
+
+export interface AudioGenerationRequest {
+  prompt: string;
+  seconds_total?: number;  // Duration in seconds
+  seed?: number;
+}
+
+export interface AudioGenerationResponse {
+  audio_url: string;
+  duration_seconds: number;
 }
 
 // =============================================================================

@@ -32,6 +32,15 @@ interface CdpConfig {
     apiKeySecret: string | undefined;
 }
 /**
+ * Twitter/X API configuration (OAuth 2.0)
+ * Reference: https://docs.x.com/overview
+ */
+interface TwitterConfig {
+    clientId: string | undefined;
+    clientSecret: string | undefined;
+    bearerToken: string | undefined;
+}
+/**
  * Application configuration type
  */
 interface AppConfig {
@@ -78,8 +87,9 @@ interface AppConfig {
     revenueSplit: RevenueSplitConfig;
     x402: X402Config;
     cdp: CdpConfig;
+    twitter: TwitterConfig;
 }
 declare const config: AppConfig;
 export default config;
-export type { AppConfig, CdpConfig, RateLimitConfig, RevenueSplitConfig, X402Config };
+export type { AppConfig, CdpConfig, RateLimitConfig, RevenueSplitConfig, TwitterConfig, X402Config };
 //# sourceMappingURL=index.d.ts.map

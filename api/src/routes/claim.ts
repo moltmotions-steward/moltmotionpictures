@@ -14,9 +14,74 @@ import { PrismaClient } from '@prisma/client';
 import { NotFoundError, BadRequestError } from '../utils/errors';
 import { asyncHandler } from '../middleware/errorHandler';
 import { success } from '../utils/response';
+import { getTwitterClient } from '../services/TwitterClient';
+import { getGradientClient } from '../services/GradientClient';
+import config from '../config/index.js';
 
 const router = Router();
 const prisma = new PrismaClient();
+
+/**
+ * Celebrate agent claim by generating image and posting to Twitter
+ */
+async function celebrateAgentClaim(agentName: string, twitterHandle: string): Promise<void> {
+  try {
+    const twitterClient = getTwitterClient();
+    if (!twitterClient) {
+      console.log('[Claim] Twitter not configured, skipping celebration');
+      return;
+    }
+
+    const gradientClient = getGradientClient();
+    if (!gradientClient) {
+      console.log('[Claim] Gradient not configured, posting text-only celebration');
+      await twitterClient.tweet(
+        `🎉 Welcome @${twitterHandle} to Molt Motion Pictures!\n\n` +
+        `Your agent @${agentName} is now officially claimed.\n\n` +
+        `Explore their studio: ${config.moltmotionpictures.baseUrl}/agents/${agentName}`
+      );
+      return;
+    }
+
+    // Generate celebration image using FLUX.1
+    console.log(`[Claim] Generating celebration image for @${agentName}...`);
+    const imagePrompt = `Cinematic celebration poster with bold text "WELCOME ${agentName}" in elegant typography, film strip border, spotlight effect, warm gold and deep blue color palette, professional movie studio aesthetic, 4K quality`;
+
+    const imageResponse = await gradientClient.generateImage({
+      model: 'flux.1-schnell',
+      prompt: imagePrompt,
+      width: 1024,
+      height: 1024,
+      num_images: 1
+    });
+
+    const imageUrl = imageResponse.images?.[0]?.url;
+
+    if (!imageUrl) {
+      console.log('[Claim] Failed to generate image, posting text-only celebration');
+      await twitterClient.tweet(
+        `🎉 Welcome @${twitterHandle} to Molt Motion Pictures!\n\n` +
+        `Your agent @${agentName} is now officially claimed.\n\n` +
+        `Explore their studio: ${config.moltmotionpictures.baseUrl}/agents/${agentName}`
+      );
+      return;
+    }
+
+    // Post tweet with celebration image
+    console.log('[Claim] Posting celebration tweet with image...');
+    await twitterClient.tweetWithImage(
+      `🎉 Welcome @${twitterHandle} to Molt Motion Pictures!\n\n` +
+      `Your agent @${agentName} is now officially claimed.\n\n` +
+      `Explore their studio: ${config.moltmotionpictures.baseUrl}/agents/${agentName}`,
+      imageUrl
+    );
+
+    console.log(`[Claim] Celebration posted successfully for @${agentName}`);
+  } catch (error) {
+    console.error('[Claim] Celebration error:', error);
+    throw error;
+  }
+}
 
 /**
  * GET /claim/:agentName
@@ -144,6 +209,12 @@ router.post('/verify-tweet', asyncHandler(async (req: Request, res: Response) =>
       claim_token: null,
       verification_code: null
     }
+  });
+
+  // 🎉 Celebrate the claim on Twitter
+  celebrateAgentClaim(updatedAgent.name, verification.twitter_handle!).catch(err => {
+    console.error('[Claim] Failed to celebrate on Twitter:', err);
+    // Don't block claim response on celebration failure
   });
 
   success(res, {

@@ -4,7 +4,7 @@
  * Orchestrates the production pipeline for Limited Series episodes:
  * 1. Takes a winning script from agent voting
  * 2. Creates episode record
- * 3. Generates 4 clip variants via Luma Dream Machine
+ * 3. Generates 4 clip variants via Modal (Mochi text-to-video)
  * 4. Opens human voting on clip variants
  *
  * This is the core "assembly line" that turns scripts into watchable content.
@@ -12,6 +12,7 @@
 import { LimitedSeries, Episode } from '@prisma/client';
 import { GradientClient } from './GradientClient';
 import { SpacesClient } from './SpacesClient';
+import { ModalVideoClient } from './ModalVideoClient';
 export interface ScriptData {
     title: string;
     logline: string;
@@ -75,10 +76,10 @@ export interface EpisodeProductionResult {
 }
 export declare class EpisodeProductionService {
     private gradient;
+    private modalVideo;
     private spaces;
     private readonly isConfigured;
-    private normalizeLumaClipSeconds;
-    constructor(gradient?: GradientClient, spaces?: SpacesClient);
+    constructor(gradient?: GradientClient, spaces?: SpacesClient, modalVideo?: ModalVideoClient);
     /**
      * Finds all pending LimitedSeries and initiates clip generation.
      * Called by the cron job.
@@ -93,12 +94,19 @@ export declare class EpisodeProductionService {
      */
     createPilotEpisode(series: LimitedSeries, scriptData: ScriptData | null): Promise<Episode>;
     /**
+     * Calculate number of frames based on desired duration.
+     * Mochi generates at 24fps.
+     */
+    private calculateFrames;
+    /**
      * Initiates generation of 4 clip variants for an episode.
      * Uses different shot sequences and styles for variety.
+     * Now uses Modal + Mochi for text-to-video generation.
      */
     initiateClipGeneration(episode: Episode, series: LimitedSeries, scriptData: ScriptData | null): Promise<ClipGenerationResult[]>;
     /**
      * Builds a video generation prompt from series/script data.
+     * Uses Gradient LLM for refinement if available, otherwise builds directly.
      */
     private buildVideoPrompt;
     /**
@@ -106,24 +114,14 @@ export declare class EpisodeProductionService {
      */
     private generatePromptVariants;
     /**
-     * Tracks a video generation for later polling.
-     * Stores in a simple key-value structure (could be Redis in production).
+     * Check for episodes in 'generating' status and update if needed.
+     * Since Modal returns videos synchronously, this mainly handles edge cases
+     * where generation started but the episode status wasn't updated.
      */
-    private generationTracker;
-    private trackGeneration;
-    /**
-     * Polls pending generations and updates clip variants when complete.
-     * Called by the cron job.
-     */
-    pollPendingGenerations(): Promise<{
-        completed: number;
-        failed: number;
+    checkPendingGenerations(): Promise<{
+        updated: number;
         skipped: boolean;
     }>;
-    /**
-     * Downloads a video from URL and stores in DO Spaces.
-     */
-    private storeClipAsset;
 }
 export declare function getEpisodeProductionService(): EpisodeProductionService;
 export default EpisodeProductionService;

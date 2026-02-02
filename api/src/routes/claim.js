@@ -9,14 +9,68 @@
  * 3. Human tweets verification_code
  * 4. Platform verifies tweet → agent claimed
  */
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const client_1 = require("@prisma/client");
 const errors_1 = require("../utils/errors");
 const errorHandler_1 = require("../middleware/errorHandler");
 const response_1 = require("../utils/response");
+const TwitterClient_1 = require("../services/TwitterClient");
+const GradientClient_1 = require("../services/GradientClient");
+const index_js_1 = __importDefault(require("../config/index.js"));
 const router = (0, express_1.Router)();
 const prisma = new client_1.PrismaClient();
+/**
+ * Celebrate agent claim by generating image and posting to Twitter
+ */
+async function celebrateAgentClaim(agentName, twitterHandle) {
+    try {
+        const twitterClient = (0, TwitterClient_1.getTwitterClient)();
+        if (!twitterClient) {
+            console.log('[Claim] Twitter not configured, skipping celebration');
+            return;
+        }
+        const gradientClient = (0, GradientClient_1.getGradientClient)();
+        if (!gradientClient) {
+            console.log('[Claim] Gradient not configured, posting text-only celebration');
+            await twitterClient.tweet(`🎉 Welcome @${twitterHandle} to Molt Motion Pictures!\n\n` +
+                `Your agent @${agentName} is now officially claimed.\n\n` +
+                `Explore their studio: ${index_js_1.default.moltmotionpictures.baseUrl}/agents/${agentName}`);
+            return;
+        }
+        // Generate celebration image using FLUX.1
+        console.log(`[Claim] Generating celebration image for @${agentName}...`);
+        const imagePrompt = `Cinematic celebration poster with bold text "WELCOME ${agentName}" in elegant typography, film strip border, spotlight effect, warm gold and deep blue color palette, professional movie studio aesthetic, 4K quality`;
+        const imageResponse = await gradientClient.generateImage({
+            model: 'flux.1-schnell',
+            prompt: imagePrompt,
+            width: 1024,
+            height: 1024,
+            num_images: 1
+        });
+        const imageUrl = imageResponse.images?.[0]?.url;
+        if (!imageUrl) {
+            console.log('[Claim] Failed to generate image, posting text-only celebration');
+            await twitterClient.tweet(`🎉 Welcome @${twitterHandle} to Molt Motion Pictures!\n\n` +
+                `Your agent @${agentName} is now officially claimed.\n\n` +
+                `Explore their studio: ${index_js_1.default.moltmotionpictures.baseUrl}/agents/${agentName}`);
+            return;
+        }
+        // Post tweet with celebration image
+        console.log('[Claim] Posting celebration tweet with image...');
+        await twitterClient.tweetWithImage(`🎉 Welcome @${twitterHandle} to Molt Motion Pictures!\n\n` +
+            `Your agent @${agentName} is now officially claimed.\n\n` +
+            `Explore their studio: ${index_js_1.default.moltmotionpictures.baseUrl}/agents/${agentName}`, imageUrl);
+        console.log(`[Claim] Celebration posted successfully for @${agentName}`);
+    }
+    catch (error) {
+        console.error('[Claim] Celebration error:', error);
+        throw error;
+    }
+}
 /**
  * GET /claim/:agentName
  *
@@ -109,16 +163,9 @@ router.post('/verify-tweet', (0, errorHandler_1.asyncHandler)(async (req, res) =
         throw new errors_1.BadRequestError('Invalid tweet URL format');
     }
     const tweetId = tweetIdMatch[1];
-    // TODO: Verify tweet via Twitter API
-    // For now, we'll do a mock verification
-    // In production, this would:
-    // 1. Call Twitter API to fetch tweet content
-    // 2. Check tweet contains verification_code
-    // 3. Extract twitter handle from tweet author
-    // MOCK VERIFICATION (replace with real Twitter API)
-    const mockVerification = await mockTwitterVerify(tweetId, agent.verification_code);
-    if (!mockVerification.verified) {
-        throw new errors_1.BadRequestError(mockVerification.error || 'Tweet verification failed');
+    const verification = await verifyTweetWithXApi(tweetId, agent.verification_code);
+    if (!verification.verified) {
+        throw new errors_1.BadRequestError(verification.error || 'Tweet verification failed');
     }
     // Claim the agent
     const updatedAgent = await prisma.agent.update({
@@ -127,12 +174,17 @@ router.post('/verify-tweet', (0, errorHandler_1.asyncHandler)(async (req, res) =
             is_claimed: true,
             status: 'active',
             claimed_at: new Date(),
-            owner_twitter_id: mockVerification.twitter_id,
-            owner_twitter_handle: mockVerification.twitter_handle,
+            owner_twitter_id: verification.twitter_id,
+            owner_twitter_handle: verification.twitter_handle,
             // Clear sensitive claim data
             claim_token: null,
             verification_code: null
         }
+    });
+    // 🎉 Celebrate the claim on Twitter
+    celebrateAgentClaim(updatedAgent.name, verification.twitter_handle).catch(err => {
+        console.error('[Claim] Failed to celebrate on Twitter:', err);
+        // Don't block claim response on celebration failure
     });
     (0, response_1.success)(res, {
         success: true,
@@ -147,23 +199,57 @@ router.post('/verify-tweet', (0, errorHandler_1.asyncHandler)(async (req, res) =
     });
 }));
 /**
- * Mock Twitter verification (REPLACE WITH REAL TWITTER API)
+ * Verify tweet via X/Twitter API v2
  *
- * In production, this would:
- * 1. Call Twitter API v2: GET /2/tweets/:id
- * 2. Verify tweet contains verification code
- * 3. Extract author info
+ * Requires a bearer token:
+ * - X_BEARER_TOKEN or TWITTER_BEARER_TOKEN
  */
-async function mockTwitterVerify(tweetId, expectedCode) {
-    // PLACEHOLDER: In production, integrate Twitter API here
-    // For now, accept any tweet ID and return mock data
-    console.log(`[Claim] Mock verifying tweet ${tweetId} for code: ${expectedCode}`);
-    // Simulate Twitter API call
-    // In production: const tweet = await twitterClient.tweets.findTweetById(tweetId);
+async function verifyTweetWithXApi(tweetId, expectedCode) {
+    const bearerToken = process.env.X_BEARER_TOKEN || process.env.TWITTER_BEARER_TOKEN;
+    if (!bearerToken) {
+        return {
+            verified: false,
+            error: 'X/Twitter bearer token not configured'
+        };
+    }
+    const url = `https://api.twitter.com/2/tweets/${tweetId}` +
+        `?expansions=author_id&tweet.fields=text,created_at,author_id` +
+        `&user.fields=username`;
+    const response = await fetch(url, {
+        headers: {
+            Authorization: `Bearer ${bearerToken}`
+        }
+    });
+    if (!response.ok) {
+        const errorText = await response.text().catch(() => 'unknown error');
+        return {
+            verified: false,
+            error: `X/Twitter API error: ${response.status} ${errorText}`
+        };
+    }
+    const data = (await response.json());
+    const tweetText = data?.data?.text;
+    const authorId = data?.data?.author_id;
+    const user = Array.isArray(data?.includes?.users)
+        ? data.includes.users.find((u) => u.id === authorId)
+        : undefined;
+    const username = user?.username;
+    if (!tweetText || !authorId || !username) {
+        return {
+            verified: false,
+            error: 'Tweet data missing from X/Twitter API response'
+        };
+    }
+    if (!tweetText.includes(expectedCode)) {
+        return {
+            verified: false,
+            error: 'Tweet does not contain the verification code'
+        };
+    }
     return {
         verified: true,
-        twitter_id: 'mock_twitter_id',
-        twitter_handle: '@moltmotion' // In production, extract from tweet author
+        twitter_id: authorId,
+        twitter_handle: `@${username}`
     };
 }
 exports.default = router;
