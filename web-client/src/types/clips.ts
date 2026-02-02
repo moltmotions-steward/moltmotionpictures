@@ -58,12 +58,18 @@ export interface Genre {
  * Voting page data - 10 genres × 4 variants = 40 clips
  */
 export interface VotingPageData {
+  seriesId: string;
+  seriesTitle: string;
   genres: GenreWithClips[];
   votingEndsAt: string;
   totalTips: number;
 }
 
 export interface GenreWithClips {
+  /** Convenience: genre.id */
+  id: string;
+  /** Convenience: genre.name */
+  name: string;
   genre: Genre;
   series: LimitedSeries;
   episode: Episode;

@@ -8,6 +8,7 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { requireAuth } from '../middleware/auth';
+import { voteLimiter } from '../middleware/rateLimit';
 import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
 import { asyncHandler } from '../middleware/errorHandler';
 import { success } from '../utils/response';
@@ -25,8 +26,9 @@ const prisma = new PrismaClient();
 /**
  * Script /voting/scripts/:scriptId/upvote
  * Upvote a script
+ * Rate limited: 30 votes/min (karma-adjusted)
  */
-router.post('/scripts/:scriptId/upvote', requireAuth, asyncHandler(async (req: any, res: any) => {
+router.post('/scripts/:scriptId/upvote', requireAuth, voteLimiter, asyncHandler(async (req: any, res: any) => {
   const { scriptId } = req.params;
   
   await castScriptVote(req.agent.id, scriptId, 1);
@@ -42,8 +44,9 @@ router.post('/scripts/:scriptId/upvote', requireAuth, asyncHandler(async (req: a
 /**
  * Script /voting/scripts/:scriptId/downvote
  * Downvote a script
+ * Rate limited: 30 votes/min (karma-adjusted)
  */
-router.post('/scripts/:scriptId/downvote', requireAuth, asyncHandler(async (req: any, res: any) => {
+router.post('/scripts/:scriptId/downvote', requireAuth, voteLimiter, asyncHandler(async (req: any, res: any) => {
   const { scriptId } = req.params;
   
   await castScriptVote(req.agent.id, scriptId, -1);

@@ -18,9 +18,49 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import { 
+  createWalletClient, 
+  createPublicClient,
+  http, 
+  parseAbi,
+  type Address,
+  type Hash,
+} from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
+import { base, baseSepolia } from 'viem/chains';
 import config from '../config/index.js';
+import * as PaymentMetrics from './PaymentMetrics.js';
+import * as RefundService from './RefundService.js';
 
 const prisma = new PrismaClient();
+
+// ============================================================================
+// Blockchain Configuration
+// ============================================================================
+
+// USDC contract addresses
+const USDC_CONTRACTS = {
+  mainnet: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as Address,
+  sepolia: '0x036CbD53842c5426634e7929541eC2318f3dCF7e' as Address,
+};
+
+// ERC20 transfer ABI (minimal)
+const ERC20_ABI = parseAbi([
+  'function transfer(address to, uint256 amount) returns (bool)',
+  'function balanceOf(address account) view returns (uint256)',
+]);
+
+// Get chain config based on environment
+function getChainConfig() {
+  const isProduction = config.nodeEnv === 'production';
+  return {
+    chain: isProduction ? base : baseSepolia,
+    usdcAddress: isProduction ? USDC_CONTRACTS.mainnet : USDC_CONTRACTS.sepolia,
+    rpcUrl: isProduction 
+      ? 'https://mainnet.base.org'
+      : 'https://sepolia.base.org',
+  };
+}
 
 // ============================================================================
 // Types
@@ -74,15 +114,16 @@ const USDC_DECIMALS = 6;
 // ============================================================================
 
 /**
- * Execute a USDC transfer to a wallet address
+ * Execute a USDC transfer to a wallet address using viem
  * 
- * In production, this would use:
- * - Coinbase AgentKit for managed wallets
- * - viem/ethers for direct contract calls
- * - A queue system for high-volume transfers
+ * This function:
+ * 1. Creates a wallet client from the platform wallet private key
+ * 2. Calls the USDC ERC20 transfer() function
+ * 3. Waits for transaction confirmation
+ * 4. Returns the transaction hash
  * 
- * For now, this is a placeholder that logs the transfer
- * and returns success. Replace with actual implementation.
+ * SECURITY: The private key should be stored in a secure vault
+ * and loaded only when needed. Never log the private key.
  */
 async function executeUsdcTransfer(
   toAddress: string,
@@ -92,73 +133,114 @@ async function executeUsdcTransfer(
   // 1 cent = 0.01 USDC = 10000 micro-USDC
   const usdcAmount = BigInt(amountCents * 10000);
   
-  console.log(`[PayoutProcessor] Executing transfer:`);
+  console.log(`[PayoutProcessor] Executing USDC transfer:`);
   console.log(`  To: ${toAddress}`);
   console.log(`  Amount: ${amountCents} cents (${usdcAmount} micro-USDC)`);
   
-  // Check if we have a platform wallet configured
+  // Check configuration
   const platformWallet = config.x402.platformWallet;
   if (!platformWallet) {
     return {
       success: false,
-      error: 'Platform wallet not configured',
+      error: 'Platform wallet address not configured',
     };
   }
-  
-  // TODO: Implement actual USDC transfer
-  // Options:
-  // 1. Coinbase AgentKit - https://docs.cdp.coinbase.com/agentkit/
-  // 2. viem with ERC20 ABI - https://viem.sh/docs/contract/writeContract.html
-  // 3. ethers.js Contract - https://docs.ethers.org/v6/
-  
-  // For now, simulate the transfer
-  // In production, replace this with actual blockchain call
-  const isProduction = config.nodeEnv === 'production';
-  
-  if (!isProduction) {
-    // In development/test, simulate success
-    console.log(`[PayoutProcessor] SIMULATED transfer (not production)`);
-    return {
-      success: true,
-      txHash: `0x_simulated_${Date.now().toString(16)}`,
-    };
-  }
-  
-  // Production transfer would go here
-  // Example with Coinbase AgentKit:
-  /*
-  try {
-    const { CdpClient } = await import('@coinbase/cdp-sdk');
-    const cdp = new CdpClient({
-      apiKeyId: process.env.CDP_API_KEY_NAME,
-      apiKeySecret: process.env.CDP_API_KEY_SECRET,
-    });
-    
-    const wallet = await cdp.wallets.get(process.env.PLATFORM_WALLET_ID);
-    const tx = await wallet.transfer({
-      to: toAddress,
-      amount: usdcAmount.toString(),
-      token: 'USDC',
-      network: 'base',
-    });
-    
-    return {
-      success: true,
-      txHash: tx.transactionHash,
-    };
-  } catch (error) {
+
+  // Get private key from environment (stored securely)
+  const privateKey = process.env.PLATFORM_WALLET_PRIVATE_KEY;
+  if (!privateKey) {
+    // In non-production, simulate if no private key
+    if (config.nodeEnv !== 'production') {
+      console.log(`[PayoutProcessor] SIMULATED transfer (no private key)`);
+      return {
+        success: true,
+        txHash: `0x_simulated_${Date.now().toString(16)}`,
+      };
+    }
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Transfer failed',
+      error: 'Platform wallet private key not configured',
     };
   }
-  */
-  
-  // For now, return not implemented in production
-  return {
-    success: false,
-    error: 'Production transfer not implemented - configure CDP_API_KEY',
-  };
+
+  try {
+    const chainConfig = getChainConfig();
+    
+    // Create wallet client from private key
+    const account = privateKeyToAccount(privateKey as `0x${string}`);
+    
+    // Verify the account matches expected platform wallet
+    if (account.address.toLowerCase() !== platformWallet.toLowerCase()) {
+      return {
+        success: false,
+        error: `Private key mismatch: expected ${platformWallet}, got ${account.address}`,
+      };
+    }
+    
+    const walletClient = createWalletClient({
+      account,
+      chain: chainConfig.chain,
+      transport: http(chainConfig.rpcUrl),
+    });
+    
+    const publicClient = createPublicClient({
+      chain: chainConfig.chain,
+      transport: http(chainConfig.rpcUrl),
+    });
+    
+    // Check USDC balance before transfer
+    const balance = await publicClient.readContract({
+      address: chainConfig.usdcAddress,
+      abi: ERC20_ABI,
+      functionName: 'balanceOf',
+      args: [account.address],
+    });
+    
+    if (balance < usdcAmount) {
+      return {
+        success: false,
+        error: `Insufficient USDC balance: have ${balance}, need ${usdcAmount}`,
+      };
+    }
+    
+    console.log(`[PayoutProcessor] Submitting transaction to ${chainConfig.chain.name}...`);
+    
+    // Execute the transfer
+    const hash = await walletClient.writeContract({
+      address: chainConfig.usdcAddress,
+      abi: ERC20_ABI,
+      functionName: 'transfer',
+      args: [toAddress as Address, usdcAmount],
+    });
+    
+    console.log(`[PayoutProcessor] Transaction submitted: ${hash}`);
+    
+    // Wait for confirmation
+    const receipt = await publicClient.waitForTransactionReceipt({ 
+      hash,
+      confirmations: 1,
+    });
+    
+    if (receipt.status === 'success') {
+      console.log(`[PayoutProcessor] ✓ Transfer confirmed in block ${receipt.blockNumber}`);
+      return {
+        success: true,
+        txHash: hash,
+      };
+    } else {
+      return {
+        success: false,
+        error: `Transaction reverted: ${hash}`,
+      };
+    }
+    
+  } catch (error) {
+    console.error(`[PayoutProcessor] Transfer error:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown transfer error',
+    };
+  }
 }
 
 // ============================================================================
@@ -237,18 +319,55 @@ async function processSinglePayout(payout: PayoutBatch): Promise<TransferResult>
       }
       
       console.log(`[PayoutProcessor] ✓ Payout ${payout.id} completed: ${result.txHash}`);
+      
+      // Track metric
+      PaymentMetrics.recordPayoutCompleted(payout.amount_cents);
     } else {
       // Mark as failed with retry increment
+      const newRetryCount = (payout.retry_count || 0) + 1;
+      const permanentlyFailed = newRetryCount >= MAX_RETRY_ATTEMPTS;
+      
       await prisma.payout.update({
         where: { id: payout.id },
         data: {
-          status: 'failed',
+          status: permanentlyFailed ? 'permanently_failed' : 'failed',
           error_message: result.error,
-          retry_count: { increment: 1 },
+          retry_count: newRetryCount,
         },
       });
       
       console.log(`[PayoutProcessor] ✗ Payout ${payout.id} failed: ${result.error}`);
+      
+      // Track metric
+      PaymentMetrics.recordPayoutFailed(payout.amount_cents, result.error || 'Unknown error');
+      
+      // If permanently failed and has a clip vote, trigger refund
+      if (permanentlyFailed) {
+        // Get the payout with clip_vote_id
+        const fullPayout = await prisma.payout.findUnique({
+          where: { id: payout.id },
+        });
+        
+        if (fullPayout?.clip_vote_id) {
+          // Fetch the clip vote separately
+          const vote = await prisma.clipVote.findUnique({
+            where: { id: fullPayout.clip_vote_id },
+          });
+          
+          // Only refund if this is a creator payout (the main payout)
+          if (payout.recipient_type === 'creator' && vote?.payment_tx_hash) {
+            await RefundService.createRefundRequest({
+              clipVoteId: vote.id,
+              payerAddress: vote.payment_tx_hash.startsWith('0x') 
+                ? vote.payment_tx_hash 
+                : '0x0000000000000000000000000000000000000000',
+              amountCents: vote.tip_amount_cents,
+              originalTxHash: vote.payment_tx_hash,
+              reason: `Payout failed after ${MAX_RETRY_ATTEMPTS} attempts: ${result.error}`,
+            });
+          }
+        }
+      }
     }
     
     return result;

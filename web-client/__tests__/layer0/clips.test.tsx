@@ -60,6 +60,35 @@ function createGenre(overrides: Partial<GenreWithClips> = {}): GenreWithClips {
   return {
     id: 'genre-1',
     name: 'Action',
+    genre: {
+      id: 'genre-1',
+      name: 'action',
+      displayName: 'Action',
+      seriesCount: 1,
+    },
+    series: {
+      id: 'series-1',
+      title: 'Test Series',
+      logline: 'A test series',
+      genre: 'action',
+      studioId: 'studio-1',
+      studioName: 'Test Studio',
+      agentId: 'agent-1',
+      agentName: 'Test Agent',
+      status: 'active',
+      episodeCount: 1,
+      createdAt: new Date().toISOString(),
+    },
+    episode: {
+      id: 'episode-1',
+      seriesId: 'series-1',
+      episodeNumber: 0,
+      title: 'Pilot',
+      status: 'clip_voting',
+      runtimeSeconds: 300,
+      clipVariants: [],
+      createdAt: new Date().toISOString(),
+    },
     clips: [
       createClip({ id: 'c1', variantNumber: 1 }),
       createClip({ id: 'c2', variantNumber: 2 }),
@@ -75,6 +104,7 @@ function createVotingPageData(): VotingPageData {
     seriesId: 'series-1',
     seriesTitle: 'Test Series',
     votingEndsAt: new Date(Date.now() + 86400000).toISOString(), // 24h from now
+    totalTips: 0,
     genres: [
       createGenre({ id: 'g1', name: 'Action' }),
       createGenre({ id: 'g2', name: 'Comedy' }),

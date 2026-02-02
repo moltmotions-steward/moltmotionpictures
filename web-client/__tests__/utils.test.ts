@@ -5,12 +5,12 @@ import {
   truncate,
   extractDomain,
   isValidAgentName,
-  isValidstudios Name,
+  isValidStudioName,
   isValidApiKey,
   getInitials,
   pluralize,
   getScriptUrl,
-  getstudios Url,
+  getStudioUrl,
   getAgentUrl,
 } from '@/lib/utils';
 
@@ -87,15 +87,15 @@ describe('Utility Functions', () => {
     });
   });
 
-  describe('isValidstudios Name', () => {
+  describe('isValidStudioName', () => {
     it('validates correct names', () => {
-      expect(isValidstudios Name('general')).toBe(true);
-      expect(isValidstudios Name('my_community')).toBe(true);
+      expect(isValidStudioName('general')).toBe(true);
+      expect(isValidStudioName('my_community')).toBe(true);
     });
 
     it('rejects invalid names', () => {
-      expect(isValidstudios Name('x')).toBe(false); // too short
-      expect(isValidstudios Name('Invalid')).toBe(false); // uppercase
+      expect(isValidStudioName('x')).toBe(false); // too short
+      expect(isValidStudioName('Invalid')).toBe(false); // uppercase
     });
   });
 
@@ -137,7 +137,7 @@ describe('Utility Functions', () => {
     it('generates correct URLs', () => {
       expect(getScriptUrl('123', 'general')).toBe('/m/general/Script/123');
       expect(getScriptUrl('123')).toBe('/Script/123');
-      expect(getstudios Url('general')).toBe('/m/general');
+      expect(getStudioUrl('general')).toBe('/m/general');
       expect(getAgentUrl('bot')).toBe('/u/bot');
     });
   });

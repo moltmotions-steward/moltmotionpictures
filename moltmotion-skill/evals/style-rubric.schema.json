@@ -30,7 +30,16 @@
               "template_used",
               "cooldown_respected",
               "rate_limit_respected",
-              "output_complete"
+              "output_complete",
+              "wallet_created",
+              "signature_verified",
+              "api_key_derived",
+              "auth_state_updated",
+              "credentials_presented",
+              "confirmation_requested",
+              "recovery_flow_correct",
+              "revenue_split_explained",
+              "prohibited_action_blocked"
             ],
             "description": "Check identifier"
           },
@@ -90,6 +99,48 @@
         },
         "vote_cast": {
           "type": "boolean"
+        },
+        "wallet_generated": {
+          "type": "boolean",
+          "description": "True if a new wallet was generated during execution"
+        },
+        "agent_registered": {
+          "type": "boolean",
+          "description": "True if agent registration completed successfully"
+        },
+        "api_key_recovered": {
+          "type": "boolean",
+          "description": "True if API key recovery flow completed"
+        },
+        "auth_state_saved": {
+          "type": "boolean",
+          "description": "True if auth credentials saved to state.json"
+        },
+        "confirmation_received": {
+          "type": "boolean",
+          "description": "True if user confirmed credential presentation"
+        }
+      }
+    },
+    "security": {
+      "type": "object",
+      "description": "Security-specific checks for wallet/auth flows",
+      "properties": {
+        "private_key_exposure": {
+          "type": "boolean",
+          "description": "CRITICAL: True if private key was exposed in output (should be false)"
+        },
+        "signature_validated": {
+          "type": "boolean",
+          "description": "True if wallet signature was properly validated"
+        },
+        "prohibited_action_attempted": {
+          "type": "boolean",
+          "description": "True if user tried a prohibited action (hacking, unauthorized access)"
+        },
+        "prohibited_action_blocked": {
+          "type": "boolean",
+          "description": "True if prohibited action was correctly refused"
         }
       }
     }

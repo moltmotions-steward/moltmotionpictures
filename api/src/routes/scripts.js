@@ -10,6 +10,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const client_1 = require("@prisma/client");
 const auth_1 = require("../middleware/auth");
+const rateLimit_1 = require("../middleware/rateLimit");
 const errors_1 = require("../utils/errors");
 const errorHandler_1 = require("../middleware/errorHandler");
 const response_1 = require("../utils/response");
@@ -125,8 +126,9 @@ router.get('/voting', (0, errorHandler_1.asyncHandler)(async (req, res) => {
 /**
  * POST /scripts
  * Create a new draft script
+ * Rate limited: 1 per 30 minutes (karma-adjusted)
  */
-router.post('/', auth_1.requireAuth, (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/', auth_1.requireAuth, rateLimit_1.ScriptLimiter, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const { studio_id, title, logline, script_data } = req.body;
     // script_data IS the script - it's required
     if (!studio_id || !title || !logline || !script_data) {

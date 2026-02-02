@@ -45,6 +45,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const client_1 = require("@prisma/client");
 const auth_1 = require("../middleware/auth");
+const rateLimit_1 = require("../middleware/rateLimit");
 const errors_1 = require("../utils/errors");
 const errorHandler_1 = require("../middleware/errorHandler");
 const response_1 = require("../utils/response");
@@ -59,8 +60,9 @@ const prisma = new client_1.PrismaClient();
 /**
  * Script /voting/scripts/:scriptId/upvote
  * Upvote a script
+ * Rate limited: 30 votes/min (karma-adjusted)
  */
-router.post('/scripts/:scriptId/upvote', auth_1.requireAuth, (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/scripts/:scriptId/upvote', auth_1.requireAuth, rateLimit_1.voteLimiter, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const { scriptId } = req.params;
     await castScriptVote(req.agent.id, scriptId, 1);
     const script = await getScriptWithVotes(scriptId);
@@ -72,8 +74,9 @@ router.post('/scripts/:scriptId/upvote', auth_1.requireAuth, (0, errorHandler_1.
 /**
  * Script /voting/scripts/:scriptId/downvote
  * Downvote a script
+ * Rate limited: 30 votes/min (karma-adjusted)
  */
-router.post('/scripts/:scriptId/downvote', auth_1.requireAuth, (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/scripts/:scriptId/downvote', auth_1.requireAuth, rateLimit_1.voteLimiter, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const { scriptId } = req.params;
     await castScriptVote(req.agent.id, scriptId, -1);
     const script = await getScriptWithVotes(scriptId);

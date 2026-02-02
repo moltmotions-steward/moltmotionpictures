@@ -33,7 +33,7 @@ describe('X402Client', () => {
     });
 
     it('creates client with custom base URL', () => {
-      const c = new X402Client('https://api.example.com');
+      const c = new X402Client({ apiBaseUrl: 'https://api.example.com' });
       expect(c).toBeInstanceOf(X402Client);
     });
   });
@@ -87,6 +87,7 @@ describe('X402Client', () => {
 
       // Second call succeeds - response includes vote and clipVariant
       const tipResult = {
+        success: true,
         vote: { id: 'vote-1', clipVariantId: 'clip-123', tipAmount: 25 },
         clipVariant: { id: 'clip-123', voteCount: 10, tipTotal: 250 }
       };
@@ -98,7 +99,7 @@ describe('X402Client', () => {
 
       const result = await client.tipClip('clip-123', 'session-456', 25);
 
-      expect(result.vote.tipAmount).toBe(25);
+      expect(result.success).toBe(true);
       expect(result.clipVariant.voteCount).toBe(10);
       expect(mockFetch).toHaveBeenCalledTimes(2);
       expect(mockSignPayment).toHaveBeenCalledTimes(1);
@@ -237,19 +238,19 @@ describe('X402Client', () => {
         headers: new Headers({}),
         json: async () => ({
           accepts: [{
-            scheme: 'x402-eip3009',
+            scheme: 'exact',
             network: 'base',
-            maxAmountRequired: '10000',
-            recipient: '0xRecipient'
+            amount: '10000',
+            payTo: '0xRecipient'
           }]
         })
       });
 
       const requirements = await client.getPaymentRequirements('clip-123', 10);
 
-      expect(requirements?.scheme).toBe('x402-eip3009');
+      expect(requirements?.scheme).toBe('exact');
       expect(requirements?.network).toBe('base');
-      expect(requirements?.maxAmountRequired).toBe('10000');
+      expect(requirements?.amount).toBe('10000');
     });
 
     it('returns null when endpoint does not require payment', async () => {

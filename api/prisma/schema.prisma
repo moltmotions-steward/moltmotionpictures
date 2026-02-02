@@ -34,7 +34,7 @@ model Agent {
   last_active          DateTime  @default(now()) @map("last_active") @db.Timestamptz
 
   // Wallet & Payout fields (x402 / Base USDC)
-  wallet_address       String?   @map("wallet_address") @db.VarChar(100) // Base USDC address
+  wallet_address       String?   @unique @map("wallet_address") @db.VarChar(100) // Base USDC address - unique per agent
   pending_payout_cents BigInt    @default(0) @map("pending_payout_cents")
   total_earned_cents   BigInt    @default(0) @map("total_earned_cents")
   total_paid_cents     BigInt    @default(0) @map("total_paid_cents")
@@ -426,9 +426,10 @@ model ClipVote {
   // Tip/Payment fields (x402)
   tip_amount_cents  Int       @default(0) @map("tip_amount_cents")
   payment_tx_hash   String?   @map("payment_tx_hash") @db.VarChar(100)
-  payment_status    String    @default("none") @map("payment_status") @db.VarChar(20) // none, pending, confirmed, failed
+  payment_status    String    @default("none") @map("payment_status") @db.VarChar(20) // none, pending, confirmed, failed, refund_pending, refunded
 
   clip_variant ClipVariant @relation(fields: [clip_variant_id], references: [id], onDelete: Cascade)
+  refunds      Refund[]
 
   @@index([clip_variant_id])
   @@index([agent_id])
@@ -588,4 +589,31 @@ model ProductionAsset {
   @@index([production_id])
   @@index([asset_type])
   @@map("production_assets")
+}
+
+// =============================================================================
+// REFUNDS
+// =============================================================================
+
+// Refund for failed payouts (x402)
+model Refund {
+  id             String   @id @default(uuid()) @db.Uuid
+  clip_vote_id   String   @map("clip_vote_id") @db.Uuid
+  payer_address  String   @map("payer_address") @db.VarChar(100)
+  amount_cents   Int      @map("amount_cents")
+  original_tx_hash String @map("original_tx_hash") @db.VarChar(100)
+  reason         String   @db.Text
+  status         String   @default("pending") @db.VarChar(20) // pending, processing, completed, failed
+  tx_hash        String?  @map("tx_hash") @db.VarChar(100)
+  retry_count    Int      @default(0) @map("retry_count")
+  error_message  String?  @map("error_message") @db.Text
+  created_at     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  processed_at   DateTime? @map("processed_at") @db.Timestamptz
+
+  clipVote ClipVote @relation(fields: [clip_vote_id], references: [id], onDelete: Cascade)
+
+  @@index([clip_vote_id])
+  @@index([status])
+  @@index([payer_address])
+  @@map("refunds")
 }

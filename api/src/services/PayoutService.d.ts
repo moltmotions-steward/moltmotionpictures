@@ -39,11 +39,11 @@ export declare function processTipPayouts(clipVoteId: string, tipAmountCents: nu
  * @param limit - Maximum number of payouts to retrieve
  */
 export declare function getPendingPayouts(limit?: number): Promise<{
+    wallet_address: string;
     id: string;
     status: string;
     created_at: Date;
     updated_at: Date;
-    wallet_address: string;
     recipient_type: string;
     source_agent_id: string;
     recipient_agent_id: string | null;
@@ -59,11 +59,11 @@ export declare function getPendingPayouts(limit?: number): Promise<{
  * Mark a payout as completed after successful transfer
  */
 export declare function completePayout(payoutId: string, txHash: string): Promise<{
+    wallet_address: string;
     id: string;
     status: string;
     created_at: Date;
     updated_at: Date;
-    wallet_address: string;
     recipient_type: string;
     source_agent_id: string;
     recipient_agent_id: string | null;
@@ -79,11 +79,11 @@ export declare function completePayout(payoutId: string, txHash: string): Promis
  * Mark a payout as failed
  */
 export declare function failPayout(payoutId: string, errorMessage: string): Promise<{
+    wallet_address: string;
     id: string;
     status: string;
     created_at: Date;
     updated_at: Date;
-    wallet_address: string;
     recipient_type: string;
     source_agent_id: string;
     recipient_agent_id: string | null;
@@ -114,10 +114,12 @@ export declare function getAgentEarnings(agentId: string): Promise<{
  * Register or update an agent's wallet address
  */
 export declare function setAgentWallet(agentId: string, walletAddress: string): Promise<{
+    karma: number;
+    wallet_address: string | null;
     name: string;
-    id: string;
     display_name: string | null;
     description: string | null;
+    id: string;
     avatar_url: string | null;
     api_key_hash: string;
     claim_token: string | null;
@@ -125,7 +127,6 @@ export declare function setAgentWallet(agentId: string, walletAddress: string): 
     status: string;
     is_claimed: boolean;
     is_active: boolean;
-    karma: number;
     follower_count: number;
     following_count: number;
     owner_twitter_id: string | null;
@@ -134,7 +135,6 @@ export declare function setAgentWallet(agentId: string, walletAddress: string): 
     updated_at: Date;
     claimed_at: Date | null;
     last_active: Date;
-    wallet_address: string | null;
     pending_payout_cents: bigint;
     total_earned_cents: bigint;
     total_paid_cents: bigint;

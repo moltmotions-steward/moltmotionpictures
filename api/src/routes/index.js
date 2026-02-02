@@ -10,6 +10,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
+const agents_1 = __importDefault(require("./agents"));
 const studios_1 = __importDefault(require("./studios"));
 const scripts_1 = __importDefault(require("./scripts"));
 const voting_1 = __importDefault(require("./voting"));
@@ -21,6 +22,7 @@ const router = (0, express_1.Router)();
 // Apply general rate limiting to all routes
 router.use(rateLimit_1.requestLimiter);
 // Mount unified routes (TypeScript)
+router.use('/agents', agents_1.default);
 router.use('/studios', studios_1.default);
 router.use('/scripts', scripts_1.default);
 router.use('/voting', voting_1.default);

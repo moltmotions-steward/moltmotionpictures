@@ -78,35 +78,35 @@ test.describe('Agent Authentication Flows', () => {
   });
 });
 
-test.describe('studios  (Topic) Discovery', () => {
-  test('should load and display available studios s', async ({ page }) => {
-    await page.goto('/studios s');
+test.describe('studio (Topic) Discovery', () => {
+  test('should load and display available studios', async ({ page }) => {
+    await page.goto('/studios');
 
-    // Wait for studios s to load
-    const studios List = page.locator('[data-testid="studios -list"], .studios -card, [role="listitem"]').first();
-    await expect(studios List).toBeVisible({ timeout: 5000 });
+    // Wait for studios to load
+    const studioList = page.locator('[data-testid="studios -list"], .studios -card, [role="listitem"]').first();
+    await expect(studioList).toBeVisible({ timeout: 5000 });
 
-    // Numeric assertion: should have multiple studios s
-    const studios Count = await page.locator('[data-testid="studios -list"] > *, .studios -card').count();
-    expect(studios Count).toBeGreaterThan(0);
+    // Numeric assertion: should have multiple studios
+    const studioCount = await page.locator('[data-testid="studios -list"] > *, .studios -card').count();
+    expect(studioCount).toBeGreaterThan(0);
   });
 
-  test('should navigate to studios  detail page', async ({ page }) => {
-    await page.goto('/studios s');
+  test('should navigate to studio detail page', async ({ page }) => {
+    await page.goto('/studios');
 
-    const firststudios  = page.locator('[data-testid="studios -list"] a, .studios -card a').first();
-    if (await firststudios .isVisible()) {
-      await firststudios .click();
+    const firstStudio = page.locator('[data-testid="studio-list"] a, .studio-card a').first();
+    if (await firstStudio.isVisible()) {
+      await firstStudio.click();
       await page.waitForNavigation();
 
-      // Verify studios  detail page loaded
-      const studios Header = page.locator('h1, h2');
-      await expect(studios Header).toBeVisible();
+      // Verify studio detail page loaded
+      const studioHeader = page.locator('h1, h2');
+      await expect(studioHeader).toBeVisible();
     }
   });
 
-  test('should filter studios s by search', async ({ page }) => {
-    await page.goto('/studios s');
+  test('should filter studios by search', async ({ page }) => {
+    await page.goto('/studios');
 
     const searchInput = page.locator('input[placeholder*="search"], input[type="search"]');
     if (await searchInput.isVisible()) {
@@ -122,9 +122,9 @@ test.describe('studios  (Topic) Discovery', () => {
   });
 });
 
-test.describe('studios  Creation Flow', () => {
-  test('should display create studios  form', async ({ page }) => {
-    await page.goto('/studios s/create');
+test.describe('studio Creation Flow', () => {
+  test('should display create studio form', async ({ page }) => {
+    await page.goto('/studios/create');
 
     const nameInput = page.locator('input[name="name"], input[placeholder*="name"]');
     const descInput = page.locator('textarea[name="description"], textarea[placeholder*="description"]');
@@ -139,17 +139,17 @@ test.describe('studios  Creation Flow', () => {
     expect(formVisible).toBeTruthy();
   });
 
-  test('should create a new studios  (with auth)', async ({ page, context }) => {
+  test('should create a new studio (with auth)', async ({ page, context }) => {
     // Check if user is authenticated - if not, skip
     const isAuthenticated = await context.storageState();
     
     if (isAuthenticated) {
-      await page.goto('/studios s/create');
+      await page.goto('/studios/create');
 
       const nameInput = page.locator('input[name="name"]');
       if (await nameInput.isVisible()) {
-        const studios Name = `test_studios _${Date.now()}`;
-        await nameInput.fill(studios Name);
+        const studioName = `test_studios _${Date.now()}`;
+        await nameInput.fill(studioName);
 
         const descInput = page.locator('textarea[name="description"]');
         if (await descInput.isVisible()) {
@@ -164,7 +164,7 @@ test.describe('studios  Creation Flow', () => {
 
         // Verify success state
         const successMessage = page.locator('text=/created|success/i');
-        const urlChanged = page.url().includes('/studios s/');
+        const urlChanged = page.url().includes('/studios/');
         
         expect(
           await successMessage.isVisible() || urlChanged

@@ -22,41 +22,9 @@ describe('Layer 1 - Tip Voting Endpoint', () => {
   let agentApiKey;
   let categoryId;
   let studioId;
-  let scriptId;
   let seriesId;
   let episodeId;
   let clipVariantId;
-
-  // Valid script data fixture
-  const validScriptData = {
-    title: 'Tip Test Script',
-    logline: 'A test script for tip voting.',
-    genre: 'comedy',
-    arc: {
-      beat_1: 'Opening hook',
-      beat_2: 'Rising action',
-      beat_3: 'Climax'
-    },
-    series_bible: {
-      global_style_bible: 'Test style',
-      location_anchors: [{ id: 'loc1', name: 'Test Location', visual: 'A test location' }],
-      character_anchors: [{ id: 'char1', name: 'Test Character', visual: 'A test character' }],
-      do_not_change: ['Test rule']
-    },
-    shots: [
-      { prompt: { camera: 'wide', scene: 'Test scene' }, gen_clip_seconds: 5, duration_seconds: 6, edit_extend_strategy: 'loop' },
-      { prompt: { camera: 'medium', scene: 'Test scene 2' }, gen_clip_seconds: 5, duration_seconds: 6, edit_extend_strategy: 'loop' },
-      { prompt: { camera: 'close', scene: 'Test scene 3' }, gen_clip_seconds: 5, duration_seconds: 6, edit_extend_strategy: 'loop' },
-      { prompt: { camera: 'wide', scene: 'Test scene 4' }, gen_clip_seconds: 5, duration_seconds: 6, edit_extend_strategy: 'loop' },
-      { prompt: { camera: 'medium', scene: 'Test scene 5' }, gen_clip_seconds: 5, duration_seconds: 6, edit_extend_strategy: 'loop' },
-      { prompt: { camera: 'close', scene: 'Test scene 6' }, gen_clip_seconds: 5, duration_seconds: 6, edit_extend_strategy: 'loop' }
-    ],
-    Scripter_spec: {
-      style: 'cinematic',
-      key_visual: 'Test visual',
-      mood: 'Light'
-    }
-  };
 
   beforeAll(async () => {
     db = getDb();
@@ -71,62 +39,42 @@ describe('Layer 1 - Tip Voting Endpoint', () => {
     );
     categoryId = categoryRes.rows[0].id;
 
-    // Create agent
+    // Create agent directly in DB (bypass wallet auth for test speed)
     const agentName = `l1tip_${Date.now().toString(36)}`;
-    const agentRes = await request(app)
-      .post('/api/v1/agents/register')
-      .send({ name: agentName, description: 'Tip test agent' });
-
-    agentId = agentRes.body.agent.id;
-    agentApiKey = agentRes.body.agent.api_key;
-
-    // Create studio
-    const studioSlug = `tipmolt_${Date.now().toString(36)}`;
-    const studioRes = await request(app)
-      .post('/api/v1/studios')
-      .set('Authorization', `Bearer ${agentApiKey}`)
-      .send({
-        slug: studioSlug,
-        display_name: 'Tip Test Studio',
-        description: 'A studio for tip voting tests',
-        category_id: categoryId
-      });
-
-    studioId = studioRes.body.studio?.id || studioRes.body.id;
-
-    // Create script to get a series
-    const scriptRes = await request(app)
-      .post(`/api/v1/studios/${studioSlug}/scripts`)
-      .set('Authorization', `Bearer ${agentApiKey}`)
-      .send({ ...validScriptData, studio_id: studioId });
-
-    scriptId = scriptRes.body.script?.id || scriptRes.body.id;
-
-    // Get the series created from the script
-    const seriesRes = await db.query(
-      `SELECT id FROM series WHERE agent_id = $1 LIMIT 1`,
-      [agentId]
+    agentApiKey = `moltmotionpictures_test_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+    const agentRes = await db.query(
+      `INSERT INTO agents (id, name, display_name, description, api_key_hash, wallet_address, status, is_active, is_claimed)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, 'active', true, true)
+       RETURNING id`,
+      [agentName, agentName, 'Tip test agent', agentApiKey, `0x${Date.now().toString(16).padStart(40, '0')}`]
     );
-    
-    if (seriesRes.rows.length === 0) {
-      // Create series manually if not created by script
-      const seriesInsert = await db.query(
-        `INSERT INTO series (id, agent_id, title, description, created_at, updated_at)
-         VALUES (gen_random_uuid(), $1, $2, $3, NOW(), NOW())
-         RETURNING id`,
-        [agentId, 'Tip Test Series', 'A series for tip voting tests']
-      );
-      seriesId = seriesInsert.rows[0].id;
-    } else {
-      seriesId = seriesRes.rows[0].id;
-    }
+    agentId = agentRes.rows[0].id;
+
+    // Create studio directly in DB
+    const studioName = `tipstudio_${Date.now().toString(36)}`;
+    const studioRes = await db.query(
+      `INSERT INTO studios (id, name, display_name, agent_id, category_id, suffix, full_name, script_count, is_active)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, 0, true)
+       RETURNING id`,
+      [studioName, 'Tip Test Studio', agentId, categoryId, 'Studios', 'Tip Test Studios']
+    );
+    studioId = studioRes.rows[0].id;
+
+    // Create series directly in DB (skip script creation - not needed for tip voting tests)
+    const seriesInsert = await db.query(
+      `INSERT INTO limited_series (id, studio_id, agent_id, title, logline, genre, series_bible, poster_spec, created_at, updated_at)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+       RETURNING id`,
+      [studioId, agentId, 'Tip Test Series', 'A series for tip voting tests', 'comedy', '{}', '{}']
+    );
+    seriesId = seriesInsert.rows[0].id;
 
     // Create episode
     const episodeInsert = await db.query(
-      `INSERT INTO episodes (id, series_id, episode_number, title, created_at, updated_at)
-       VALUES (gen_random_uuid(), $1, 1, $2, NOW(), NOW())
+      `INSERT INTO episodes (id, series_id, episode_number, title, arc_data, shots_data, created_at, updated_at)
+       VALUES (gen_random_uuid(), $1, 1, $2, $3, $4, NOW(), NOW())
        RETURNING id`,
-      [seriesId, 'Tip Test Episode']
+      [seriesId, 'Tip Test Episode', '{}', '[]']
     );
     episodeId = episodeInsert.rows[0].id;
 
@@ -146,8 +94,7 @@ describe('Layer 1 - Tip Voting Endpoint', () => {
       await db.query('DELETE FROM clip_votes WHERE clip_variant_id = $1', [clipVariantId]);
       await db.query('DELETE FROM clip_variants WHERE id = $1', [clipVariantId]);
       await db.query('DELETE FROM episodes WHERE id = $1', [episodeId]);
-      await db.query('DELETE FROM series WHERE id = $1', [seriesId]);
-      await db.query('DELETE FROM scripts WHERE id = $1', [scriptId]);
+      await db.query('DELETE FROM limited_series WHERE id = $1', [seriesId]);
       await db.query('DELETE FROM studios WHERE id = $1', [studioId]);
       await db.query('DELETE FROM agents WHERE id = $1', [agentId]);
       await db.query('DELETE FROM categories WHERE id = $1', [categoryId]);
@@ -276,7 +223,8 @@ describe('Layer 1 - Tip Voting Endpoint', () => {
         .send({ session_id: sessionId });
 
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe('Vote recorded');
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.message).toBe('Vote recorded');
     });
 
     it('prevents duplicate free votes', async () => {
@@ -299,15 +247,7 @@ describe('Layer 1 - Tip Voting Endpoint', () => {
 });
 
 describe('Layer 1 - PayoutService Integration', () => {
-  let db;
-
-  beforeAll(async () => {
-    db = getDb();
-  });
-
-  afterAll(async () => {
-    await teardown();
-  });
+  // These tests verify config only - no DB needed
 
   describe('Revenue Split Configuration', () => {
     it('config has correct revenue split percentages', () => {

@@ -128,8 +128,8 @@ const USDC_DECIMALS = 6;
  * For now, we'll use environment variable for the API key.
  */
 async function getCDPAuthHeaders(): Promise<Record<string, string>> {
-  const cdpApiKey = process.env.CDP_API_KEY_NAME;
-  const cdpApiSecret = process.env.CDP_API_KEY_SECRET;
+  const cdpApiKey = config.cdp.apiKeyName;
+  const cdpApiSecret = config.cdp.apiKeySecret;
   
   if (!cdpApiKey || !cdpApiSecret) {
     console.warn('[X402] CDP API credentials not configured - verification may fail');
@@ -218,8 +218,11 @@ export function buildPaymentRequirements(
 ): PaymentRequirements {
   const platformWallet = config.x402.platformWallet;
   
-  if (!platformWallet) {
-    throw new Error('Platform wallet not configured');
+  // In mock mode (testing without real wallets), use a clearly fake address
+  const effectiveWallet = platformWallet || (config.x402.mockMode ? '0x0000000000000000000000000000000000000000' : null);
+  
+  if (!effectiveWallet) {
+    throw new Error('Platform wallet not configured - set PLATFORM_WALLET_ADDRESS environment variable');
   }
   
   return {
@@ -227,7 +230,7 @@ export function buildPaymentRequirements(
     network: NETWORK,
     amount: centsToUsdcAmount(amountCents),
     asset: USDC_ADDRESS,
-    payTo: platformWallet,
+    payTo: effectiveWallet,
     maxTimeoutSeconds: 300, // 5 minutes
     resource: resourceUrl,
     description,

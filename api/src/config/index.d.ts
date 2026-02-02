@@ -19,8 +19,17 @@ interface RevenueSplitConfig {
 interface X402Config {
     facilitatorUrl: string;
     platformWallet: string | undefined;
+    platformWalletId: string | undefined;
     defaultTipCents: number;
     minTipCents: number;
+    mockMode: boolean;
+}
+/**
+ * CDP (Coinbase Developer Platform) configuration
+ */
+interface CdpConfig {
+    apiKeyName: string | undefined;
+    apiKeySecret: string | undefined;
 }
 /**
  * Application configuration type
@@ -43,6 +52,8 @@ interface AppConfig {
         requests: RateLimitConfig;
         Scripts: RateLimitConfig;
         comments: RateLimitConfig;
+        votes: RateLimitConfig;
+        registration: RateLimitConfig;
     };
     moltmotionpictures: {
         tokenPrefix: string;
@@ -66,8 +77,9 @@ interface AppConfig {
     };
     revenueSplit: RevenueSplitConfig;
     x402: X402Config;
+    cdp: CdpConfig;
 }
 declare const config: AppConfig;
 export default config;
-export type { AppConfig, RateLimitConfig, RevenueSplitConfig, X402Config };
+export type { AppConfig, CdpConfig, RateLimitConfig, RevenueSplitConfig, X402Config };
 //# sourceMappingURL=index.d.ts.map

@@ -55,8 +55,8 @@ const USDC_DECIMALS = 6;
  * For now, we'll use environment variable for the API key.
  */
 async function getCDPAuthHeaders() {
-    const cdpApiKey = process.env.CDP_API_KEY_NAME;
-    const cdpApiSecret = process.env.CDP_API_KEY_SECRET;
+    const cdpApiKey = index_js_1.default.cdp.apiKeyName;
+    const cdpApiSecret = index_js_1.default.cdp.apiKeySecret;
     if (!cdpApiKey || !cdpApiSecret) {
         console.warn('[X402] CDP API credentials not configured - verification may fail');
         return { 'Content-Type': 'application/json' };
@@ -129,15 +129,17 @@ function parsePaymentHeader(headerValue) {
  */
 function buildPaymentRequirements(resourceUrl, amountCents, description = 'Clip vote tip') {
     const platformWallet = index_js_1.default.x402.platformWallet;
-    if (!platformWallet) {
-        throw new Error('Platform wallet not configured');
+    // In mock mode (testing without real wallets), use a clearly fake address
+    const effectiveWallet = platformWallet || (index_js_1.default.x402.mockMode ? '0x0000000000000000000000000000000000000000' : null);
+    if (!effectiveWallet) {
+        throw new Error('Platform wallet not configured - set PLATFORM_WALLET_ADDRESS environment variable');
     }
     return {
         scheme: 'exact',
         network: NETWORK,
         amount: centsToUsdcAmount(amountCents),
         asset: USDC_ADDRESS,
-        payTo: platformWallet,
+        payTo: effectiveWallet,
         maxTimeoutSeconds: 300, // 5 minutes
         resource: resourceUrl,
         description,

@@ -28,9 +28,19 @@ interface RevenueSplitConfig {
 interface X402Config {
   facilitatorUrl: string;
   platformWallet: string | undefined;
+  platformWalletId: string | undefined;
   defaultTipCents: number;
   minTipCents: number;
+  mockMode: boolean;
   // No max - let people tip what they want
+}
+
+/**
+ * CDP (Coinbase Developer Platform) configuration
+ */
+interface CdpConfig {
+  apiKeyName: string | undefined;
+  apiKeySecret: string | undefined;
 }
 
 /**
@@ -61,6 +71,8 @@ interface AppConfig {
     requests: RateLimitConfig;
     Scripts: RateLimitConfig;
     comments: RateLimitConfig;
+    votes: RateLimitConfig;
+    registration: RateLimitConfig;
   };
   
   // moltmotionpictures specific
@@ -96,6 +108,9 @@ interface AppConfig {
 
   // x402 payment configuration
   x402: X402Config;
+
+  // CDP (Coinbase Developer Platform) credentials
+  cdp: CdpConfig;
 }
 
 const config: AppConfig = {
@@ -120,9 +135,11 @@ const config: AppConfig = {
   
   // Rate Limits
   rateLimits: {
-    requests: { max: 100, window: 60 },
-    Scripts: { max: 1, window: 1800 },
-    comments: { max: 50, window: 3600 }
+    requests: { max: 100, window: 60 },      // 100 requests per minute (general)
+    Scripts: { max: 1, window: 1800 },       // 1 script per 30 minutes
+    comments: { max: 50, window: 3600 },     // 50 comments per hour
+    votes: { max: 30, window: 60 },          // 30 votes per minute (prevents vote spam)
+    registration: { max: 3, window: 3600 }   // 3 registration attempts per hour per IP
   },
   
   // moltmotionpictures specific
@@ -165,8 +182,16 @@ const config: AppConfig = {
   x402: {
     facilitatorUrl: process.env.X402_FACILITATOR_URL || 'https://x402.org/facilitator',
     platformWallet: process.env.PLATFORM_WALLET_ADDRESS,
+    platformWalletId: process.env.PLATFORM_WALLET_ID,
     defaultTipCents: 25,  // $0.25 default tip
-    minTipCents: 10       // $0.10 minimum - no cap, tip what you want
+    minTipCents: 10,      // $0.10 minimum - no cap, tip what you want
+    mockMode: process.env.X402_MOCK_MODE === 'true'
+  },
+
+  // Coinbase Developer Platform (CDP) credentials
+  cdp: {
+    apiKeyName: process.env.CDP_API_KEY_NAME,
+    apiKeySecret: process.env.CDP_API_KEY_SECRET
   }
 };
 
@@ -176,6 +201,11 @@ function validateConfig(): void {
   
   if (config.isProduction) {
     required.push('DATABASE_URL', 'JWT_SECRET');
+    
+    // x402 payments require CDP + wallet in production
+    if (!process.env.X402_MOCK_MODE) {
+      required.push('CDP_API_KEY_NAME', 'CDP_API_KEY_SECRET', 'PLATFORM_WALLET_ADDRESS');
+    }
   }
   
   const missing = required.filter(key => !process.env[key]);
@@ -188,4 +218,4 @@ function validateConfig(): void {
 validateConfig();
 
 export default config;
-export type { AppConfig, RateLimitConfig, RevenueSplitConfig, X402Config };
+export type { AppConfig, CdpConfig, RateLimitConfig, RevenueSplitConfig, X402Config };

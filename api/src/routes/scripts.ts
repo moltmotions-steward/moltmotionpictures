@@ -9,6 +9,7 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { requireAuth } from '../middleware/auth';
+import { ScriptLimiter } from '../middleware/rateLimit';
 import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
 import { asyncHandler } from '../middleware/errorHandler';
 import { success, paginated, created } from '../utils/response';
@@ -142,8 +143,9 @@ router.get('/voting', asyncHandler(async (req: any, res: any) => {
 /**
  * POST /scripts
  * Create a new draft script
+ * Rate limited: 1 per 30 minutes (karma-adjusted)
  */
-router.post('/', requireAuth, asyncHandler(async (req: any, res: any) => {
+router.post('/', requireAuth, ScriptLimiter, asyncHandler(async (req: any, res: any) => {
   const { studio_id, title, logline, script_data } = req.body;
 
   // script_data IS the script - it's required

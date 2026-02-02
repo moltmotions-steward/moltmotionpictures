@@ -41,6 +41,8 @@ interface RateLimitOptions {
   skip?: (req: Request) => boolean | Promise<boolean>;
   keyGenerator?: (req: Request) => string | Promise<string>;
   message?: string;
+  /** Multiply limits based on agent karma tier */
+  useKarmaTier?: boolean;
 }
 
 /**
@@ -48,7 +50,38 @@ interface RateLimitOptions {
  */
 interface RateLimitRequest extends Request {
   token?: string;
+  agent?: {
+    id: string;
+    name: string;
+    displayName: string | null;
+    description: string | null;
+    karma: number;
+    status: string;
+    isClaimed: boolean;
+    createdAt: Date;
+  } | null;
   rateLimit?: RateLimitResult;
+}
+
+/**
+ * Karma-based tier multipliers
+ * Higher karma = more generous limits (trusted agents)
+ */
+const KARMA_TIERS = {
+  untrusted: { maxKarma: 10, multiplier: 0.5 },   // New/low karma: 50% of normal limits
+  normal: { maxKarma: 100, multiplier: 1.0 },     // Normal: 100%
+  trusted: { maxKarma: 1000, multiplier: 1.5 },   // Trusted: 150%
+  veteran: { maxKarma: Infinity, multiplier: 2.0 } // Veterans: 200%
+};
+
+/**
+ * Get karma tier multiplier for an agent
+ */
+function getKarmaMultiplier(karma: number): number {
+  if (karma < KARMA_TIERS.untrusted.maxKarma) return KARMA_TIERS.untrusted.multiplier;
+  if (karma < KARMA_TIERS.normal.maxKarma) return KARMA_TIERS.normal.multiplier;
+  if (karma < KARMA_TIERS.trusted.maxKarma) return KARMA_TIERS.trusted.multiplier;
+  return KARMA_TIERS.veteran.multiplier;
 }
 
 /**
@@ -149,8 +182,10 @@ async function initializeStore(): Promise<void> {
   if (config.redis?.url) {
     try {
       // Dynamic import to avoid requiring ioredis if not used
-      const Redis = (await import('ioredis')).default;
-      const redis = new Redis(config.redis.url);
+      const ioredis = await import('ioredis');
+      // Handle both ESM and CJS module formats
+      const RedisClass = (ioredis as any).default ?? (ioredis as any).Redis ?? ioredis;
+      const redis = new RedisClass(config.redis.url);
       
       // Test connection
       await redis.ping();
@@ -181,9 +216,15 @@ function getStore(): RateLimitStore {
 
 /**
  * Get rate limit key from request
+ * 
+ * Priority order:
+ * 1. agent.id (authenticated agent - most specific)
+ * 2. token (API key before agent lookup completed)
+ * 3. ip (unauthenticated requests)
  */
 function getKey(req: RateLimitRequest, limitType: string): string {
-  const identifier = req.token || req.ip || 'anonymous';
+  // Prefer agent ID if auth middleware has run
+  const identifier = req.agent?.id || req.token || req.ip || 'anonymous';
   return `rl:${limitType}:${identifier}`;
 }
 
@@ -238,16 +279,17 @@ export function rateLimit(
     return (_req: Request, _res: Response, next: NextFunction) => next();
   }
 
-  const limit = (config.rateLimits as Record<string, RateLimitConfig>)[limitType];
+  const baseLimit = (config.rateLimits as Record<string, RateLimitConfig>)[limitType];
   
-  if (!limit) {
+  if (!baseLimit) {
     throw new Error(`Unknown rate limit type: ${limitType}`);
   }
   
   const {
     skip = () => false,
     keyGenerator = (req: Request) => getKey(req as RateLimitRequest, limitType),
-    message = `Rate limit exceeded`
+    message = `Rate limit exceeded`,
+    useKarmaTier = false
   } = options;
   
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -259,6 +301,17 @@ export function rateLimit(
       }
       
       const key = await Promise.resolve(keyGenerator(req));
+      
+      // Apply karma tier multiplier if enabled and agent exists
+      let limit = { ...baseLimit };
+      if (useKarmaTier) {
+        const rateLimitReq = req as RateLimitRequest;
+        if (rateLimitReq.agent?.karma !== undefined) {
+          const multiplier = getKarmaMultiplier(rateLimitReq.agent.karma);
+          limit.max = Math.floor(baseLimit.max * multiplier);
+        }
+      }
+      
       const result = await checkLimit(key, limit);
       
       // Set headers
@@ -297,12 +350,32 @@ export const ScriptLimiter = rateLimit('Scripts', {
  * Comment rate limiter (50/hr)
  */
 export const commentLimiter = rateLimit('comments', {
-  message: 'Too many comments, slow down'
+  message: 'Too many comments, slow down',
+  useKarmaTier: true
+});
+
+/**
+ * Vote rate limiter (30/min per agent)
+ * Prevents vote spam on scripts
+ */
+export const voteLimiter = rateLimit('votes', {
+  message: 'Too many votes, slow down',
+  useKarmaTier: true
+});
+
+/**
+ * Registration rate limiter (3/hr per IP)
+ * Prevents wallet/registration spam attacks
+ */
+export const registrationLimiter = rateLimit('registration', {
+  message: 'Too many registration attempts. Try again later.',
+  // Force IP-based keying for registration (no auth yet)
+  keyGenerator: (req: Request) => `rl:registration:${req.ip || 'anonymous'}`
 });
 
 /**
  * Get current rate limit store type (for monitoring)
  */
-export function getRateLimitStatus(): { storeType: string } {
-  return { storeType };
+export function getRateLimitStatus(): { storeType: string; karmaTiers: typeof KARMA_TIERS } {
+  return { storeType, karmaTiers: KARMA_TIERS };
 }

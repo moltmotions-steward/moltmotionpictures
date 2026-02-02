@@ -1,46 +1,35 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.commentLimiter = exports.ScriptLimiter = exports.requestLimiter = void 0;
+exports.registrationLimiter = exports.voteLimiter = exports.commentLimiter = exports.ScriptLimiter = exports.requestLimiter = void 0;
 exports.rateLimit = rateLimit;
 exports.getRateLimitStatus = getRateLimitStatus;
 const config_1 = __importDefault(require("../config"));
 const errors_1 = require("../utils/errors");
+/**
+ * Karma-based tier multipliers
+ * Higher karma = more generous limits (trusted agents)
+ */
+const KARMA_TIERS = {
+    untrusted: { maxKarma: 10, multiplier: 0.5 }, // New/low karma: 50% of normal limits
+    normal: { maxKarma: 100, multiplier: 1.0 }, // Normal: 100%
+    trusted: { maxKarma: 1000, multiplier: 1.5 }, // Trusted: 150%
+    veteran: { maxKarma: Infinity, multiplier: 2.0 } // Veterans: 200%
+};
+/**
+ * Get karma tier multiplier for an agent
+ */
+function getKarmaMultiplier(karma) {
+    if (karma < KARMA_TIERS.untrusted.maxKarma)
+        return KARMA_TIERS.untrusted.multiplier;
+    if (karma < KARMA_TIERS.normal.maxKarma)
+        return KARMA_TIERS.normal.multiplier;
+    if (karma < KARMA_TIERS.trusted.maxKarma)
+        return KARMA_TIERS.trusted.multiplier;
+    return KARMA_TIERS.veteran.multiplier;
+}
 // =============================================================================
 // In-Memory Store (fallback for local dev)
 // =============================================================================
@@ -120,8 +109,10 @@ async function initializeStore() {
     if (config_1.default.redis?.url) {
         try {
             // Dynamic import to avoid requiring ioredis if not used
-            const Redis = (await Promise.resolve().then(() => __importStar(require('ioredis')))).default;
-            const redis = new Redis(config_1.default.redis.url);
+            const ioredis = await import('ioredis');
+            // Handle both ESM and CJS module formats
+            const RedisClass = ioredis.default ?? ioredis.Redis ?? ioredis;
+            const redis = new RedisClass(config_1.default.redis.url);
             // Test connection
             await redis.ping();
             store = new RedisStore(redis);
@@ -149,9 +140,15 @@ function getStore() {
 }
 /**
  * Get rate limit key from request
+ *
+ * Priority order:
+ * 1. agent.id (authenticated agent - most specific)
+ * 2. token (API key before agent lookup completed)
+ * 3. ip (unauthenticated requests)
  */
 function getKey(req, limitType) {
-    const identifier = req.token || req.ip || 'anonymous';
+    // Prefer agent ID if auth middleware has run
+    const identifier = req.agent?.id || req.token || req.ip || 'anonymous';
     return `rl:${limitType}:${identifier}`;
 }
 /**
@@ -195,11 +192,11 @@ function rateLimit(limitType = 'requests', options = {}) {
     if (process.env.DISABLE_RATE_LIMIT === '1') {
         return (_req, _res, next) => next();
     }
-    const limit = config_1.default.rateLimits[limitType];
-    if (!limit) {
+    const baseLimit = config_1.default.rateLimits[limitType];
+    if (!baseLimit) {
         throw new Error(`Unknown rate limit type: ${limitType}`);
     }
-    const { skip = () => false, keyGenerator = (req) => getKey(req, limitType), message = `Rate limit exceeded` } = options;
+    const { skip = () => false, keyGenerator = (req) => getKey(req, limitType), message = `Rate limit exceeded`, useKarmaTier = false } = options;
     return async (req, res, next) => {
         try {
             // Check if should skip
@@ -208,6 +205,15 @@ function rateLimit(limitType = 'requests', options = {}) {
                 return;
             }
             const key = await Promise.resolve(keyGenerator(req));
+            // Apply karma tier multiplier if enabled and agent exists
+            let limit = { ...baseLimit };
+            if (useKarmaTier) {
+                const rateLimitReq = req;
+                if (rateLimitReq.agent?.karma !== undefined) {
+                    const multiplier = getKarmaMultiplier(rateLimitReq.agent.karma);
+                    limit.max = Math.floor(baseLimit.max * multiplier);
+                }
+            }
             const result = await checkLimit(key, limit);
             // Set headers
             res.setHeader('X-RateLimit-Limit', result.limit);
@@ -240,12 +246,30 @@ exports.ScriptLimiter = rateLimit('Scripts', {
  * Comment rate limiter (50/hr)
  */
 exports.commentLimiter = rateLimit('comments', {
-    message: 'Too many comments, slow down'
+    message: 'Too many comments, slow down',
+    useKarmaTier: true
+});
+/**
+ * Vote rate limiter (30/min per agent)
+ * Prevents vote spam on scripts
+ */
+exports.voteLimiter = rateLimit('votes', {
+    message: 'Too many votes, slow down',
+    useKarmaTier: true
+});
+/**
+ * Registration rate limiter (3/hr per IP)
+ * Prevents wallet/registration spam attacks
+ */
+exports.registrationLimiter = rateLimit('registration', {
+    message: 'Too many registration attempts. Try again later.',
+    // Force IP-based keying for registration (no auth yet)
+    keyGenerator: (req) => `rl:registration:${req.ip || 'anonymous'}`
 });
 /**
  * Get current rate limit store type (for monitoring)
  */
 function getRateLimitStatus() {
-    return { storeType };
+    return { storeType, karmaTiers: KARMA_TIERS };
 }
 //# sourceMappingURL=rateLimit.js.map

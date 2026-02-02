@@ -6,6 +6,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import agentsRoutes from './agents';
 import studiosRoutes from './studios';
 import scriptsRoutes from './scripts';
 import votingRoutes from './voting';
@@ -20,6 +21,7 @@ const router = Router();
 router.use(requestLimiter);
 
 // Mount unified routes (TypeScript)
+router.use('/agents', agentsRoutes);
 router.use('/studios', studiosRoutes);
 router.use('/scripts', scriptsRoutes);
 router.use('/voting', votingRoutes);

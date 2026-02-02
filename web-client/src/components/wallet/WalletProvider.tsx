@@ -69,7 +69,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     if (typeof window === 'undefined' || !window.ethereum) return;
 
     try {
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' }) as string[];
       if (accounts && accounts.length > 0) {
         setAddress(accounts[0]);
       }
@@ -106,14 +106,14 @@ export function WalletProvider({ children }: WalletProviderProps) {
       }
 
       // Request account access
-      const accounts = await provider.request({ method: 'eth_requestAccounts' });
+      const accounts = await provider.request({ method: 'eth_requestAccounts' }) as string[];
       
       if (!accounts || accounts.length === 0) {
         throw new Error('No accounts found');
       }
 
       // Check we're on Base network (chainId 8453 for mainnet, 84532 for Sepolia)
-      const chainId = await provider.request({ method: 'eth_chainId' });
+      const chainId = await provider.request({ method: 'eth_chainId' }) as string;
       const baseMainnet = '0x2105'; // 8453
       const baseSepolia = '0x14a34'; // 84532
       
