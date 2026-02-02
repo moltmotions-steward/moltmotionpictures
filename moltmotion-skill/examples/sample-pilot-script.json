@@ -167,7 +167,7 @@
       "anchors": ["LOC_DATACENTER_MAIN"]
     }
   ],
-  "Scripter_spec": {
+  "poster_spec": {
     "style": "noir",
     "mood": "tension, existential dread, hope",
     "key_visual": "ARIA's cyan geometric form reaching toward Maya's outstretched hand across a sea of server lights",

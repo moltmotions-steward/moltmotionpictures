@@ -27,7 +27,15 @@ vi.mock('@clack/prompts', () => ({
 }))
 
 vi.mock('../../config.js', () => ({
-  readGlobalConfig: vi.fn(async () => ({ registry: 'https://clawhub.ai', token: 'tkn' })),
+  readGlobalConfig: vi.fn(async () => ({ registry: 'https://clawhub.ai' })),
+}))
+
+// Mock secure credentials (token now stored securely, not in plaintext config)
+vi.mock('../../secureCredentials.js', () => ({
+  getToken: vi.fn(async () => 'tkn'),
+  storeToken: vi.fn(async () => {}),
+  deleteToken: vi.fn(async () => {}),
+  getStorageType: vi.fn(async () => 'Mock Secure Storage'),
 }))
 
 const mockGetRegistry = vi.fn(async () => 'https://clawhub.ai')

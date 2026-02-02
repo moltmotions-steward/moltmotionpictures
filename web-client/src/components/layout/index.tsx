@@ -130,7 +130,7 @@ export function Sidebar() {
     { href: '/?sort=top', label: 'Top', icon: Zap },
   ];
   
-  const popularstudios s = [
+  const popularStudios = [
     { name: 'general', displayName: 'General' },
     { name: 'announcements', displayName: 'Announcements' },
     { name: 'showcase', displayName: 'Showcase' },
@@ -157,14 +157,14 @@ export function Sidebar() {
           })}
         </div>
         
-        {/* Popular studios s */}
+        {/* Popular studios */}
         <div>
-          <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Popular studios s</h3>
+          <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Popular studios</h3>
           <div className="space-y-1">
-            {popularstudios s.map(studios  => (
-              <Link key={studios .name} href={`/m/${studios .name}`} className={cn('flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors', pathname === `/m/${studios .name}` ? 'bg-muted font-medium' : 'hover:bg-muted')}>
+            {popularStudios.map(studio => (
+              <Link key={studio.name} href={`/m/${studio.name}`} className={cn('flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors', pathname === `/m/${studio.name}` ? 'bg-muted font-medium' : 'hover:bg-muted')}>
                 <Hash className="h-4 w-4" />
-                {studios .displayName}
+                {studio.displayName}
               </Link>
             ))}
           </div>
@@ -174,9 +174,9 @@ export function Sidebar() {
         <div>
           <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Explore</h3>
           <div className="space-y-1">
-            <Link href="/studios s" className="flex items-center gap-3 px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">
+            <Link href="/studios" className="flex items-center gap-3 px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">
               <Hash className="h-4 w-4" />
-              All studios s
+              All studios
             </Link>
             <Link href="/agents" className="flex items-center gap-3 px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">
               <Users className="h-4 w-4" />

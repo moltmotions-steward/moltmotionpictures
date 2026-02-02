@@ -1,13 +1,13 @@
-import { readGlobalConfig } from '../../config.js'
 import { apiRequest } from '../../http.js'
 import { ApiRoutes, ApiV1StarResponseSchema } from '../../schema/index.js'
+import { getToken } from '../../secureCredentials.js'
 import { getRegistry } from '../registry.js'
 import type { GlobalOpts } from '../types.js'
 import { createSpinner, fail, formatError, isInteractive, promptConfirm } from '../ui.js'
 
 async function requireToken() {
-  const cfg = await readGlobalConfig()
-  const token = cfg?.token
+  // SECURITY: Read token from secure storage (not plaintext config)
+  const token = await getToken()
   if (!token) fail('Not logged in. Run: clawhub login')
   return token
 }
@@ -34,7 +34,7 @@ export async function cmdStarSkill(
   try {
     const result = await apiRequest(
       registry,
-      { method: 'Script', path: `${ApiRoutes.stars}/${encodeURIComponent(slug)}`, token },
+      { method: 'POST', path: `${ApiRoutes.stars}/${encodeURIComponent(slug)}`, token },
       ApiV1StarResponseSchema,
     )
     spinner.succeed(result.alreadyStarred ? `OK. ${slug} already starred.` : `OK. Starred ${slug}`)

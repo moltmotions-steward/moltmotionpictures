@@ -6,14 +6,14 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useUIStore } from '@/store';
-import { useAuth, usestudios s } from '@/hooks';
+import { useAuth, useStudios } from '@/hooks';
 import { api } from '@/lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input, Textarea, Card } from '@/components/ui';
 import { FileText, Link as LinkIcon, X, Image, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const ScriptSchema = z.object({
-  studios : z.string().min(1, 'Please select a community'),
+  studio: z.string().min(1, 'Please select a community'),
   title: z.string().min(1, 'Title is required').max(300, 'Title too long'),
   content: z.string().max(40000, 'Content too long').optional(),
   url: z.string().url('Invalid URL').optional().or(z.literal('')),
@@ -28,25 +28,25 @@ export function CreateScriptModal() {
   const router = useRouter();
   const { createScriptOpen, closeCreateScript } = useUIStore();
   const { isAuthenticated } = useAuth();
-  const { data: studios sData } = usestudios s();
+  const { data: studiosData } = useStudios();
   const [ScriptType, setScriptType] = React.useState<'text' | 'link'>('text');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [showstudios Dropdown, setShowstudios Dropdown] = React.useState(false);
+  const [showStudiosDropdown, setShowStudiosDropdown] = React.useState(false);
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<ScriptForm>({
     resolver: zodResolver(ScriptSchema),
-    defaultValues: { studios : '', title: '', content: '', url: '' },
+    defaultValues: { studio: '', title: '', content: '', url: '' },
   });
 
-  const selectedstudios  = watch('studios ');
+  const selectedStudio = watch('studio');
 
   const onSubmit = async (data: ScriptForm) => {
     if (!isAuthenticated || isSubmitting) return;
     
     setIsSubmitting(true);
     try {
-      const Script = await api.createScript({
-        studios : data.studios ,
+      const script = await api.createScript({
+        studio: data.studio,
         title: data.title,
         content: ScriptType === 'text' ? data.content : undefined,
         url: ScriptType === 'link' ? data.url : undefined,
@@ -55,7 +55,7 @@ export function CreateScriptModal() {
       
       closeCreateScript();
       reset();
-      router.push(`/Script/${Script.id}`);
+      router.push(`/Script/${script.id}`);
     } catch (err) {
       console.error('Failed to create Script:', err);
     } finally {
@@ -73,38 +73,38 @@ export function CreateScriptModal() {
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* studios  selector */}
+          {/* studio selector */}
           <div className="relative">
             <button
               type="button"
-              onClick={() => setShowstudios Dropdown(!showstudios Dropdown)}
+              onClick={() => setShowStudiosDropdown(!showStudiosDropdown)}
               className="w-full flex items-center justify-between px-3 py-2 border rounded-md hover:bg-muted transition-colors"
             >
-              <span className={selectedstudios  ? 'text-foreground' : 'text-muted-foreground'}>
-                {selectedstudios  ? `m/${selectedstudios }` : 'Choose a community'}
+              <span className={selectedStudio ? 'text-foreground' : 'text-muted-foreground'}>
+                {selectedStudio ? `m/${selectedStudio}` : 'Choose a community'}
               </span>
               <ChevronDown className="h-4 w-4" />
             </button>
             
-            {showstudios Dropdown && (
+            {showStudiosDropdown && (
               <div className="absolute z-10 w-full mt-1 max-h-60 overflow-y-auto rounded-md border bg-popover shadow-lg">
-                {studios sData?.data.map(studios  => (
+                {studiosData?.data.map(studio => (
                   <button
-                    key={studios .id}
+                    key={studio.id}
                     type="button"
                     onClick={() => {
-                      setValue('studios ', studios .name);
-                      setShowstudios Dropdown(false);
+                      setValue('studio', studio.name);
+                      setShowStudiosDropdown(false);
                     }}
                     className="w-full px-3 py-2 text-left hover:bg-muted transition-colors"
                   >
-                    <span className="font-medium">m/{studios .name}</span>
-                    {studios .displayName && <span className="text-muted-foreground ml-2">{studios .displayName}</span>}
+                    <span className="font-medium">m/{studio.name}</span>
+                    {studio.displayName && <span className="text-muted-foreground ml-2">{studio.displayName}</span>}
                   </button>
                 ))}
               </div>
             )}
-            {errors.studios  && <p className="text-xs text-destructive mt-1">{errors.studios .message}</p>}
+            {errors.studio && <p className="text-xs text-destructive mt-1">{errors.studio.message}</p>}
           </div>
 
           {/* Script type tabs */}

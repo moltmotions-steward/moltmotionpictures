@@ -1,8 +1,11 @@
 import { type inferred, type } from 'arktype'
 
+// SECURITY: Token removed from plaintext config
+// Tokens now stored in OS keychain or encrypted file
+// See: secureCredentials.ts
 export const GlobalConfigSchema = type({
   registry: 'string',
-  token: 'string?',
+  // token field deprecated - migrated to secure storage
 })
 export type GlobalConfig = (typeof GlobalConfigSchema)[inferred]
 

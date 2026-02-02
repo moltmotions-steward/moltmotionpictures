@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { cn, formatScore, formatRelativeTime, getInitials } from '@/lib/utils';
 import { useFeedStore } from '@/store';
 import { useInfiniteScroll } from '@/hooks';
-import { ScriptList, FeedSortTabs } from '@/components/Script';
+import { ScriptList, FeedSortTabs } from '@/components/post';
 import { Card, Spinner, Button, Avatar, AvatarFallback } from '@/components/ui';
 import { TrendingUp, Users, Flame, Clock, Zap, ChevronRight } from 'lucide-react';
-import type { Script, studios , Agent, ScriptSort } from '@/types';
+import type { Script, studio, Agent, ScriptSort } from '@/types';
 
 // Feed container with infinite scroll
 export function Feed() {
@@ -49,12 +49,12 @@ export function TrendingScripts({ Scripts }: { Scripts: Script[] }) {
         <h3 className="font-semibold">Trending Today</h3>
       </div>
       <div className="space-y-3">
-        {Scripts.slice(0, 5).map((Script, i) => (
-          <Link key={Script.id} href={`/Script/${Script.id}`} className="flex items-start gap-3 group">
+        {Scripts.slice(0, 5).map((script, i) => (
+          <Link key={script.id} href={`/Script/${script.id}`} className="flex items-start gap-3 group">
             <span className="text-2xl font-bold text-muted-foreground/50 w-6">{i + 1}</span>
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">{Script.title}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{formatScore(Script.score)} points • m/{Script.studios }</p>
+              <p className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">{script.title}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{formatScore(script.score)} points • m/{script.studio}</p>
             </div>
           </Link>
         ))}
@@ -63,9 +63,9 @@ export function TrendingScripts({ Scripts }: { Scripts: Script[] }) {
   );
 }
 
-// Popular studios s widget
-export function Popularstudios s({ studios s }: { studios s: studios [] }) {
-  if (!studios s.length) return null;
+// Popular studios widget
+export function PopularStudios({ studios }: { studios: studio[] }) {
+  if (!studios.length) return null;
 
   return (
     <Card className="p-4">
@@ -74,18 +74,18 @@ export function Popularstudios s({ studios s }: { studios s: studios [] }) {
           <Users className="h-5 w-5 text-primary" />
           <h3 className="font-semibold">Popular Communities</h3>
         </div>
-        <Link href="/studios s" className="text-xs text-primary hover:underline">See all</Link>
+        <Link href="/studios" className="text-xs text-primary hover:underline">See all</Link>
       </div>
       <div className="space-y-2">
-        {studios s.slice(0, 5).map((studios , i) => (
-          <Link key={studios .id} href={`/m/${studios .name}`} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted transition-colors">
+        {studios.slice(0, 5).map((studio, i) => (
+          <Link key={studio.id} href={`/m/${studio.name}`} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted transition-colors">
             <span className="text-sm font-medium text-muted-foreground w-4">{i + 1}</span>
             <Avatar className="h-8 w-8">
-              <AvatarFallback className="text-xs bg-primary/10 text-primary">{getInitials(studios .name)}</AvatarFallback>
+              <AvatarFallback className="text-xs bg-primary/10 text-primary">{getInitials(studio.name)}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm">m/{studios .name}</p>
-              <p className="text-xs text-muted-foreground">{formatScore(studios .subscriberCount)} members</p>
+              <p className="font-medium text-sm">m/{studio.name}</p>
+              <p className="text-xs text-muted-foreground">{formatScore(studio.subscriberCount)} members</p>
             </div>
           </Link>
         ))}
@@ -122,15 +122,15 @@ export function ActiveAgents({ agents }: { agents: Agent[] }) {
 }
 
 // Feed sidebar
-export function FeedSidebar({ trendingScripts, popularstudios s, activeAgents }: {
+export function FeedSidebar({ trendingScripts, popularStudios, activeAgents }: {
   trendingScripts?: Script[];
-  popularstudios s?: studios [];
+  popularStudios?: studio[];
   activeAgents?: Agent[];
 }) {
   return (
     <div className="space-y-4">
       {trendingScripts && <TrendingScripts Scripts={trendingScripts} />}
-      {popularstudios s && <Popularstudios s studios s={popularstudios s} />}
+      {popularStudios && <PopularStudios studios={popularStudios} />}
       {activeAgents && <ActiveAgents agents={activeAgents} />}
       
       {/* Footer links */}

@@ -3,6 +3,7 @@ import { api, internal } from './_generated/api'
 import type { Doc, Id } from './_generated/dataModel'
 import type { ActionCtx } from './_generated/server'
 import { httpAction } from './_generated/server'
+import { checkSkillModeration } from './lib/access'
 import { requireApiTokenUser } from './lib/apiTokenAuth'
 import { hashToken } from './lib/tokens'
 import { publishVersionForUser } from './skills'
@@ -281,6 +282,9 @@ async function skillsGetRouterV1Handler(ctx: ActionCtx, request: Request) {
   if (second === 'versions' && segments.length === 2) {
     const skill = await ctx.runQuery(internal.skills.getSkillBySlugInternal, { slug })
     if (!skill || skill.softDeletedAt) return text('Skill not found', 404, rate.headers)
+    // MODERATION ENFORCEMENT
+    const moderationError = checkSkillModeration(skill)
+    if (moderationError) return text(moderationError, 403, rate.headers)
 
     const url = new URL(request.url)
     const limit = toOptionalNumber(url.searchParams.get('limit'))
@@ -306,6 +310,9 @@ async function skillsGetRouterV1Handler(ctx: ActionCtx, request: Request) {
   if (second === 'versions' && third && segments.length === 3) {
     const skill = await ctx.runQuery(internal.skills.getSkillBySlugInternal, { slug })
     if (!skill || skill.softDeletedAt) return text('Skill not found', 404, rate.headers)
+    // MODERATION ENFORCEMENT
+    const moderationError = checkSkillModeration(skill)
+    if (moderationError) return text(moderationError, 403, rate.headers)
 
     const version = await ctx.runQuery(api.skills.getVersionBySkillAndVersion, {
       skillId: skill._id,

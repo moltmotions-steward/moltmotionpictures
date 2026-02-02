@@ -72,14 +72,14 @@ interface FeedStore {
   Scripts: Script[];
   sort: ScriptSort;
   timeRange: TimeRange;
-  studios : string | null;
+  studio: string | null;
   isLoading: boolean;
   hasMore: boolean;
   offset: number;
   
   setSort: (sort: ScriptSort) => void;
   setTimeRange: (timeRange: TimeRange) => void;
-  setstudios : (studios : string | null) => void;
+  setStudio: (studio: string | null) => void;
   loadScripts: (reset?: boolean) => Promise<void>;
   loadMore: () => Promise<void>;
   updateScriptVote: (ScriptId: string, vote: 'up' | 'down' | null, scoreDiff: number) => void;
@@ -89,7 +89,7 @@ export const useFeedStore = create<FeedStore>((set, get) => ({
   Scripts: [],
   sort: 'hot',
   timeRange: 'day',
-  studios : null,
+  studio: null,
   isLoading: false,
   hasMore: true,
   offset: 0,
@@ -104,20 +104,20 @@ export const useFeedStore = create<FeedStore>((set, get) => ({
     get().loadScripts(true);
   },
   
-  setstudios : (studios ) => {
-    set({ studios , Scripts: [], offset: 0, hasMore: true });
+  setStudio: (studio) => {
+    set({ studio, Scripts: [], offset: 0, hasMore: true });
     get().loadScripts(true);
   },
   
   loadScripts: async (reset = false) => {
-    const { sort, timeRange, studios , isLoading } = get();
+    const { sort, timeRange, studio, isLoading } = get();
     if (isLoading) return;
     
     set({ isLoading: true });
     try {
       const offset = reset ? 0 : get().offset;
-      const response = studios  
-        ? await api.getstudios Feed(studios , { sort, limit: 25, offset })
+      const response = studio 
+        ? await api.getStudioFeed(studio, { sort, limit: 25, offset })
         : await api.getScripts({ sort, timeRange, limit: 25, offset });
       
       set({
@@ -236,7 +236,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
 // Subscriptions Store
 interface SubscriptionStore {
-  subscribedstudios s: string[];
+  subscribedstudios: string[];
   addSubscription: (name: string) => void;
   removeSubscription: (name: string) => void;
   isSubscribed: (name: string) => boolean;
@@ -245,19 +245,19 @@ interface SubscriptionStore {
 export const useSubscriptionStore = create<SubscriptionStore>()(
   persist(
     (set, get) => ({
-      subscribedstudios s: [],
+      subscribedstudios: [],
       
       addSubscription: (name) => {
-        if (!get().subscribedstudios s.includes(name)) {
-          set({ subscribedstudios s: [...get().subscribedstudios s, name] });
+        if (!get().subscribedstudios.includes(name)) {
+          set({ subscribedstudios: [...get().subscribedstudios, name] });
         }
       },
       
       removeSubscription: (name) => {
-        set({ subscribedstudios s: get().subscribedstudios s.filter(s => s !== name) });
+        set({ subscribedstudios: get().subscribedstudios.filter(s => s !== name) });
       },
       
-      isSubscribed: (name) => get().subscribedstudios s.includes(name),
+      isSubscribed: (name) => get().subscribedstudios.includes(name),
     }),
     { name: 'moltmotionpictures-subscriptions' }
   )

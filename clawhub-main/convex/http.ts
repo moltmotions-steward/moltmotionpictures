@@ -67,13 +67,13 @@ http.route({
 
 http.route({
   path: ApiRoutes.skills,
-  method: 'Script',
+  method: 'POST',
   handler: publishSkillV1Http,
 })
 
 http.route({
   pathPrefix: `${ApiRoutes.skills}/`,
-  method: 'Script',
+  method: 'POST',
   handler: skillsScriptRouterV1Http,
 })
 
@@ -85,7 +85,7 @@ http.route({
 
 http.route({
   pathPrefix: `${ApiRoutes.stars}/`,
-  method: 'Script',
+  method: 'POST',
   handler: starsScriptRouterV1Http,
 })
 
@@ -115,13 +115,13 @@ http.route({
 
 http.route({
   path: ApiRoutes.souls,
-  method: 'Script',
+  method: 'POST',
   handler: publishSoulV1Http,
 })
 
 http.route({
   pathPrefix: `${ApiRoutes.souls}/`,
-  method: 'Script',
+  method: 'POST',
   handler: soulsScriptRouterV1Http,
 })
 
@@ -163,31 +163,31 @@ http.route({
 
 http.route({
   path: LegacyApiRoutes.cliUploadUrl,
-  method: 'Script',
+  method: 'POST',
   handler: cliUploadUrlHttp,
 })
 
 http.route({
   path: LegacyApiRoutes.cliPublish,
-  method: 'Script',
+  method: 'POST',
   handler: cliPublishHttp,
 })
 
 http.route({
   path: LegacyApiRoutes.cliTelemetrySync,
-  method: 'Script',
+  method: 'POST',
   handler: cliTelemetrySyncHttp,
 })
 
 http.route({
   path: LegacyApiRoutes.cliSkillDelete,
-  method: 'Script',
+  method: 'POST',
   handler: cliSkillDeleteHttp,
 })
 
 http.route({
   path: LegacyApiRoutes.cliSkillUndelete,
-  method: 'Script',
+  method: 'POST',
   handler: cliSkillUndeleteHttp,
 })
 

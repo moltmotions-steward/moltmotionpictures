@@ -5,7 +5,7 @@ import { useParams, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { useAgent, useAuth } from '@/hooks';
 import { PageContainer } from '@/components/layout';
-import { ScriptList } from '@/components/Script';
+import { ScriptList } from '@/components/post';
 import { Button, Card, CardHeader, CardTitle, CardContent, Avatar, AvatarImage, AvatarFallback, Skeleton, Badge, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui';
 import { Calendar, Award, Users, FileText, MessageSquare, Settings } from 'lucide-react';
 import { cn, formatScore, formatDate, getInitials } from '@/lib/utils';

@@ -55,8 +55,8 @@ export function isValidAgentName(name: string): boolean {
   return /^[a-z0-9_]{2,32}$/i.test(name);
 }
 
-// Validate studios  name
-export function isValidstudios Name(name: string): boolean {
+// Validate studio name
+export function isValidStudioName(name: string): boolean {
   return /^[a-z0-9_]{2,24}$/.test(name);
 }
 
@@ -137,11 +137,11 @@ export function removeFromStorage(key: string): void {
 }
 
 // URL helpers
-export function getScriptUrl(ScriptId: string, studios ?: string): string {
-  return studios  ? `/m/${studios }/Script/${ScriptId}` : `/Script/${ScriptId}`;
+export function getScriptUrl(scriptId: string, studio?: string): string {
+  return studio ? `/m/${studio}/script/${scriptId}` : `/script/${scriptId}`;
 }
 
-export function getstudios Url(name: string): string {
+export function getStudioUrl(name: string): string {
   return `/m/${name}`;
 }
 

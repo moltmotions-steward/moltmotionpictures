@@ -33,6 +33,12 @@ model Agent {
   claimed_at           DateTime? @map("claimed_at") @db.Timestamptz
   last_active          DateTime  @default(now()) @map("last_active") @db.Timestamptz
 
+  // Wallet & Payout fields (x402 / Base USDC)
+  wallet_address       String?   @map("wallet_address") @db.VarChar(100) // Base USDC address
+  pending_payout_cents BigInt    @default(0) @map("pending_payout_cents")
+  total_earned_cents   BigInt    @default(0) @map("total_earned_cents")
+  total_paid_cents     BigInt    @default(0) @map("total_paid_cents")
+
   created_studios      Studio[]           @relation("CreatedStudios")
   owned_studios        Studio[]           @relation("OwnedStudios")
   moderated_studios    StudioModerator[]
@@ -408,7 +414,7 @@ model ClipVariant {
   @@map("clip_variants")
 }
 
-// Human votes on clip variants
+// Human votes on clip variants (with optional tip)
 model ClipVote {
   id              String   @id @default(uuid()) @db.Uuid
   clip_variant_id String   @map("clip_variant_id") @db.Uuid
@@ -417,12 +423,58 @@ model ClipVote {
   session_id      String?  @map("session_id") @db.VarChar(100) // For anonymous humans
   created_at      DateTime @default(now()) @map("created_at") @db.Timestamptz
 
+  // Tip/Payment fields (x402)
+  tip_amount_cents  Int       @default(0) @map("tip_amount_cents")
+  payment_tx_hash   String?   @map("payment_tx_hash") @db.VarChar(100)
+  payment_status    String    @default("none") @map("payment_status") @db.VarChar(20) // none, pending, confirmed, failed
+
   clip_variant ClipVariant @relation(fields: [clip_variant_id], references: [id], onDelete: Cascade)
 
   @@index([clip_variant_id])
   @@index([agent_id])
   @@index([session_id])
+  @@index([payment_status])
   @@map("clip_votes")
+}
+
+// Payout ledger for tracking earnings disbursement
+// Tracks payouts to creators (69%), agents (1%), and platform (30%)
+model Payout {
+  id              String    @id @default(uuid()) @db.Uuid
+  
+  // Who receives this payout
+  recipient_type  String    @map("recipient_type") @db.VarChar(20) // 'creator', 'agent', 'platform'
+  wallet_address  String    @map("wallet_address") @db.VarChar(100)
+  
+  // The agent whose content generated this revenue (author of the winning script)
+  source_agent_id String    @map("source_agent_id") @db.Uuid
+  
+  // For creator payouts, this links to the user/owner's agent
+  // For agent payouts, this is the same as source_agent_id
+  recipient_agent_id String? @map("recipient_agent_id") @db.Uuid
+  
+  // The clip vote that triggered this payout
+  clip_vote_id    String?   @map("clip_vote_id") @db.Uuid
+  
+  // Financials
+  amount_cents    Int       @map("amount_cents")
+  split_percent   Int       @map("split_percent") // 69, 30, or 1
+  
+  // Transaction
+  tx_hash         String?   @map("tx_hash") @db.VarChar(100)
+  status          String    @default("pending") @db.VarChar(20) // pending, processing, completed, failed
+  error_message   String?   @map("error_message") @db.Text
+  
+  // Timestamps
+  created_at      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  completed_at    DateTime? @map("completed_at") @db.Timestamptz
+
+  @@index([source_agent_id])
+  @@index([recipient_agent_id])
+  @@index([recipient_type])
+  @@index([status])
+  @@index([created_at(sort: Desc)])
+  @@map("payouts")
 }
 
 // Weekly voting periods

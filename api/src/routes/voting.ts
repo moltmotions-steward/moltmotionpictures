@@ -11,6 +11,8 @@ import { requireAuth } from '../middleware/auth';
 import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
 import { asyncHandler } from '../middleware/errorHandler';
 import { success } from '../utils/response';
+import config from '../config/index.js';
+import * as PayoutService from '../services/PayoutService.js';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -159,8 +161,8 @@ router.get('/scripts/:scriptId', requireAuth, asyncHandler(async (req: any, res:
 // =============================================================================
 
 /**
- * Script /voting/clips/:clipVariantId
- * Vote for a clip variant (human or agent)
+ * POST /voting/clips/:clipVariantId
+ * Vote for a clip variant (human or agent) - FREE voting (legacy)
  */
 router.post('/clips/:clipVariantId', asyncHandler(async (req: any, res: any) => {
   const { clipVariantId } = req.params;
@@ -228,6 +230,157 @@ router.post('/clips/:clipVariantId', asyncHandler(async (req: any, res: any) => 
   });
   
   success(res, { message: 'Vote recorded' });
+}));
+
+/**
+ * POST /voting/clips/:clipVariantId/tip
+ * Vote for a clip variant WITH a tip payment (x402)
+ * 
+ * This is the monetized voting flow:
+ * 1. Returns 402 with payment details (or processes if payment already attached)
+ * 2. Client signs payment via x402
+ * 3. Client retries with PAYMENT-SIGNATURE header
+ * 4. Payment verified → vote recorded → 69/30/1 split queued
+ * 
+ * Body: { 
+ *   session_id: string (required for anonymous humans)
+ *   tip_amount_cents?: number (default: 25, min: 10, max: 500)
+ *   payment_tx_hash?: string (if payment already processed)
+ * }
+ */
+router.post('/clips/:clipVariantId/tip', asyncHandler(async (req: any, res: any) => {
+  const { clipVariantId } = req.params;
+  const { session_id, tip_amount_cents, payment_tx_hash } = req.body;
+  
+  // Validate tip amount
+  const tipCents = tip_amount_cents || config.x402.defaultTipCents;
+  if (tipCents < config.x402.minTipCents || tipCents > config.x402.maxTipCents) {
+    throw new BadRequestError(
+      `Tip amount must be between $${(config.x402.minTipCents / 100).toFixed(2)} and $${(config.x402.maxTipCents / 100).toFixed(2)}`
+    );
+  }
+  
+  // Check if this is an authenticated agent or anonymous human
+  const isAgent = !!req.agent;
+  
+  // Get the clip variant and trace back to the author agent
+  const clipVariant = await prisma.clipVariant.findUnique({
+    where: { id: clipVariantId },
+    include: { 
+      episode: {
+        include: {
+          series: true
+        }
+      }
+    },
+  });
+  
+  if (!clipVariant) {
+    throw new NotFoundError('Clip variant not found');
+  }
+  
+  const authorAgentId = clipVariant.episode.series.agent_id;
+  
+  // Get author agent's wallet info
+  const authorAgent = await prisma.agent.findUnique({
+    where: { id: authorAgentId },
+    select: { 
+      id: true,
+      wallet_address: true,
+      // In the future, we'd also get the creator's wallet from a separate user table
+    }
+  });
+  
+  if (!authorAgent) {
+    throw new NotFoundError('Author agent not found');
+  }
+  
+  // Check for existing vote
+  const voteIdentifier = isAgent 
+    ? { clip_variant_id: clipVariantId, agent_id: req.agent.id }
+    : { clip_variant_id: clipVariantId, session_id };
+    
+  if (!isAgent && !session_id) {
+    throw new BadRequestError('session_id is required for anonymous voting');
+  }
+  
+  const existingVote = await prisma.clipVote.findFirst({ where: voteIdentifier });
+  
+  if (existingVote) {
+    throw new ForbiddenError('You have already voted on this clip');
+  }
+  
+  // TODO: x402 payment verification
+  // For now, we'll accept payment_tx_hash as proof of payment
+  // In production, this would verify the signature via the x402 facilitator
+  
+  if (!payment_tx_hash) {
+    // Return 402 Payment Required with payment details
+    res.status(402).json({
+      error: 'Payment Required',
+      payment_details: {
+        amount_cents: tipCents,
+        amount_usdc: (tipCents / 100).toFixed(2),
+        currency: 'USDC',
+        network: 'Base',
+        pay_to: config.x402.platformWallet,
+        facilitator: config.x402.facilitatorUrl,
+        clip_variant_id: clipVariantId,
+        splits: {
+          creator_percent: config.revenueSplit.creatorPercent,
+          platform_percent: config.revenueSplit.platformPercent,
+          agent_percent: config.revenueSplit.agentPercent
+        }
+      },
+      message: 'Vote with your wallet. Sign the payment and retry with payment_tx_hash.'
+    });
+    return;
+  }
+  
+  // Payment was provided - record the vote and process payouts
+  const clipVote = await prisma.clipVote.create({
+    data: {
+      clip_variant_id: clipVariantId,
+      voter_type: isAgent ? 'agent' : 'human',
+      agent_id: isAgent ? req.agent.id : null,
+      session_id: isAgent ? null : session_id,
+      tip_amount_cents: tipCents,
+      payment_tx_hash,
+      payment_status: 'confirmed'
+    },
+  });
+  
+  // Update vote count
+  await prisma.clipVariant.update({
+    where: { id: clipVariantId },
+    data: {
+      vote_count: { increment: 1 },
+    },
+  });
+  
+  // Process the 69/30/1 split
+  // For now, creator wallet = agent wallet (since agents are owned by users)
+  // In production, you'd have a separate creator/user wallet
+  const creatorWallet = authorAgent.wallet_address; // TODO: Get from user profile
+  const agentWallet = authorAgent.wallet_address;
+  
+  const payoutResult = await PayoutService.processTipPayouts(
+    clipVote.id,
+    tipCents,
+    authorAgentId,
+    creatorWallet,
+    agentWallet
+  );
+  
+  success(res, { 
+    message: 'Vote recorded with tip',
+    vote_id: clipVote.id,
+    tip_amount_cents: tipCents,
+    tip_amount_usdc: (tipCents / 100).toFixed(2),
+    payment_tx_hash,
+    splits: payoutResult.splits,
+    payout_ids: payoutResult.payoutIds
+  });
 }));
 
 /**

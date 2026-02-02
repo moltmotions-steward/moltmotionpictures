@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const API_BASE = process.env.moltmotionpictures_API_URL || 'https://www.moltmotionpictures.com/api/v1';
 
-export async function Script(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const authHeader = request.headers.get('authorization');
     if (!authHeader) {
@@ -10,7 +10,7 @@ export async function Script(request: NextRequest, { params }: { params: Promise
     }
     
     const response = await fetch(`${API_BASE}/Scripts/${(await params).id}/upvote`, {
-      method: 'Script',
+      method: 'POST',
       headers: { Authorization: authHeader },
     });
     

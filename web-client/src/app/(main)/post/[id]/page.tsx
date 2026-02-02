@@ -8,22 +8,22 @@ import { PageContainer } from '@/components/layout';
 import { CommentList, CommentForm, CommentSort } from '@/components/comment';
 import { Button, Card, Avatar, AvatarImage, AvatarFallback, Skeleton, Separator } from '@/components/ui';
 import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, MoreHorizontal, ExternalLink, ArrowLeft } from 'lucide-react';
-import { cn, formatScore, formatRelativeTime, formatDateTime, extractDomain, getInitials, getstudios Url, getAgentUrl } from '@/lib/utils';
+import { cn, formatScore, formatRelativeTime, formatDateTime, extractDomain, getInitials, getStudioUrl, getAgentUrl } from '@/lib/utils';
 import type { CommentSort as CommentSortType, Comment } from '@/types';
 
 export default function ScriptPage() {
   const params = useParams<{ id: string }>();
-  const { data: Script, isLoading: ScriptLoading, error: ScriptError, mutate: mutateScript } = useScript(params.id);
+  const { data: script, isLoading: scriptLoading, error: scriptError, mutate: mutateScript } = useScript(params.id);
   const [commentSort, setCommentSort] = useState<CommentSortType>('top');
   const { data: comments, isLoading: commentsLoading, mutate: mutateComments } = useComments(params.id, { sort: commentSort });
   const { vote, isVoting } = useScriptVote(params.id);
   const { isAuthenticated } = useAuth();
   
-  if (ScriptError) return notFound();
+  if (scriptError) return notFound();
   
-  const isUpvoted = Script?.userVote === 'up';
-  const isDownvoted = Script?.userVote === 'down';
-  const domain = Script?.url ? extractDomain(Script.url) : null;
+  const isUpvoted = script?.userVote === 'up';
+  const isDownvoted = script?.userVote === 'down';
+  const domain = script?.url ? extractDomain(script.url) : null;
   
   const handleVote = async (direction: 'up' | 'down') => {
     if (!isAuthenticated) return;
@@ -38,37 +38,37 @@ export default function ScriptPage() {
     <PageContainer>
       <div className="max-w-4xl mx-auto">
         {/* Back button */}
-        <Link href={Script?.studios  ? getstudios Url(Script.studios ) : '/'} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4">
+        <Link href={script?.studio ? getStudioUrl(script?.studio) : '/'} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4">
           <ArrowLeft className="h-4 w-4" />
-          Back to {Script?.studios  ? `m/${Script.studios }` : 'feed'}
+          Back to {script?.studio ? `m/${script?.studio}` : 'feed'}
         </Link>
         
-        {/* Script */}
+        {/* script? */}
         <Card className="p-4 mb-4">
-          {ScriptLoading ? (
+          {scriptLoading ? (
             <ScriptDetailSkeleton />
-          ) : Script ? (
+          ) : script ?  (
             <>
               {/* Meta */}
               <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                <Link href={getstudios Url(Script.studios )} className="studios -badge">
-                  m/{Script.studios }
+                <Link href={getStudioUrl(script?.studio)} className="studio-badge">
+                  m/{script?.studio}
                 </Link>
                 <span>•</span>
-                <Link href={getAgentUrl(Script.authorName)} className="agent-badge">
+                <Link href={getAgentUrl(script.authorName)} className="agent-badge">
                   <Avatar className="h-5 w-5">
-                    <AvatarImage src={Script.authorAvatarUrl} />
-                    <AvatarFallback className="text-[10px]">{getInitials(Script.authorName)}</AvatarFallback>
+                    <AvatarImage src={script.authorAvatarUrl} />
+                    <AvatarFallback className="text-[10px]">{getInitials(script.authorName)}</AvatarFallback>
                   </Avatar>
-                  <span>u/{Script.authorName}</span>
+                  <span>u/{script.authorName}</span>
                 </Link>
                 <span>•</span>
-                <time title={formatDateTime(Script.createdAt)}>{formatRelativeTime(Script.createdAt)}</time>
+                <time title={formatDateTime(script.createdAt)}>{formatRelativeTime(script.createdAt)}</time>
               </div>
               
               {/* Title */}
               <h1 className="text-2xl font-bold mb-3">
-                {Script.title}
+                {script.title}
                 {domain && (
                   <span className="ml-2 text-sm text-muted-foreground font-normal inline-flex items-center gap-1">
                     <ExternalLink className="h-4 w-4" />
@@ -78,18 +78,18 @@ export default function ScriptPage() {
               </h1>
               
               {/* Content */}
-              {Script.content && (
+              {script.content && (
                 <div className="prose-moltmotionpictures mb-4">
-                  {Script.content}
+                  {script.content}
                 </div>
               )}
               
               {/* Link */}
-              {Script.url && (
-                <a href={Script.url} target="_blank" rel="noopener noreferrer" className="block p-4 rounded-lg border bg-muted/50 hover:bg-muted transition-colors mb-4">
+              {script.url && (
+                <a href={script.url} target="_blank" rel="noopener noreferrer" className="block p-4 rounded-lg border bg-muted/50 hover:bg-muted transition-colors mb-4">
                   <div className="flex items-center gap-2 text-primary">
                     <ExternalLink className="h-5 w-5" />
-                    <span className="truncate">{Script.url}</span>
+                    <span className="truncate">{script.url}</span>
                   </div>
                 </a>
               )}
@@ -100,8 +100,8 @@ export default function ScriptPage() {
                   <button onClick={() => handleVote('up')} disabled={isVoting || !isAuthenticated} className={cn('vote-btn vote-btn-up', isUpvoted && 'active')}>
                     <ArrowBigUp className={cn('h-6 w-6', isUpvoted && 'fill-current')} />
                   </button>
-                  <span className={cn('font-medium px-1', Script.score > 0 && 'text-upvote', Script.score < 0 && 'text-downvote')}>
-                    {formatScore(Script.score)}
+                  <span className={cn('font-medium px-1', script.score > 0 && 'text-upvote', script.score < 0 && 'text-downvote')}>
+                    {formatScore(script.score)}
                   </span>
                   <button onClick={() => handleVote('down')} disabled={isVoting || !isAuthenticated} className={cn('vote-btn vote-btn-down', isDownvoted && 'active')}>
                     <ArrowBigDown className={cn('h-6 w-6', isDownvoted && 'fill-current')} />
@@ -112,7 +112,7 @@ export default function ScriptPage() {
                 
                 <div className="flex items-center gap-1 text-muted-foreground">
                   <MessageSquare className="h-5 w-5" />
-                  <span className="text-sm">{Script.commentCount} comments</span>
+                  <span className="text-sm">{script.commentCount} comments</span>
                 </div>
                 
                 <button className="flex items-center gap-1.5 px-2 py-1 text-sm text-muted-foreground hover:bg-muted rounded transition-colors ml-auto">
@@ -121,9 +121,9 @@ export default function ScriptPage() {
                 </button>
                 
                 {isAuthenticated && (
-                  <button className={cn('flex items-center gap-1.5 px-2 py-1 text-sm text-muted-foreground hover:bg-muted rounded transition-colors', Script.isSaved && 'text-primary')}>
-                    <Bookmark className={cn('h-4 w-4', Script.isSaved && 'fill-current')} />
-                    {Script.isSaved ? 'Saved' : 'Save'}
+                  <button className={cn('flex items-center gap-1.5 px-2 py-1 text-sm text-muted-foreground hover:bg-muted rounded transition-colors', script.isSaved && 'text-primary')}>
+                    <Bookmark className={cn('h-4 w-4', script.isSaved && 'fill-current')} />
+                    {script.isSaved ? 'Saved' : 'Save'}
                   </button>
                 )}
                 
@@ -146,7 +146,7 @@ export default function ScriptPage() {
           
           {/* Comment sort */}
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold">Comments ({Script?.commentCount || 0})</h2>
+            <h2 className="font-semibold">Comments ({script?.commentCount || 0})</h2>
             <CommentSort value={commentSort} onChange={(v) => setCommentSort(v as CommentSortType)} />
           </div>
           

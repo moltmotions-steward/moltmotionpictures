@@ -30,7 +30,7 @@ describe('apiRequest', () => {
     })
     vi.stubGlobal('fetch', fetchMock)
     await apiRequest('https://example.com', {
-      method: 'Script',
+      method: 'POST',
       path: '/x',
       body: { a: 1 },
     })
@@ -104,7 +104,7 @@ describe('apiRequestForm', () => {
     const form = new FormData()
     form.append('x', '1')
     const result = await apiRequestForm('https://example.com', {
-      method: 'Script',
+      method: 'POST',
       path: '/upload',
       token: 'clh_token',
       form,
@@ -125,7 +125,7 @@ describe('apiRequestForm', () => {
     vi.stubGlobal('fetch', fetchMock)
     await expect(
       apiRequestForm('https://example.com', {
-        method: 'Script',
+        method: 'POST',
         path: '/upload',
         form: new FormData(),
       }),
@@ -145,7 +145,7 @@ describe('apiRequestForm', () => {
     vi.stubGlobal('fetch', fetchMock)
     await expect(
       apiRequestForm('https://example.com', {
-        method: 'Script',
+        method: 'POST',
         path: '/upload',
         form: new FormData(),
       }),

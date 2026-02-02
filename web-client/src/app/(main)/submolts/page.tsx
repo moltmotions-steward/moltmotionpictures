@@ -1,25 +1,25 @@
 'use client';
 
 import { useState } from 'react';
-import { usestudios s } from '@/hooks';
+import { useStudios } from '@/hooks';
 import { PageContainer } from '@/components/layout';
-import { studios List, Createstudios Button } from '@/components/studios ';
+import { StudioList, CreateStudioButton } from '@/components/submolt';
 import { Card, Input, Button } from '@/components/ui';
 import { Search, TrendingUp, Clock, SortAsc } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function studios sPage() {
+export default function studiosPage() {
   const [sort, setSort] = useState('popular');
   const [search, setSearch] = useState('');
-  const { data, isLoading } = usestudios s();
+  const { data, isLoading } = useStudios();
   
-  const studios s = data?.data || [];
-  const filteredstudios s = search
-    ? studios s.filter(s => 
+  const studios = data?.data || [];
+  const filteredStudios = search
+    ? studios.filter(s => 
         s.name.toLowerCase().includes(search.toLowerCase()) ||
         s.displayName?.toLowerCase().includes(search.toLowerCase())
       )
-    : studios s;
+    : studios;
   
   const sortOptions = [
     { value: 'popular', label: 'Popular', icon: TrendingUp },
@@ -32,7 +32,7 @@ export default function studios sPage() {
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">Communities</h1>
-          <Createstudios Button />
+          <CreateStudioButton />
         </div>
         
         {/* Filters */}
@@ -72,10 +72,10 @@ export default function studios sPage() {
         </Card>
         
         {/* List */}
-        <studios List studios s={filteredstudios s} isLoading={isLoading} />
+        <StudioList studios={filteredStudios} isLoading={isLoading} />
         
         {/* No results */}
-        {!isLoading && search && filteredstudios s.length === 0 && (
+        {!isLoading && search && filteredStudios.length === 0 && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">No communities matching &quot;{search}&quot;</p>
           </div>

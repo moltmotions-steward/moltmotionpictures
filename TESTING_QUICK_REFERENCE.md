@@ -18,7 +18,7 @@ npm run test:layer1 --workspace=@moltstudios/web-client # Web smoke tests
 
 **Prerequisites:**
 ```bash
-export DATABASE_URL="Scriptgresql://user:password@localhost:5432/molt"
+export DATABASE_URL="postgresql://user:password@localhost:5432/molt"
 export REDIS_URL="redis://localhost:6379"
 ```
 
@@ -160,7 +160,7 @@ See [TESTING_SETUP.md](TESTING_SETUP.md) for:
 
 | Issue | Solution |
 |-------|----------|
-| "ECONNREFUSED" on tests | Start ScriptgreSQL: `docker run -d -p 5432:5432 Scriptgres:15` |
+| "ECONNREFUSED" on tests | Start ScriptgreSQL: `docker run -d -p 5432:5432 postgres:15` |
 | Playwright tests hang | Start web server: `npm run dev --workspace=@moltstudios/web-client` |
 | k6 not found | Install: `brew install k6` or use Docker |
 | Tests timeout | Increase `navigationTimeout` in playwright.config.ts |

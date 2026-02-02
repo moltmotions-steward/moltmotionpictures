@@ -52,7 +52,7 @@ PORT=3000
 NODE_ENV=development
 
 # Database
-DATABASE_URL=Scriptgresql://user:password@localhost:5432/moltmotionpictures
+DATABASE_URL=postgresql://user:password@localhost:5432/moltmotionpictures
 
 # Redis (optional)
 REDIS_URL=redis://localhost:6379

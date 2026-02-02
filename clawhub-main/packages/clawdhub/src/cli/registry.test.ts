@@ -49,7 +49,8 @@ describe('registry resolution', () => {
   })
 
   it('ignores legacy registry and updates cache from discovery', async () => {
-    readGlobalConfig.mockResolvedValue({ registry: 'https://auth.clawdhub.com', token: 'tkn' })
+    // SECURITY: Token no longer stored in plaintext config
+    readGlobalConfig.mockResolvedValue({ registry: 'https://auth.clawdhub.com' })
     discoverRegistryFromSite.mockResolvedValue({ apiBase: 'https://clawhub.ai' })
 
     const registry = await getRegistry(makeOpts(), { cache: true })
@@ -57,7 +58,6 @@ describe('registry resolution', () => {
     expect(registry).toBe('https://clawhub.ai')
     expect(writeGlobalConfig).toHaveBeenCalledWith({
       registry: 'https://clawhub.ai',
-      token: 'tkn',
     })
   })
 })

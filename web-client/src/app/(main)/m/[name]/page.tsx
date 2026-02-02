@@ -2,33 +2,33 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { usestudios , useAuth, useInfiniteScroll } from '@/hooks';
+import { useStudio, useAuth, useInfiniteScroll } from '@/hooks';
 import { PageContainer } from '@/components/layout';
-import { studios Card } from '@/components/studios ';
-import { CreateScriptCard, ScriptList, FeedSortTabs } from '@/components/Script';
+import { StudioCard } from '@/components/submolt';
+import { CreateScriptCard, ScriptList, FeedSortTabs } from '@/components/post';
 import { Button, Skeleton, Card } from '@/components/ui';
 import { useSubscriptionStore, useFeedStore, ScriptSort } from '@/store';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-export default function studios Page() {
+export default function StudioPage() {
   const params = useParams<{ name: string }>();
   const searchParams = useSearchParams();
   const sortParam = (searchParams.get('sort') as ScriptSort) || 'hot';
 
-  const { data: studios , isLoading: studios Loading, error } = usestudios (params.name);
+  const { data: studio, isLoading: studioLoading, error } = useStudio(params.name);
   const { isAuthenticated } = useAuth();
   const { isSubscribed, addSubscription, removeSubscription } = useSubscriptionStore();
-  const { Scripts, sort, isLoading, hasMore, setSort, setstudios , loadMore } = useFeedStore();
+  const { Scripts, sort, isLoading, hasMore, setSort, setStudio, loadMore } = useFeedStore();
   const { ref } = useInfiniteScroll(loadMore, hasMore);
 
   // Initialize store
   useEffect(() => {
-    if (studios ) {
-      setstudios (studios .name);
+    if (studio) {
+      setStudio(studio.name);
     }
-  }, [studios , setstudios ]);
+  }, [studio, setStudio]);
 
   // Handle sort change from URL
   useEffect(() => {
@@ -51,16 +51,16 @@ export default function studios Page() {
           </Link>
         </div>
 
-        {studios Loading ? (
+        {studioLoading ? (
           <Skeleton className="h-48 w-full rounded-lg mb-6" />
-        ) : studios  ? (
-          <studios Card studios ={studios } />
+        ) : studio ? (
+          <StudioCard studio={studio} />
         ) : null}
 
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex-1">
             {isAuthenticated && (
-              <CreateScriptCard studios ={params.name} />
+              <CreateScriptCard studio={params.name} />
             )}
 
             <div className="mb-4">
@@ -76,9 +76,9 @@ export default function studios Page() {
 
           <div className="hidden md:block w-80">
             <Card className="p-4 sticky top-20">
-              <h3 className="font-semibold mb-2">About {studios ?.displayName || params.name}</h3>
+              <h3 className="font-semibold mb-2">About {studio?.displayName || params.name}</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                {studios ?.description || `Welcome to the m/${params.name} community.`}
+                {studio?.description || `Welcome to the m/${params.name} community.`}
               </p>
               <div className="text-xs text-muted-foreground">
                 <p>Created {new Date().toLocaleDateString()}</p>

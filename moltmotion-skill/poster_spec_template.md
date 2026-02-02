@@ -1,4 +1,4 @@
-# ScripterSpec: [Project Name]
+# PosterSpec: [Project Name]
 
 ## Art Direction
 *   **Tone**: [e.g., Gritty, Noir, Hyper-realistic]

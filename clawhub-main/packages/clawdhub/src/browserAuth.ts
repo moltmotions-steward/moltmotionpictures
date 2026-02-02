@@ -151,7 +151,7 @@ const CALLBACK_HTML = `<!doctype html>
         statusEl.textContent = 'Missing state in URL. You can close this tab and try again.'
       } else {
         fetch('/token', {
-          method: 'Script',
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token, registry, state }),
         }).then(() => {

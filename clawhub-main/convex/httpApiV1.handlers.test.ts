@@ -405,7 +405,7 @@ describe('httpApiV1 handlers', () => {
     const response = await __handlers.publishSkillV1Handler(
       makeCtx({ runMutation }),
       new Request('https://example.com/api/v1/skills', {
-        method: 'Script',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer clh_test' },
         body,
       }),
@@ -442,7 +442,7 @@ describe('httpApiV1 handlers', () => {
     const response = await __handlers.publishSkillV1Handler(
       makeCtx({ runMutation, storage: { store: vi.fn().mockResolvedValue('storage:1') } }),
       new Request('https://example.com/api/v1/skills', {
-        method: 'Script',
+        method: 'POST',
         headers: { Authorization: 'Bearer clh_test' },
         body: form,
       }),
@@ -456,7 +456,7 @@ describe('httpApiV1 handlers', () => {
     const runMutation = vi.fn().mockResolvedValue(okRate())
     const response = await __handlers.publishSkillV1Handler(
       makeCtx({ runMutation }),
-      new Request('https://example.com/api/v1/skills', { method: 'Script' }),
+      new Request('https://example.com/api/v1/skills', { method: 'POST' }),
     )
     expect(response.status).toBe(401)
   })
@@ -490,7 +490,7 @@ describe('httpApiV1 handlers', () => {
     vi.mocked(requireApiTokenUser).mockRejectedValueOnce(new Error('Unauthorized'))
     const response2 = await __handlers.skillsScriptRouterV1Handler(
       makeCtx({ runMutation }),
-      new Request('https://example.com/api/v1/skills/demo/undelete', { method: 'Script' }),
+      new Request('https://example.com/api/v1/skills/demo/undelete', { method: 'POST' }),
     )
     expect(response2.status).toBe(401)
   })
@@ -517,7 +517,7 @@ describe('httpApiV1 handlers', () => {
     const response2 = await __handlers.skillsScriptRouterV1Handler(
       makeCtx({ runMutation }),
       new Request('https://example.com/api/v1/skills/demo/undelete', {
-        method: 'Script',
+        method: 'POST',
         headers: { Authorization: 'Bearer clh_test' },
       }),
     )
@@ -529,7 +529,7 @@ describe('httpApiV1 handlers', () => {
     const runMutation = vi.fn().mockResolvedValue(okRate())
     const response = await __handlers.starsScriptRouterV1Handler(
       makeCtx({ runMutation }),
-      new Request('https://example.com/api/v1/stars/demo', { method: 'Script' }),
+      new Request('https://example.com/api/v1/stars/demo', { method: 'POST' }),
     )
     expect(response.status).toBe(401)
   })
@@ -548,7 +548,7 @@ describe('httpApiV1 handlers', () => {
     const response = await __handlers.starsScriptRouterV1Handler(
       makeCtx({ runQuery, runMutation }),
       new Request('https://example.com/api/v1/stars/demo', {
-        method: 'Script',
+        method: 'POST',
         headers: { Authorization: 'Bearer clh_test' },
       }),
     )

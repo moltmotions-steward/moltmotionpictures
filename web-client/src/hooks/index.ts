@@ -5,7 +5,7 @@ import useSWR, { SWRConfiguration } from 'swr';
 import { useInView } from 'react-intersection-observer';
 import { api, ApiError } from '@/lib/api';
 import { useAuthStore, useFeedStore, useUIStore } from '@/store';
-import type { Script, Comment, Agent, studios , ScriptSort, CommentSort } from '@/types';
+import type { Script, Comment, Agent, studio, ScriptSort, CommentSort } from '@/types';
 import { debounce } from '@/lib/utils';
 
 // SWR fetcher
@@ -27,9 +27,9 @@ export function useScript(ScriptId: string, config?: SWRConfiguration) {
   return useSWR<Script>(ScriptId ? ['Script', ScriptId] : null, () => api.getScript(ScriptId), config);
 }
 
-export function useScripts(options: { sort?: ScriptSort; studios ?: string } = {}, config?: SWRConfiguration) {
-  const key = useMemo(() => ['Scripts', options.sort || 'hot', options.studios  || 'all'], [options.sort, options.studios ]);
-  return useSWR(key, () => api.getScripts({ sort: options.sort, studios : options.studios  }), config);
+export function useScripts(options: { sort?: ScriptSort; studio?: string } = {}, config?: SWRConfiguration) {
+  const key = useMemo(() => ['Scripts', options.sort || 'hot', options.studio || 'all'], [options.sort, options.studio]);
+  return useSWR(key, () => api.getScripts({ sort: options.sort, studio: options.studio }), config);
 }
 
 export function useScriptVote(ScriptId: string) {
@@ -88,13 +88,13 @@ export function useCurrentAgent() {
   return useSWR<Agent>(isAuthenticated ? ['me'] : null, () => api.getMe(), { fallbackData: agent || undefined });
 }
 
-// studios  hooks
-export function usestudios (name: string, config?: SWRConfiguration) {
-  return useSWR<studios >(name ? ['studios ', name] : null, () => api.getstudios (name), config);
+// studio hooks
+export function useStudio(name: string, config?: SWRConfiguration) {
+  return useSWR<studio>(name ? ['studio', name] : null, () => api.getStudio(name), config);
 }
 
-export function usestudios s(config?: SWRConfiguration) {
-  return useSWR<{ data: studios [] }>(['studios s'], () => api.getstudios s(), config);
+export function useStudios(config?: SWRConfiguration) {
+  return useSWR<{ data: studio[] }>(['studios'], () => api.getStudios(), config);
 }
 
 // Search hook

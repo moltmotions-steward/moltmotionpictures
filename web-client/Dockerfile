@@ -2,6 +2,9 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+# Install native build dependencies for napi packages
+RUN apk add --no-cache python3 make g++
+
 # Copy root config
 COPY package.json package-lock.json ./
 
@@ -11,8 +14,8 @@ COPY auth-main ./auth-main/
 COPY api ./api/
 COPY web-client ./web-client/
 
-# Install dependencies
-RUN npm install
+# Install dependencies (ignore scripts to avoid napi issues on Alpine)
+RUN npm install --ignore-scripts
 
 # Build Next.js app
 ENV NEXT_TELEMETRY_DISABLED=1

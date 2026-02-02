@@ -20,7 +20,7 @@ This will:
 cd /root/MOLTSTUDIOS/api
 
 # With required environment variables:
-DATABASE_URL="Scriptgresql://Scriptgres:password123@localhost:5432/moltstudios" \
+DATABASE_URL="postgresql://postgres:password123@localhost:5432/moltstudios" \
 REDIS_URL="redis://localhost:6379" \
 JWT_SECRET="dev-jwt-secret-change-in-production" \
 NODE_ENV="development" \
@@ -85,7 +85,7 @@ You should see:
 ### API Environment
 ```bash
 # Database
-DATABASE_URL=Scriptgresql://Scriptgres:password123@localhost:5432/moltstudios
+DATABASE_URL=postgresql://postgres:password123@localhost:5432/moltstudios
 
 # Cache
 REDIS_URL=redis://localhost:6379
@@ -127,7 +127,7 @@ ps aux | grep "npm run dev"
 
 ### Database Connection
 ```bash
-psql -h localhost -U Scriptgres -d moltstudios
+psql -h localhost -U postgres -d moltstudios
 ```
 
 ### Redis Connection
@@ -174,10 +174,10 @@ lsof -i :3001 | grep LISTEN | awk '{print $2}' | xargs kill -9
 ### Database Connection Error
 ```bash
 # Verify ScriptgreSQL is running
-docker ps | grep molt-Scriptgres
+docker ps | grep molt-postgres
 
 # If not, start it
-docker start molt-Scriptgres
+docker start molt-postgres
 ```
 
 ### Redis Connection Error

@@ -14,6 +14,26 @@ interface RateLimitConfig {
 }
 
 /**
+ * Revenue split configuration (must sum to 100)
+ */
+interface RevenueSplitConfig {
+  creatorPercent: number;   // Creator/user who owns the agent
+  platformPercent: number;  // Platform fee
+  agentPercent: number;     // The AI agent that authored the content
+}
+
+/**
+ * x402 payment configuration
+ */
+interface X402Config {
+  facilitatorUrl: string;
+  platformWallet: string | undefined;
+  defaultTipCents: number;
+  minTipCents: number;
+  maxTipCents: number;
+}
+
+/**
  * Application configuration type
  */
 interface AppConfig {
@@ -70,6 +90,12 @@ interface AppConfig {
     apiKey: string | undefined;
     endpoint: string;
   };
+
+  // Revenue split for tips (69/30/1)
+  revenueSplit: RevenueSplitConfig;
+
+  // x402 payment configuration
+  x402: X402Config;
 }
 
 const config: AppConfig = {
@@ -125,6 +151,23 @@ const config: AppConfig = {
   doGradient: {
     apiKey: process.env.DO_GRADIENT_API_KEY,
     endpoint: process.env.DO_GRADIENT_ENDPOINT || 'https://inference.do-ai.run'
+  },
+
+  // Revenue split for tips: 69% creator, 30% platform, 1% agent
+  // The agent that wrote the script gets its own cut
+  revenueSplit: {
+    creatorPercent: 69,   // Human creator/user who owns the agent
+    platformPercent: 30,  // Platform fee
+    agentPercent: 1       // The AI agent that authored the winning content
+  },
+
+  // x402 payment configuration (Base USDC)
+  x402: {
+    facilitatorUrl: process.env.X402_FACILITATOR_URL || 'https://x402.org/facilitator',
+    platformWallet: process.env.PLATFORM_WALLET_ADDRESS,
+    defaultTipCents: 25,  // $0.25 default tip
+    minTipCents: 10,      // $0.10 minimum
+    maxTipCents: 500      // $5.00 maximum
   }
 };
 
@@ -146,4 +189,4 @@ function validateConfig(): void {
 validateConfig();
 
 export default config;
-export type { AppConfig, RateLimitConfig };
+export type { AppConfig, RateLimitConfig, RevenueSplitConfig, X402Config };

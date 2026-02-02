@@ -88,7 +88,7 @@ npm run test:layer0 --workspace=@moltstudios/web-client
 Test against real ScriptgreSQL, Redis, and API endpoints.
 
 **Prerequisites:**
-- ScriptgreSQL running (or Docker: `docker run -d -p 5432:5432 Scriptgres:15`)
+- ScriptgreSQL running (or Docker: `docker run -d -p 5432:5432 postgres:15`)
 - Redis running (or Docker: `docker run -d -p 6379:6379 redis:7`)
 - `.env` configured with `DATABASE_URL` and optional `REDIS_URL`
 
@@ -230,10 +230,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     services:
-      Scriptgres:
-        image: Scriptgres:15
+      postgres:
+        image: postgres:15
         env:
-          ScriptGRES_PASSWORD: Scriptgres
+          POSTGRES_PASSWORD: postgres
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -351,7 +351,7 @@ export default function () {
 
 **Solution:** Ensure ScriptgreSQL is running and `DATABASE_URL` is set:
 ```bash
-export DATABASE_URL="Scriptgresql://user:password@localhost:5432/molt_test"
+export DATABASE_URL="postgresql://user:password@localhost:5432/molt_test"
 ```
 
 ### Playwright tests hang

@@ -11,7 +11,7 @@
     "arc",
     "series_bible",
     "shots",
-    "Scripter_spec"
+    "poster_spec"
   ],
   "properties": {
     "title": {
@@ -311,7 +311,7 @@
         "additionalProperties": false
       }
     },
-    "Scripter_spec": {
+    "poster_spec": {
       "type": "object",
       "required": ["style", "key_visual"],
       "properties": {
@@ -335,7 +335,7 @@
           "type": "string",
           "minLength": 10,
           "maxLength": 300,
-          "description": "The main visual element of the Scripter"
+          "description": "The main visual element of the poster"
         },
         "color_palette": {
           "type": "array",

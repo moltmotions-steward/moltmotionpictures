@@ -30,7 +30,8 @@ export async function getRegistry(opts: GlobalOpts, params?: { cache?: boolean }
     !cached ||
     isLegacyRegistry(cached) ||
     (cached === DEFAULT_REGISTRY && registry !== DEFAULT_REGISTRY)
-  if (shouldUpdate) await writeGlobalConfig({ registry, token: cfg?.token })
+  // SECURITY: Token no longer stored in plaintext config
+  if (shouldUpdate) await writeGlobalConfig({ registry })
   return registry
 }
 

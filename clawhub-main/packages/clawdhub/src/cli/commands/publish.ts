@@ -1,9 +1,9 @@
 import { stat } from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
 import semver from 'semver'
-import { readGlobalConfig } from '../../config.js'
 import { apiRequestForm } from '../../http.js'
 import { ApiRoutes, ApiV1PublishResponseSchema } from '../../schema/index.js'
+import { getToken } from '../../secureCredentials.js'
 import { listTextFiles } from '../../skills.js'
 import { getRegistry } from '../registry.js'
 import { sanitizeSlug, titleCase } from '../slug.js'
@@ -27,8 +27,8 @@ export async function cmdPublish(
   const folderStat = await stat(folder).catch(() => null)
   if (!folderStat || !folderStat.isDirectory()) fail('Path must be a folder')
 
-  const cfg = await readGlobalConfig()
-  const token = cfg?.token
+  // SECURITY: Read token from secure storage (not plaintext config)
+  const token = await getToken()
   if (!token) fail('Not logged in. Run: clawhub login')
   const registry = await getRegistry(opts, { cache: true })
 
@@ -86,7 +86,7 @@ export async function cmdPublish(
     spinner.text = `Publishing ${slug}@${version}`
     const result = await apiRequestForm(
       registry,
-      { method: 'Script', path: ApiRoutes.skills, token, form },
+      { method: 'POST', path: ApiRoutes.skills, token, form },
       ApiV1PublishResponseSchema,
     )
 

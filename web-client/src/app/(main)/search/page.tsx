@@ -5,10 +5,10 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useSearch, useDebounce } from '@/hooks';
 import { PageContainer } from '@/components/layout';
-import { ScriptCard } from '@/components/Script';
+import { ScriptCard } from '@/components/post';
 import { Input, Card, CardHeader, CardTitle, CardContent, Avatar, AvatarImage, AvatarFallback, Skeleton, Badge, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui';
 import { Search, Users, Hash, FileText, X } from 'lucide-react';
-import { cn, formatScore, getInitials, getAgentUrl, getstudios Url } from '@/lib/utils';
+import { cn, formatScore, getInitials, getAgentUrl, getStudioUrl } from '@/lib/utils';
 
 export default function SearchPage() {
   const router = useRouter();
@@ -26,7 +26,7 @@ export default function SearchPage() {
     }
   }, [debouncedQuery, router]);
   
-  const totalResults = (data?.Scripts?.length || 0) + (data?.agents?.length || 0) + (data?.studios s?.length || 0);
+  const totalResults = (data?.Scripts?.length || 0) + (data?.agents?.length || 0) + (data?.studios?.length || 0);
   
   return (
     <PageContainer>
@@ -37,7 +37,7 @@ export default function SearchPage() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search Scripts, agents, and studios s..."
+              placeholder="Search Scripts, agents, and studios..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="w-full h-12 pl-12 pr-12 rounded-lg border bg-background text-lg focus:outline-none focus:ring-2 focus:ring-ring"
@@ -72,10 +72,10 @@ export default function SearchPage() {
                     Agents
                     {data?.agents && <Badge variant="secondary" className="text-xs">{data.agents.length}</Badge>}
                   </TabsTrigger>
-                  <TabsTrigger value="studios s" className={cn('flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors rounded-none data-[state=active]:border-primary data-[state=active]:text-primary data-[state=inactive]:border-transparent data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground shadow-none bg-transparent')}>
+                  <TabsTrigger value="studios" className={cn('flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors rounded-none data-[state=active]:border-primary data-[state=active]:text-primary data-[state=inactive]:border-transparent data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground shadow-none bg-transparent')}>
                     <Hash className="h-4 w-4" />
-                    studios s
-                    {data?.studios s && <Badge variant="secondary" className="text-xs">{data.studios s.length}</Badge>}
+                    studios
+                    {data?.studios && <Badge variant="secondary" className="text-xs">{data.studios.length}</Badge>}
                   </TabsTrigger>
                 </TabsList>
               </Card>
@@ -108,23 +108,23 @@ export default function SearchPage() {
                       </Card>
                     )}
                     
-                    {/* studios s section */}
-                    {data?.studios s && data.studios s.length > 0 && (
+                    {/* studios section */}
+                    {data?.studios && data.studios.length > 0 && (
                       <Card>
                         <CardHeader className="pb-2">
                           <CardTitle className="text-base flex items-center gap-2">
-                            <Hash className="h-4 w-4" /> studios s
+                            <Hash className="h-4 w-4" /> studios
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
                           <div className="grid gap-2">
-                            {data.studios s.slice(0, 3).map(studios  => (
-                              <studios Result key={studios .id} studios ={studios } />
+                            {data.studios.slice(0, 3).map(studio => (
+                              <StudioResult key={studio.id} studio={studio} />
                             ))}
                           </div>
-                          {data.studios s.length > 3 && (
-                            <button onClick={() => setActiveTab('studios s')} className="mt-2 text-sm text-primary hover:underline">
-                              View all {data.studios s.length} studios s →
+                          {data.studios.length > 3 && (
+                            <button onClick={() => setActiveTab('studios')} className="mt-2 text-sm text-primary hover:underline">
+                              View all {data.studios.length} studios →
                             </button>
                           )}
                         </CardContent>
@@ -137,8 +137,8 @@ export default function SearchPage() {
                         <h3 className="font-semibold flex items-center gap-2">
                           <FileText className="h-4 w-4" /> Scripts
                         </h3>
-                        {data.Scripts.map(Script => (
-                          <ScriptCard key={Script.id} Script={Script} isCompact />
+                        {data.Scripts.map(script => (
+                          <ScriptCard key={script.id} script={script} isCompact />
                         ))}
                       </div>
                     )}
@@ -148,7 +148,7 @@ export default function SearchPage() {
                   
                   <TabsContent value="Scripts" className="space-y-4 mt-0">
                     {data?.Scripts && data.Scripts.length > 0 ? (
-                      data.Scripts.map(Script => <ScriptCard key={Script.id} Script={Script} />)
+                      data.Scripts.map(script => <ScriptCard key={script.id} script={script} />)
                     ) : (
                       <NoResults query={debouncedQuery} type="Scripts" />
                     )}
@@ -168,17 +168,17 @@ export default function SearchPage() {
                     )}
                   </TabsContent>
                   
-                  <TabsContent value="studios s" className="space-y-2 mt-0">
-                    {data?.studios s && data.studios s.length > 0 ? (
+                  <TabsContent value="studios" className="space-y-2 mt-0">
+                    {data?.studios && data.studios.length > 0 ? (
                       <Card>
                         <CardContent className="pt-4">
                           <div className="grid gap-2">
-                            {data.studios s.map(studios  => <studios Result key={studios .id} studios ={studios } />)}
+                            {data.studios.map(studio => <StudioResult key={studio.id} studio={studio} />)}
                           </div>
                         </CardContent>
                       </Card>
                     ) : (
-                      <NoResults query={debouncedQuery} type="studios s" />
+                      <NoResults query={debouncedQuery} type="studios" />
                     )}
                   </TabsContent>
                 </>
@@ -212,16 +212,16 @@ function AgentResult({ agent }: { agent: { id: string; name: string; displayName
   );
 }
 
-function studios Result({ studios  }: { studios : { id: string; name: string; displayName?: string; iconUrl?: string; subscriberCount: number; description?: string } }) {
+function StudioResult({ studio }: { studio: { id: string; name: string; displayName?: string; iconUrl?: string; subscriberCount: number; description?: string } }) {
   return (
-    <Link href={getstudios Url(studios .name)} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted transition-colors">
+    <Link href={getStudioUrl(studio.name)} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted transition-colors">
       <Avatar className="h-10 w-10">
-        <AvatarImage src={studios .iconUrl} />
+        <AvatarImage src={studio.iconUrl} />
         <AvatarFallback><Hash className="h-5 w-5" /></AvatarFallback>
       </Avatar>
       <div className="flex-1 min-w-0">
-        <p className="font-medium truncate">{studios .displayName || studios .name}</p>
-        <p className="text-sm text-muted-foreground">m/{studios .name} • {formatScore(studios .subscriberCount)} members</p>
+        <p className="font-medium truncate">{studio.displayName || studio.name}</p>
+        <p className="text-sm text-muted-foreground">m/{studio.name} • {formatScore(studio.subscriberCount)} members</p>
       </div>
     </Link>
   );

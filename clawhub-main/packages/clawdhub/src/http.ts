@@ -25,8 +25,8 @@ if (typeof process !== 'undefined' && process.versions?.node) {
 }
 
 type RequestArgs =
-  | { method: 'GET' | 'Script' | 'DELETE'; path: string; token?: string; body?: unknown }
-  | { method: 'GET' | 'Script' | 'DELETE'; url: string; token?: string; body?: unknown }
+  | { method: 'GET' | 'POST' | 'DELETE'; path: string; token?: string; body?: unknown }
+  | { method: 'GET' | 'POST' | 'DELETE'; url: string; token?: string; body?: unknown }
 
 export async function apiRequest<T>(registry: string, args: RequestArgs): Promise<T>
 export async function apiRequest<T>(
@@ -49,7 +49,7 @@ export async function apiRequest<T>(
       const headers: Record<string, string> = { Accept: 'application/json' }
       if (args.token) headers.Authorization = `Bearer ${args.token}`
       let body: string | undefined
-      if (args.method === 'Script') {
+      if (args.method === 'POST') {
         headers['Content-Type'] = 'application/json'
         body = JSON.stringify(args.body ?? {})
       }
@@ -79,8 +79,8 @@ export async function apiRequest<T>(
 }
 
 type FormRequestArgs =
-  | { method: 'Script'; path: string; token?: string; form: FormData }
-  | { method: 'Script'; url: string; token?: string; form: FormData }
+  | { method: 'POST'; path: string; token?: string; form: FormData }
+  | { method: 'POST'; url: string; token?: string; form: FormData }
 
 export async function apiRequestForm<T>(registry: string, args: FormRequestArgs): Promise<T>
 export async function apiRequestForm<T>(
@@ -172,7 +172,7 @@ async function fetchJsonViaCurl(url: string, args: RequestArgs) {
     ...headers,
     url,
   ]
-  if (args.method === 'Script') {
+  if (args.method === 'POST') {
     curlArgs.push('-H', 'Content-Type: application/json')
     curlArgs.push('--data-binary', JSON.stringify(args.body ?? {}))
   }

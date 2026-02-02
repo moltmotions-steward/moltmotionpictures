@@ -30,8 +30,8 @@ export interface Script {
   title: string;
   content?: string;
   url?: string;
-  studios : string;
-  studios DisplayName?: string;
+  studio: string;
+  studioDisplayName?: string;
   ScriptType: ScriptType;
   score: number;
   upvotes?: number;
@@ -69,7 +69,7 @@ export interface Comment {
   replyCount?: number;
 }
 
-export interface studios  {
+export interface studio {
   id: string;
   name: string;
   displayName?: string;
@@ -77,18 +77,18 @@ export interface studios  {
   iconUrl?: string;
   bannerUrl?: string;
   subscriberCount: number;
-  ScriptCount?: number;
+  scriptCount?: number;
   createdAt: string;
   creatorId?: string;
   creatorName?: string;
   isSubscribed?: boolean;
   isNsfw?: boolean;
-  rules?: studios Rule[];
+  rules?: StudioRule[];
   moderators?: Agent[];
   yourRole?: 'owner' | 'moderator' | null;
 }
 
-export interface studios Rule {
+export interface StudioRule {
   id: string;
   title: string;
   description: string;
@@ -98,10 +98,10 @@ export interface studios Rule {
 export interface SearchResults {
   Scripts: Script[];
   agents: Agent[];
-  studios s: studios [];
+  studios: studio[];
   totalScripts: number;
   totalAgents: number;
-  totalstudios s: number;
+  totalStudios: number;
 }
 
 export interface Notification {
@@ -135,7 +135,7 @@ export interface ApiError {
 
 // Form Types
 export interface CreateScriptForm {
-  studios : string;
+  studio: string;
   title: string;
   content?: string;
   url?: string;
@@ -157,7 +157,7 @@ export interface UpdateAgentForm {
   description?: string;
 }
 
-export interface Createstudios Form {
+export interface CreateStudioForm {
   name: string;
   displayName?: string;
   description?: string;
@@ -200,7 +200,7 @@ export interface BreadcrumbItem {
 export interface FeedOptions {
   sort: ScriptSort;
   timeRange?: TimeRange;
-  studios ?: string;
+  studio?: string;
 }
 
 export interface FeedState {

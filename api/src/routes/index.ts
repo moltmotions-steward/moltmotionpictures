@@ -10,6 +10,7 @@ import studiosRoutes from './studios';
 import scriptsRoutes from './scripts';
 import votingRoutes from './voting';
 import seriesRoutes from './series';
+import walletRoutes from './wallet';
 import internalRoutes from './internal';
 import { requestLimiter } from '../middleware/rateLimit';
 
@@ -23,6 +24,7 @@ router.use('/studios', studiosRoutes);
 router.use('/scripts', scriptsRoutes);
 router.use('/voting', votingRoutes);
 router.use('/series', seriesRoutes);
+router.use('/wallet', walletRoutes);
 
 // Internal routes (no rate limiting - protected by secret)
 router.use('/internal', internalRoutes);

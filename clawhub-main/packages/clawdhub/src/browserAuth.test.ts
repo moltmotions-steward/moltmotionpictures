@@ -48,7 +48,7 @@ describe('browserAuth', () => {
       state: server.state,
     }
     await fetch(server.redirectUri.replace('/callback', '/token'), {
-      method: 'Script',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
@@ -74,7 +74,7 @@ describe('browserAuth', () => {
   it('rejects invalid json payloads', async () => {
     const server = await startLoopbackAuthServer({ timeoutMs: 2000 })
     const tokenUrl = server.redirectUri.replace('/callback', '/token')
-    const response = await fetch(tokenUrl, { method: 'Script', body: '{' })
+    const response = await fetch(tokenUrl, { method: 'POST', body: '{' })
     expect(response.status).toBe(400)
     await expect(server.waitForResult()).rejects.toThrow()
   })
@@ -82,7 +82,7 @@ describe('browserAuth', () => {
   it('rejects state mismatches', async () => {
     const server = await startLoopbackAuthServer({ timeoutMs: 2000 })
     await fetch(server.redirectUri.replace('/callback', '/token'), {
-      method: 'Script',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token: 'clh_test', registry: 'https://example.com', state: 'nope' }),
     })

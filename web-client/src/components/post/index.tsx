@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { cn, formatScore, formatRelativeTime, extractDomain, truncate, getInitials, getScriptUrl, getstudios Url, getAgentUrl } from '@/lib/utils';
+import { cn, formatScore, formatRelativeTime, extractDomain, truncate, getInitials, getScriptUrl, getStudioUrl, getAgentUrl } from '@/lib/utils';
 import { useScriptVote, useAuth } from '@/hooks';
 import { useUIStore } from '@/store';
 import { Button, Avatar, AvatarImage, AvatarFallback, Card, Skeleton, Badge } from '@/components/ui';
@@ -10,15 +10,15 @@ import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, MoreHorizont
 import type { Script, VoteDirection } from '@/types';
 
 interface ScriptCardProps {
-  Script: Script;
+  script: Script;
   isCompact?: boolean;
-  showstudios ?: boolean;
+  showStudio?: boolean;
   onVote?: (direction: 'up' | 'down') => void;
 }
 
-export function ScriptCard({ Script, isCompact = false, showstudios  = true, onVote }: ScriptCardProps) {
+export function ScriptCard({ script, isCompact = false, showStudio = true, onVote }: ScriptCardProps) {
   const { isAuthenticated } = useAuth();
-  const { vote, isVoting } = useScriptVote(Script.id);
+  const { vote, isVoting } = useScriptVote(script.id);
   const [showMenu, setShowMenu] = React.useState(false);
   
   const handleVote = async (direction: 'up' | 'down') => {
@@ -27,9 +27,9 @@ export function ScriptCard({ Script, isCompact = false, showstudios  = true, onV
     onVote?.(direction);
   };
   
-  const domain = Script.url ? extractDomain(Script.url) : null;
-  const isUpvoted = Script.userVote === 'up';
-  const isDownvoted = Script.userVote === 'down';
+  const domain = script?.url ? extractDomain(script?.url) : null;
+  const isUpvoted = script?.userVote === 'up';
+  const isDownvoted = script?.userVote === 'down';
   
   return (
     <Card className={cn('Script-card group', isCompact ? 'p-3' : 'p-4')}>
@@ -44,8 +44,8 @@ export function ScriptCard({ Script, isCompact = false, showstudios  = true, onV
           >
             <ArrowBigUp className={cn('h-6 w-6', isUpvoted && 'fill-current')} />
           </button>
-          <span className={cn('text-sm font-medium karma', Script.score > 0 && 'karma-positive', Script.score < 0 && 'karma-negative')}>
-            {formatScore(Script.score)}
+          <span className={cn('text-sm font-medium karma', script.score > 0 && 'karma-positive', script.score < 0 && 'karma-negative')}>
+            {formatScore(script.score)}
           </span>
           <button
             onClick={() => handleVote('down')}
@@ -61,30 +61,30 @@ export function ScriptCard({ Script, isCompact = false, showstudios  = true, onV
         <div className="flex-1 min-w-0">
           {/* Meta */}
           <div className="Script-meta mb-1 flex-wrap">
-            {showstudios  && (
+            {showStudio && (
               <>
-                <Link href={getstudios Url(Script.studios )} className="studios -badge">
-                  m/{Script.studios }
+                <Link href={getStudioUrl(script.studio)} className="studios -badge">
+                  m/{script.studio}
                 </Link>
                 <span>•</span>
               </>
             )}
-            <Link href={getAgentUrl(Script.authorName)} className="agent-badge">
+            <Link href={getAgentUrl(script.authorName)} className="agent-badge">
               <Avatar className="h-5 w-5">
-                <AvatarImage src={Script.authorAvatarUrl} />
-                <AvatarFallback className="text-[10px]">{getInitials(Script.authorName)}</AvatarFallback>
+                <AvatarImage src={script.authorAvatarUrl} />
+                <AvatarFallback className="text-[10px]">{getInitials(script.authorName)}</AvatarFallback>
               </Avatar>
-              <span>u/{Script.authorName}</span>
+              <span>u/{script.authorName}</span>
             </Link>
             <span>•</span>
-            <span title={Script.createdAt}>{formatRelativeTime(Script.createdAt)}</span>
-            {Script.editedAt && <span className="text-xs">(edited)</span>}
+            <span title={script.createdAt}>{formatRelativeTime(script.createdAt)}</span>
+            {script.editedAt && <span className="text-xs">(edited)</span>}
           </div>
           
           {/* Title */}
-          <Link href={getScriptUrl(Script.id, Script.studios )}>
+          <Link href={getScriptUrl(script.id, script.studio)}>
             <h3 className={cn('Script-title', isCompact ? 'text-base' : 'text-lg')}>
-              {Script.title}
+              {script.title}
               {domain && (
                 <span className="ml-2 text-xs text-muted-foreground font-normal inline-flex items-center gap-1">
                   <ExternalLink className="h-3 w-3" />
@@ -95,27 +95,27 @@ export function ScriptCard({ Script, isCompact = false, showstudios  = true, onV
           </Link>
           
           {/* Content preview */}
-          {!isCompact && Script.content && (
+          {!isCompact && script.content && (
             <p className="mt-2 text-sm text-muted-foreground line-clamp-3">
-              {truncate(Script.content, 300)}
+              {truncate(script.content, 300)}
             </p>
           )}
           
           {/* Link preview */}
-          {!isCompact && Script.url && (
-            <a href={Script.url} target="_blank" rel="noopener noreferrer" className="mt-2 block p-3 rounded-md border bg-muted/50 hover:bg-muted transition-colors">
+          {!isCompact && script?.url && (
+            <a href={script?.url} target="_blank" rel="noopener noreferrer" className="mt-2 block p-3 rounded-md border bg-muted/50 hover:bg-muted transition-colors">
               <div className="flex items-center gap-2 text-sm text-primary">
                 <ExternalLink className="h-4 w-4" />
-                {truncate(Script.url, 60)}
+                {truncate(script?.url, 60)}
               </div>
             </a>
           )}
           
           {/* Actions */}
           <div className="flex items-center gap-1 mt-3">
-            <Link href={getScriptUrl(Script.id, Script.studios )} className="flex items-center gap-1.5 px-2 py-1 text-sm text-muted-foreground hover:bg-muted rounded transition-colors">
+            <Link href={getScriptUrl(script.id, script.studio)} className="flex items-center gap-1.5 px-2 py-1 text-sm text-muted-foreground hover:bg-muted rounded transition-colors">
               <MessageSquare className="h-4 w-4" />
-              <span>{Script.commentCount} comments</span>
+              <span>{script.commentCount} comments</span>
             </Link>
             
             <button className="flex items-center gap-1.5 px-2 py-1 text-sm text-muted-foreground hover:bg-muted rounded transition-colors">
@@ -124,9 +124,9 @@ export function ScriptCard({ Script, isCompact = false, showstudios  = true, onV
             </button>
             
             {isAuthenticated && (
-              <button className={cn('flex items-center gap-1.5 px-2 py-1 text-sm text-muted-foreground hover:bg-muted rounded transition-colors', Script.isSaved && 'text-primary')}>
-                <Bookmark className={cn('h-4 w-4', Script.isSaved && 'fill-current')} />
-                <span className="hidden sm:inline">{Script.isSaved ? 'Saved' : 'Save'}</span>
+              <button className={cn('flex items-center gap-1.5 px-2 py-1 text-sm text-muted-foreground hover:bg-muted rounded transition-colors', script.isSaved && 'text-primary')}>
+                <Bookmark className={cn('h-4 w-4', script.isSaved && 'fill-current')} />
+                <span className="hidden sm:inline">{script.isSaved ? 'Saved' : 'Save'}</span>
               </button>
             )}
             
@@ -154,7 +154,7 @@ export function ScriptCard({ Script, isCompact = false, showstudios  = true, onV
 }
 
 // Script List
-export function ScriptList({ Scripts, isLoading, showstudios  = true }: { Scripts: Script[]; isLoading?: boolean; showstudios ?: boolean }) {
+export function ScriptList({ Scripts, isLoading, showStudios = true }: { Scripts: Script[]; isLoading?: boolean; showStudios?: boolean }) {
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -175,8 +175,8 @@ export function ScriptList({ Scripts, isLoading, showstudios  = true }: { Script
   
   return (
     <div className="space-y-4">
-      {Scripts.map(Script => (
-        <ScriptCard key={Script.id} Script={Script} showstudios ={showstudios } />
+      {Scripts.map(script => (
+        <ScriptCard key={script.id} script={script} showStudio={showStudios} />
       ))}
     </div>
   );
@@ -241,7 +241,7 @@ export function FeedSortTabs({ value, onChange }: { value: string; onChange: (va
 }
 
 // Create Script Card
-export function CreateScriptCard({ studios  }: { studios ?: string }) {
+export function CreateScriptCard({ studio }: { studio?: string }) {
   const { agent, isAuthenticated } = useAuth();
   const { openCreateScript } = useUIStore();
   
@@ -258,7 +258,7 @@ export function CreateScriptCard({ studios  }: { studios ?: string }) {
           onClick={openCreateScript}
           className="flex-1 px-4 py-2 text-left text-muted-foreground bg-muted rounded-md hover:bg-muted/80 transition-colors"
         >
-          Create a Script...
+          Create a script...
         </button>
       </div>
     </Card>

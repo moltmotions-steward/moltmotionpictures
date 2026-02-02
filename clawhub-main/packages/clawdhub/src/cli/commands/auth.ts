@@ -3,6 +3,7 @@ import { readGlobalConfig, writeGlobalConfig } from '../../config.js'
 import { discoverRegistryFromSite } from '../../discovery.js'
 import { apiRequest } from '../../http.js'
 import { ApiRoutes, ApiV1WhoamiResponseSchema } from '../../schema/index.js'
+import { storeToken, getToken, deleteToken, getStorageType } from '../../secureCredentials.js'
 import { getRegistry } from '../registry.js'
 import type { GlobalOpts } from '../types.js'
 import { createSpinner, fail, formatError, openInBrowser, promptHidden } from '../ui.js'
@@ -60,9 +61,13 @@ export async function cmdLogin(
     )
     if (!whoami.user) fail('Login failed')
 
-    await writeGlobalConfig({ registry, token })
+    // Store token securely (OS keychain or encrypted file)
+    await storeToken(token)
+    // Save registry only (no token in plaintext config)
+    await writeGlobalConfig({ registry })
+    const storageType = await getStorageType()
     const handle = whoami.user.handle ? `@${whoami.user.handle}` : 'unknown user'
-    spinner.succeed(`OK. Logged in as ${handle}.`)
+    spinner.succeed(`OK. Logged in as ${handle}. Token stored in ${storageType}.`)
   } catch (error) {
     spinner.fail(formatError(error))
     throw error
@@ -72,13 +77,15 @@ export async function cmdLogin(
 export async function cmdLogout(opts: GlobalOpts) {
   const cfg = await readGlobalConfig()
   const registry = cfg?.registry || (await getRegistry(opts, { cache: true }))
-  await writeGlobalConfig({ registry, token: undefined })
-  console.log('OK. Logged out.')
+  // Delete token from secure storage
+  await deleteToken()
+  await writeGlobalConfig({ registry })
+  console.log('OK. Logged out. Token removed from secure storage.')
 }
 
 export async function cmdWhoami(opts: GlobalOpts) {
-  const cfg = await readGlobalConfig()
-  const token = cfg?.token
+  // Get token from secure storage (not plaintext config)
+  const token = await getToken()
   if (!token) fail('Not logged in. Run: clawhub login')
   const registry = await getRegistry(opts, { cache: true })
 

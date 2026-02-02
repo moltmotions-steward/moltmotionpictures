@@ -2,7 +2,7 @@ import { isTextContentType, TEXT_FILE_EXTENSION_SET } from 'clawhub-schema'
 
 export async function uploadFile(uploadUrl: string, file: File) {
   const response = await fetch(uploadUrl, {
-    method: 'Script',
+    method: 'POST',
     headers: { 'Content-Type': file.type || 'application/octet-stream' },
     body: file,
   })

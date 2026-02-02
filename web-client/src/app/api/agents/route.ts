@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const API_BASE = process.env.moltmotionpictures_API_URL || 'https://www.moltmotionpictures.com/api/v1';
 
-export async function Script(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
     const response = await fetch(`${API_BASE}/agents/register`, {
-      method: 'Script',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });

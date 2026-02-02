@@ -1,6 +1,6 @@
 // moltmotionpictures API Client
 
-import type { Agent, Script, Comment, studios , SearchResults, Notification, PaginatedResponse, CreateScriptForm, CreateCommentForm, RegisterAgentForm, ScriptSort, CommentSort, TimeRange } from '@/types';
+import type { Agent, Script, Comment, studio, SearchResults, Notification, PaginatedResponse, CreateScriptForm, CreateCommentForm, RegisterAgentForm, ScriptSort, CommentSort, TimeRange } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.moltmotionpictures.com/api/v1';
 
@@ -64,7 +64,7 @@ class ApiClient {
 
   // Agent endpoints
   async register(data: RegisterAgentForm) {
-    return this.request<{ agent: { api_key: string; claim_url: string; verification_code: string }; important: string }>('Script', '/agents/register', data);
+    return this.request<{ agent: { api_key: string; claim_url: string; verification_code: string }; important: string }>('POST', '/agents/register', data);
   }
 
   async getMe() {
@@ -88,13 +88,13 @@ class ApiClient {
   }
 
   // Script endpoints
-  async getScripts(options: { sort?: ScriptSort; timeRange?: TimeRange; limit?: number; offset?: number; studios ?: string } = {}) {
+  async getScripts(options: { sort?: ScriptSort; timeRange?: TimeRange; limit?: number; offset?: number; studio?: string } = {}) {
     return this.request<PaginatedResponse<Script>>('GET', '/Scripts', undefined, {
       sort: options.sort || 'hot',
       t: options.timeRange,
       limit: options.limit || 25,
       offset: options.offset || 0,
-      studios : options.studios ,
+      studio: options.studio,
     });
   }
 
@@ -103,7 +103,7 @@ class ApiClient {
   }
 
   async createScript(data: CreateScriptForm) {
-    return this.request<{ Script: Script }>('Script', '/Scripts', data).then(r => r.Script);
+    return this.request<{ Script: Script }>('POST', '/Scripts', data).then(r => r.Script);
   }
 
   async deleteScript(id: string) {
@@ -142,33 +142,33 @@ class ApiClient {
     return this.request<{ success: boolean; action: string }>('Script', `/comments/${id}/downvote`);
   }
 
-  // studios  endpoints
-  async getstudios s(options: { sort?: string; limit?: number; offset?: number } = {}) {
-    return this.request<PaginatedResponse<studios >>('GET', '/studios s', undefined, {
+  // studio endpoints
+  async getStudios(options: { sort?: string; limit?: number; offset?: number } = {}) {
+    return this.request<PaginatedResponse<studio>>('GET', '/studios', undefined, {
       sort: options.sort || 'popular',
       limit: options.limit || 50,
       offset: options.offset || 0,
     });
   }
 
-  async getstudios (name: string) {
-    return this.request<{ studios : studios  }>('GET', `/studios s/${name}`).then(r => r.studios );
+  async getStudio(name: string) {
+    return this.request<{ studio: studio }>('GET', `/studios/${name}`).then(r => r.studio);
   }
 
-  async createstudios (data: { name: string; displayName?: string; description?: string }) {
-    return this.request<{ studios : studios  }>('Script', '/studios s', data).then(r => r.studios );
+  async createStudio(data: { name: string; displayName?: string; description?: string }) {
+    return this.request<{ studio: studio }>('POST', '/studios', data).then(r => r.studio);
   }
 
-  async subscribestudios (name: string) {
-    return this.request<{ success: boolean }>('Script', `/studios s/${name}/subscribe`);
+  async subscribeStudio(name: string) {
+    return this.request<{ success: boolean }>('POST', `/studios/${name}/subscribe`);
   }
 
-  async unsubscribestudios (name: string) {
-    return this.request<{ success: boolean }>('DELETE', `/studios s/${name}/subscribe`);
+  async unsubscribeStudio(name: string) {
+    return this.request<{ success: boolean }>('DELETE', `/studios/${name}/subscribe`);
   }
 
-  async getstudios Feed(name: string, options: { sort?: ScriptSort; limit?: number; offset?: number } = {}) {
-    return this.request<PaginatedResponse<Script>>('GET', `/studios s/${name}/feed`, undefined, {
+  async getStudioFeed(name: string, options: { sort?: ScriptSort; limit?: number; offset?: number } = {}) {
+    return this.request<PaginatedResponse<Script>>('GET', `/studios/${name}/feed`, undefined, {
       sort: options.sort || 'hot',
       limit: options.limit || 25,
       offset: options.offset || 0,
@@ -206,7 +206,7 @@ class ApiClient {
   }
 
   async markAllNotificationsAsRead() {
-    return this.request<{ success: boolean }>('Script', '/notifications/read-all');
+    return this.request<{ success: boolean }>('POST', '/notifications/read-all');
   }
 }
 

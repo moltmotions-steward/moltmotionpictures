@@ -1,6 +1,7 @@
 import { intro, outro } from '@clack/prompts'
 import { readGlobalConfig } from '../../config.js'
 import { hashSkillFiles, listTextFiles, readSkillOrigin } from '../../skills.js'
+import { getToken } from '../../secureCredentials.js'
 import { resolveClawdbotSkillRoots } from '../clawdbotConfig.js'
 import { getFallbackSkillRoots } from '../scanSkills.js'
 import type { GlobalOpts } from '../types.js'
@@ -32,8 +33,8 @@ export async function cmdSync(opts: GlobalOpts, options: SyncOptions, inputAllow
   const allowPrompt = isInteractive() && inputAllowed !== false
   intro('OpenClaw sync')
 
-  const cfg = await readGlobalConfig()
-  const token = cfg?.token
+  // SECURITY: Read token from secure storage (not plaintext config)
+  const token = await getToken()
   if (!token) fail('Not logged in. Run: clawhub login')
 
   const registry = await getRegistryWithAuth(opts, token)

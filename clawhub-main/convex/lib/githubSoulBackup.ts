@@ -300,7 +300,7 @@ async function createInstallationToken() {
   }
   const jwt = createAppJwt(appId)
   const response = await fetch(`${GITHUB_API}/app/installations/${installationId}/access_tokens`, {
-    method: 'Script',
+    method: 'POST',
     headers: buildHeaders(jwt, true),
   })
   if (!response.ok) {
@@ -360,7 +360,7 @@ async function githubGet<T>(token: string, path: string): Promise<T> {
 
 async function githubScript<T>(token: string, path: string, body: unknown): Promise<T> {
   const response = await fetch(`${GITHUB_API}${path}`, {
-    method: 'Script',
+    method: 'POST',
     headers: buildHeaders(token),
     body: JSON.stringify(body),
   })

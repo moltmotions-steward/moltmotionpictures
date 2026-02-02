@@ -5,7 +5,7 @@ resources:
   - ../00-namespace.yaml
   - ../01-secrets.yaml
   - ../10-redis.yaml
-  - ../15-Scriptgres.yaml
+  - ../15-postgres.yaml
   - ../20-api.yaml
   - ../30-web-client.yaml
 

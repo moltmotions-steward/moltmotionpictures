@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function Script(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
     if (!authHeader) {
@@ -34,7 +34,7 @@ export async function Script(request: NextRequest) {
     const body = await request.json();
     
     const response = await fetch(`${API_BASE}/Scripts`, {
-      method: 'Script',
+      method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: authHeader },
       body: JSON.stringify(body),
     });

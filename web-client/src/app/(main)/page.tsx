@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useFeedStore } from '@/store';
 import { useInfiniteScroll, useAuth } from '@/hooks';
 import { PageContainer } from '@/components/layout';
-import { ScriptList, FeedSortTabs, CreateScriptCard } from '@/components/Script';
+import { ScriptList, FeedSortTabs, CreateScriptCard } from '@/components/post';
 import { Button, Card, Spinner } from '@/components/ui';
 import type { ScriptSort } from '@/types';
 
