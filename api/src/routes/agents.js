@@ -38,11 +38,16 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const client_1 = require("@prisma/client");
 const rateLimit_1 = require("../middleware/rateLimit");
+const auth_1 = require("../utils/auth");
 const WalletAuthService = __importStar(require("../services/WalletAuthService"));
+const index_js_1 = __importDefault(require("../config/index.js"));
 const router = (0, express_1.Router)();
 const prisma = new client_1.PrismaClient();
 /**
@@ -141,7 +146,9 @@ router.post('/register', rateLimit_1.registrationLimiter, async (req, res) => {
             });
             return;
         }
-        // Create the agent
+        // Create the agent (pending_claim status)
+        const claimToken = (0, auth_1.generateClaimToken)();
+        const verificationCode = (0, auth_1.generateVerificationCode)();
         const agent = await prisma.agent.create({
             data: {
                 name,
@@ -149,12 +156,14 @@ router.post('/register', rateLimit_1.registrationLimiter, async (req, res) => {
                 description,
                 api_key_hash: apiKeyHash,
                 wallet_address: normalizedAddress,
-                status: 'active',
-                is_claimed: true,
-                claimed_at: new Date()
+                claim_token: claimToken,
+                verification_code: verificationCode,
+                status: 'pending_claim',
+                is_claimed: false
             }
         });
-        // Return the API key (only shown once at registration!)
+        // Return the API key + claim instructions
+        const claimUrl = `${index_js_1.default.moltmotionpictures.baseUrl}/claim/${agent.name}`;
         res.status(201).json({
             success: true,
             agent: {
@@ -164,7 +173,17 @@ router.post('/register', rateLimit_1.registrationLimiter, async (req, res) => {
                 wallet_address: agent.wallet_address
             },
             api_key: apiKey,
-            warning: 'Save this API key! It will not be shown again. You can recover it by signing with your wallet.'
+            claim: {
+                claim_url: claimUrl,
+                verification_code: verificationCode,
+                instructions: [
+                    `1. Visit: ${claimUrl}`,
+                    `2. Tweet this code from your Twitter: "${verificationCode}"`,
+                    '3. Paste your tweet URL to claim the agent',
+                    '⚠️  Agent cannot create studios until claimed'
+                ]
+            },
+            warning: 'Save your API key now - it will not be shown again!'
         });
     }
     catch (error) {

@@ -8,7 +8,9 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { registrationLimiter } from '../middleware/rateLimit';
+import { generateClaimToken, generateVerificationCode } from '../utils/auth';
 import * as WalletAuthService from '../services/WalletAuthService';
+import config from '../config/index.js';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -119,7 +121,10 @@ router.post('/register', registrationLimiter, async (req: Request, res: Response
       return;
     }
 
-    // Create the agent
+    // Create the agent (pending_claim status)
+    const claimToken = generateClaimToken();
+    const verificationCode = generateVerificationCode();
+    
     const agent = await prisma.agent.create({
       data: {
         name,
@@ -127,13 +132,16 @@ router.post('/register', registrationLimiter, async (req: Request, res: Response
         description,
         api_key_hash: apiKeyHash,
         wallet_address: normalizedAddress,
-        status: 'active',
-        is_claimed: true,
-        claimed_at: new Date()
+        claim_token: claimToken,
+        verification_code: verificationCode,
+        status: 'pending_claim',
+        is_claimed: false
       }
     });
 
-    // Return the API key (only shown once at registration!)
+    // Return the API key + claim instructions
+    const claimUrl = `${config.moltmotionpictures.baseUrl}/claim/${agent.name}`;
+    
     res.status(201).json({
       success: true,
       agent: {
@@ -143,7 +151,17 @@ router.post('/register', registrationLimiter, async (req: Request, res: Response
         wallet_address: agent.wallet_address
       },
       api_key: apiKey,
-      warning: 'Save this API key! It will not be shown again. You can recover it by signing with your wallet.'
+      claim: {
+        claim_url: claimUrl,
+        verification_code: verificationCode,
+        instructions: [
+          `1. Visit: ${claimUrl}`,
+          `2. Tweet this code from your Twitter: "${verificationCode}"`,
+          '3. Paste your tweet URL to claim the agent',
+          '⚠️  Agent cannot create studios until claimed'
+        ]
+      },
+      warning: 'Save your API key now - it will not be shown again!'
     });
 
   } catch (error) {
