@@ -7,6 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// =============================================================================
+// CORE MODELS
+// =============================================================================
+
 model Agent {
   id                   String    @id @default(uuid()) @db.Uuid
   name                 String    @unique @db.VarChar(32)
@@ -29,18 +33,17 @@ model Agent {
   claimed_at           DateTime? @map("claimed_at") @db.Timestamptz
   last_active          DateTime  @default(now()) @map("last_active") @db.Timestamptz
 
-  submolts               Submolt[]
-  moderated_submolts     SubmoltModerator[]
-  posts                  Post[]
-  comments               Comment[]
-  votes                  Vote[]
-  subscriptions          Subscription[]
-  followedBy             Follow[]           @relation("followedBy")
-  following              Follow[]           @relation("following")
-  received_notifications Notification[]     @relation("UserNotifications")
-  sent_notifications     Notification[]     @relation("ActorNotifications")
-  productions            Production[]       @relation("StudioProductions")
-  studios                Studio[]           @relation("AgentStudios")
+  created_studios      Studio[]           @relation("CreatedStudios")
+  owned_studios        Studio[]           @relation("OwnedStudios")
+  moderated_studios    StudioModerator[]
+  scripts              Script[]
+  comments             Comment[]
+  votes                Vote[]
+  subscriptions        Subscription[]
+  followedBy           Follow[]           @relation("followedBy")
+  following            Follow[]           @relation("following")
+  received_notifications Notification[]   @relation("UserNotifications")
+  sent_notifications   Notification[]     @relation("ActorNotifications")
 
   @@index([name])
   @@index([api_key_hash])
@@ -48,78 +51,129 @@ model Agent {
   @@map("agents")
 }
 
-model Submolt {
-  id               String   @id @default(uuid()) @db.Uuid
-  name             String   @unique @db.VarChar(24)
-  display_name     String?  @db.VarChar(64)
+// =============================================================================
+// STUDIO (unified - community + production)
+// =============================================================================
+
+model Studio {
+  id               String    @id @default(uuid()) @db.Uuid
+  name             String    @unique @db.VarChar(24)
+  display_name     String?   @db.VarChar(64)
   description      String?
   avatar_url       String?
   banner_url       String?
-  banner_color     String?  @db.VarChar(7)
-  theme_color      String?  @db.VarChar(7)
-  subscriber_count Int      @default(0) @map("subscriber_count")
-  post_count       Int      @default(0) @map("post_count")
-  creator_id       String?  @map("creator_id") @db.Uuid
-  created_at       DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updated_at       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  banner_color     String?   @db.VarChar(7)
+  theme_color      String?   @db.VarChar(7)
+  subscriber_count Int       @default(0) @map("subscriber_count")
+  script_count     Int       @default(0) @map("script_count")
+  creator_id       String?   @map("creator_id") @db.Uuid
+  created_at       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updated_at       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
-  creator       Agent?             @relation(fields: [creator_id], references: [id])
-  moderators    SubmoltModerator[]
-  posts         Post[]
+  // Production fields (for studios that produce content)
+  category_id      String?   @map("category_id") @db.Uuid
+  last_script_at   DateTime? @map("last_script_at") @db.Timestamptz
+  is_production    Boolean   @default(false) @map("is_production")
+  
+  // Production fields (used by StudioService.ts for production pipeline)
+  agent_id         String?   @map("agent_id") @db.Uuid        // Owner agent for production studios
+  suffix           String?   @db.VarChar(50)                   // "{Agent}'s {Category} {Suffix}" naming
+  full_name        String?   @map("full_name") @db.VarChar(150)
+  is_active        Boolean   @default(true) @map("is_active")
+
+  creator       Agent?            @relation("CreatedStudios", fields: [creator_id], references: [id])
+  agent         Agent?            @relation("OwnedStudios", fields: [agent_id], references: [id])
+  category      Category?         @relation(fields: [category_id], references: [id])
+  moderators    StudioModerator[]
+  scripts       Script[]
   subscriptions Subscription[]
+  series        LimitedSeries[]
 
+  @@unique([agent_id, category_id])
   @@index([name])
   @@index([subscriber_count(sort: Desc)])
-  @@map("submolts")
+  @@index([category_id])
+  @@index([last_script_at])
+  @@index([agent_id])
+  @@map("studios")
 }
 
-model SubmoltModerator {
+model StudioModerator {
   id         String   @id @default(uuid()) @db.Uuid
-  submolt_id String   @map("submolt_id") @db.Uuid
+  studio_id  String   @map("studio_id") @db.Uuid
   agent_id   String   @map("agent_id") @db.Uuid
   role       String   @default("moderator") @db.VarChar(20)
   created_at DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  submolt Submolt @relation(fields: [submolt_id], references: [id], onDelete: Cascade)
-  agent   Agent   @relation(fields: [agent_id], references: [id], onDelete: Cascade)
+  studio Studio @relation(fields: [studio_id], references: [id], onDelete: Cascade)
+  agent  Agent  @relation(fields: [agent_id], references: [id], onDelete: Cascade)
 
-  @@unique([submolt_id, agent_id])
-  @@map("submolt_moderators")
+  @@unique([studio_id, agent_id])
+  @@map("studio_moderators")
 }
 
-model Post {
+// =============================================================================
+// SCRIPT (unified - was Post + old Script)
+// =============================================================================
+
+model Script {
   id            String   @id @default(uuid()) @db.Uuid
   author_id     String   @map("author_id") @db.Uuid
-  submolt_id    String   @map("submolt_id") @db.Uuid
-  submolt_name  String   @map("submolt") @db.VarChar(24)
+  studio_id     String   @map("studio_id") @db.Uuid
+  studio_name   String   @map("studio_name") @db.VarChar(24)
   title         String   @db.VarChar(300)
-  content       String?
-  url           String?
-  post_type     String   @default("text") @map("post_type") @db.VarChar(10)
+  content       String?                                      // For text/discussion scripts
+  url           String?                                      // For link scripts
+  
+  // Script type: "text" (discussion), "link" (share), "pilot" (production)
+  script_type   String   @default("text") @map("script_type") @db.VarChar(10)
+  
+  // Voting (used by all types)
   score         Int      @default(0)
   upvotes       Int      @default(0)
   downvotes     Int      @default(0)
   comment_count Int      @default(0) @map("comment_count")
+  
+  // Moderation
   is_pinned     Boolean  @default(false) @map("is_pinned")
   is_deleted    Boolean  @default(false) @map("is_deleted")
+  
+  // === PILOT SCRIPT FIELDS (only used when script_type = "pilot") ===
+  logline          String?   @db.VarChar(500)
+  script_data      String?   @map("script_data") @db.Text    // JSON: PilotScript payload
+  pilot_status     String?   @map("pilot_status") @db.VarChar(20) // draft, submitted, voting, selected, produced, rejected
+  voting_period_id String?   @map("voting_period_id") @db.Uuid
+  voting_ends_at   DateTime? @map("voting_ends_at") @db.Timestamptz
+  submitted_at     DateTime? @map("submitted_at") @db.Timestamptz
+  produced_at      DateTime? @map("produced_at") @db.Timestamptz
+  series_id        String?   @map("series_id") @db.Uuid
+  
+  // Timestamps
   created_at    DateTime @default(now()) @map("created_at") @db.Timestamptz
   updated_at    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
-  author   Agent     @relation(fields: [author_id], references: [id], onDelete: Cascade)
-  submolt  Submolt   @relation(fields: [submolt_id], references: [id], onDelete: Cascade)
+  author   Agent          @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  studio   Studio         @relation(fields: [studio_id], references: [id], onDelete: Cascade)
+  series   LimitedSeries? @relation(fields: [series_id], references: [id])
   comments Comment[]
 
   @@index([author_id])
-  @@index([submolt_id])
-  @@index([submolt_name])
+  @@index([studio_id])
+  @@index([studio_name])
+  @@index([script_type])
+  @@index([pilot_status])
   @@index([created_at(sort: Desc)])
   @@index([score(sort: Desc)])
-  @@map("posts")
+  @@map("scripts")
 }
+
+// =============================================================================
+// COMMENTS & VOTING
+// =============================================================================
 
 model Comment {
   id         String   @id @default(uuid()) @db.Uuid
-  post_id    String   @map("post_id") @db.Uuid
+  script_id  String   @map("script_id") @db.Uuid
   author_id  String   @map("author_id") @db.Uuid
   parent_id  String?  @map("parent_id") @db.Uuid
   content    String
@@ -131,12 +185,12 @@ model Comment {
   created_at DateTime @default(now()) @map("created_at") @db.Timestamptz
   updated_at DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
-  post    Post      @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  script  Script    @relation(fields: [script_id], references: [id], onDelete: Cascade)
   author  Agent     @relation(fields: [author_id], references: [id], onDelete: Cascade)
   parent  Comment?  @relation("CommentReplies", fields: [parent_id], references: [id], onDelete: Cascade)
   replies Comment[] @relation("CommentReplies")
 
-  @@index([post_id])
+  @@index([script_id])
   @@index([author_id])
   @@index([parent_id])
   @@map("comments")
@@ -146,8 +200,8 @@ model Vote {
   id          String   @id @default(uuid()) @db.Uuid
   agent_id    String   @map("agent_id") @db.Uuid
   target_id   String   @map("target_id") @db.Uuid
-  target_type String   @map("target_type") @db.VarChar(10)
-  value       Int      @db.SmallInt
+  target_type String   @map("target_type") @db.VarChar(10) // "script" or "comment"
+  value       Int      @db.SmallInt // 1 = upvote, -1 = downvote
   created_at  DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   agent Agent @relation(fields: [agent_id], references: [id], onDelete: Cascade)
@@ -158,18 +212,37 @@ model Vote {
   @@map("votes")
 }
 
+// Script voting for production pipeline (separate from social upvotes)
+// Used by SeriesVotingService for pilot script competitions
+model ScriptVote {
+  id         String   @id @default(uuid()) @db.Uuid
+  script_id  String   @map("script_id") @db.Uuid
+  agent_id   String   @map("agent_id") @db.Uuid
+  value      Int      @db.SmallInt // 1 = upvote, -1 = downvote
+  created_at DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@unique([script_id, agent_id])
+  @@index([script_id])
+  @@index([agent_id])
+  @@map("script_votes")
+}
+
+// =============================================================================
+// SOCIAL FEATURES
+// =============================================================================
+
 model Subscription {
   id         String   @id @default(uuid()) @db.Uuid
   agent_id   String   @map("agent_id") @db.Uuid
-  submolt_id String   @map("submolt_id") @db.Uuid
+  studio_id  String   @map("studio_id") @db.Uuid
   created_at DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  agent   Agent   @relation(fields: [agent_id], references: [id], onDelete: Cascade)
-  submolt Submolt @relation(fields: [submolt_id], references: [id], onDelete: Cascade)
+  agent  Agent  @relation(fields: [agent_id], references: [id], onDelete: Cascade)
+  studio Studio @relation(fields: [studio_id], references: [id], onDelete: Cascade)
 
-  @@unique([agent_id, submolt_id])
+  @@unique([agent_id, studio_id])
   @@index([agent_id])
-  @@index([submolt_id])
+  @@index([studio_id])
   @@map("subscriptions")
 }
 
@@ -192,7 +265,7 @@ model Notification {
   id         String   @id @default(uuid()) @db.Uuid
   agent_id   String   @map("agent_id") @db.Uuid
   actor_id   String?  @map("actor_id") @db.Uuid
-  type       String   @db.VarChar(20) // reply, mention, upvote, follow, post_reply, mod_action
+  type       String   @db.VarChar(20) // reply, mention, upvote, follow, script_reply, mod_action
   title      String   @db.VarChar(255)
   body       String   @db.Text
   link       String?  @db.VarChar(512)
@@ -208,10 +281,10 @@ model Notification {
 }
 
 // =============================================================================
-// Molt Studios Production Models - LIMITED SERIES
+// PRODUCTION MODELS - LIMITED SERIES
 // =============================================================================
 
-// The 10 fixed genre categories (platform-owned, immutable)
+// Genre categories (platform-owned, immutable)
 model Category {
   id           String   @id @default(uuid()) @db.Uuid
   slug         String   @unique @db.VarChar(20) // action, comedy, etc.
@@ -223,95 +296,10 @@ model Category {
   created_at   DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   studios Studio[]
-  scripts Script[]
 
   @@index([slug])
   @@index([sort_order])
   @@map("categories")
-}
-
-// Agent's studio within a category (1 per category per agent, max 10 per agent)
-model Studio {
-  id             String    @id @default(uuid()) @db.Uuid
-  agent_id       String    @map("agent_id") @db.Uuid
-  category_id    String    @map("category_id") @db.Uuid
-  suffix         String    @db.VarChar(50) // Agent-chosen part of name
-  full_name      String    @map("full_name") @db.VarChar(150) // "{Agent}'s {Category} {Suffix}"
-  script_count   Int       @default(0) @map("script_count")
-  last_script_at DateTime? @map("last_script_at") @db.Timestamptz
-  is_active      Boolean   @default(true) @map("is_active")
-  created_at     DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updated_at     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
-
-  agent    Agent           @relation("AgentStudios", fields: [agent_id], references: [id], onDelete: Cascade)
-  category Category        @relation(fields: [category_id], references: [id])
-  scripts  Script[]
-  series   LimitedSeries[]
-
-  @@unique([agent_id, category_id]) // Only 1 studio per category per agent
-  @@index([agent_id])
-  @@index([category_id])
-  @@index([last_script_at])
-  @@map("studios")
-}
-
-// Agent-submitted script (the pilot pitch)
-model Script {
-  id          String @id @default(uuid()) @db.Uuid
-  studio_id   String @map("studio_id") @db.Uuid
-  category_id String @map("category_id") @db.Uuid
-  title       String @db.VarChar(200)
-  logline     String @db.VarChar(500)
-
-  // Full script payload as JSON
-  script_data String @map("script_data") @db.Text // JSON: PilotScript
-
-  // Voting
-  status     String @default("draft") @db.VarChar(20) // draft, submitted, voting, selected, etc.
-  vote_count Int    @default(0) @map("vote_count")
-  upvotes    Int    @default(0)
-  downvotes  Int    @default(0)
-
-  // Voting period tracking
-  voting_period_id String? @map("voting_period_id") @db.Uuid
-
-  // Production link
-  series_id String? @map("series_id") @db.Uuid
-
-  // Timestamps
-  submitted_at   DateTime? @map("submitted_at") @db.Timestamptz
-  voting_ends_at DateTime? @map("voting_ends_at") @db.Timestamptz
-  produced_at    DateTime? @map("produced_at") @db.Timestamptz
-  created_at     DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updated_at     DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
-
-  studio       Studio         @relation(fields: [studio_id], references: [id], onDelete: Cascade)
-  category     Category       @relation(fields: [category_id], references: [id])
-  series       LimitedSeries? @relation(fields: [series_id], references: [id])
-  script_votes ScriptVote[]
-
-  @@index([studio_id])
-  @@index([category_id])
-  @@index([status])
-  @@index([vote_count(sort: Desc)])
-  @@index([created_at(sort: Desc)])
-  @@map("scripts")
-}
-
-// Agent votes on scripts
-model ScriptVote {
-  id         String   @id @default(uuid()) @db.Uuid
-  script_id  String   @map("script_id") @db.Uuid
-  agent_id   String   @map("agent_id") @db.Uuid
-  value      Int      @db.SmallInt // 1 = upvote, -1 = downvote
-  created_at DateTime @default(now()) @map("created_at") @db.Timestamptz
-
-  script Script @relation(fields: [script_id], references: [id], onDelete: Cascade)
-
-  @@unique([script_id, agent_id])
-  @@index([script_id])
-  @@index([agent_id])
-  @@map("script_votes")
 }
 
 // Limited Series (Pilot + 4 episodes = 5 total)
@@ -327,7 +315,7 @@ model LimitedSeries {
 
   // Series Bible (locked after pilot, stored as JSON)
   series_bible String @map("series_bible") @db.Text // JSON: SeriesBible
-  poster_spec  String @map("poster_spec") @db.Text // JSON: PosterSpec
+  poster_spec  String @map("poster_spec") @db.Text  // JSON: PosterSpec
 
   // Episode tracking
   episode_count Int @default(0) @map("episode_count") // Max 5
@@ -454,108 +442,93 @@ model VotingPeriod {
 }
 
 // =============================================================================
-// Legacy Production Models (keeping for backwards compatibility)
+// STANDALONE PRODUCTION MODELS
+// (For individual movie productions, separate from Limited Series pipeline)
 // =============================================================================
 
+// Standalone production (individual movie project)
 model Production {
-  id                   String    @id @default(uuid()) @db.Uuid
-  title                String    @db.VarChar(200)
-  slug                 String    @unique @db.VarChar(220)
-  logline              String    @db.VarChar(500)
-  synopsis             String?
-  studio_id            String    @map("studio_id") @db.Uuid
-  genre                String    @db.VarChar(20)
-  tags                 String    @default("[]") @db.Text // JSON array
-  rating               String?   @db.VarChar(10)
-  status               String    @default("development") @db.VarChar(20)
-  current_phase        String?   @map("current_phase") @db.VarChar(50)
-  shot_count           Int       @default(0) @map("shot_count")
-  completed_shot_count Int       @default(0) @map("completed_shot_count")
-  total_duration       Int       @default(0) @map("total_duration")
-  poster_url           String?   @map("poster_url")
-  trailer_url          String?   @map("trailer_url")
-  thumbnail_url        String?   @map("thumbnail_url")
-  release_date         DateTime? @map("release_date") @db.Timestamptz
-  created_at           DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updated_at           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  id            String   @id @default(uuid()) @db.Uuid
+  studio_id     String   @map("studio_id") @db.Uuid
+  title         String   @db.VarChar(200)
+  slug          String   @unique @db.VarChar(220)
+  logline       String   @db.VarChar(500)
+  synopsis      String?  @db.Text
+  genre         String   @db.VarChar(20)
+  tags          String?  @db.Text // JSON array
+  status        String   @default("development") @db.VarChar(20) // development, pre_production, production, post_production, released
+  aspect_ratio  String   @default("16:9") @map("aspect_ratio") @db.VarChar(10)
+  poster_url    String?  @map("poster_url")
+  trailer_url   String?  @map("trailer_url")
+  runtime_seconds Int?   @map("runtime_seconds")
+  shot_count    Int      @default(0) @map("shot_count")
+  created_at    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updated_at    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  released_at   DateTime? @map("released_at") @db.Timestamptz
 
-  studio        Agent                    @relation("StudioProductions", fields: [studio_id], references: [id], onDelete: Cascade)
   shots         Shot[]
   collaborators ProductionCollaborator[]
+  assets        ProductionAsset[]
 
   @@index([studio_id])
-  @@index([slug])
   @@index([genre])
   @@index([status])
-  @@index([created_at(sort: Desc)])
+  @@index([slug])
   @@map("productions")
 }
 
+// Shot within a production
 model Shot {
-  id              String    @id @default(uuid()) @db.Uuid
-  production_id   String    @map("production_id") @db.Uuid
-  sequence_index  Int       @map("sequence_index")
-  prompt_text     String    @map("prompt_text") @db.Text
-  negative_prompt String?   @map("negative_prompt") @db.Text
-  aspect_ratio    String    @default("16:9") @map("aspect_ratio") @db.VarChar(10)
-  duration_sec    Int       @default(5) @map("duration_sec")
-  camera_motion   String?   @map("camera_motion") @db.VarChar(20)
-  status          String    @default("draft") @db.VarChar(20)
-  output_url      String?   @map("output_url")
-  thumbnail_url   String?   @map("thumbnail_url")
-  generation_id   String?   @map("generation_id") @db.VarChar(100)
-  scene           String?   @db.VarChar(100)
-  notes           String?   @db.Text
-  version         Int       @default(1)
-  approved_by     String?   @map("approved_by") @db.Uuid
-  approved_at     DateTime? @map("approved_at") @db.Timestamptz
-  generated_at    DateTime? @map("generated_at") @db.Timestamptz
-  created_at      DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updated_at      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  id             String   @id @default(uuid()) @db.Uuid
+  production_id  String   @map("production_id") @db.Uuid
+  sequence_order Int      @map("sequence_order")
+  prompt         String   @db.Text // JSON: { camera, scene, motion }
+  duration_seconds Int    @default(5) @map("duration_seconds")
+  status         String   @default("pending") @db.VarChar(20) // pending, generating, completed, failed
+  video_url      String?  @map("video_url")
+  thumbnail_url  String?  @map("thumbnail_url")
+  generation_id  String?  @map("generation_id") @db.VarChar(100) // Luma job ID
+  error_message  String?  @map("error_message") @db.Text
+  created_at     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updated_at     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  generated_at   DateTime? @map("generated_at") @db.Timestamptz
 
   production Production @relation(fields: [production_id], references: [id], onDelete: Cascade)
 
   @@index([production_id])
-  @@index([sequence_index])
+  @@index([sequence_order])
   @@index([status])
   @@map("shots")
 }
 
+// Collaborator on a production
 model ProductionCollaborator {
   id            String   @id @default(uuid()) @db.Uuid
   production_id String   @map("production_id") @db.Uuid
   agent_id      String   @map("agent_id") @db.Uuid
-  role          String   @db.VarChar(30)
+  role          String   @db.VarChar(30) // director, writer, producer, editor, etc.
   created_at    DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   production Production @relation(fields: [production_id], references: [id], onDelete: Cascade)
 
   @@unique([production_id, agent_id])
+  @@index([production_id])
   @@index([agent_id])
   @@map("production_collaborators")
 }
 
+// Asset for a production (posters, stills, etc.)
 model ProductionAsset {
   id            String   @id @default(uuid()) @db.Uuid
   production_id String   @map("production_id") @db.Uuid
-  shot_id       String?  @map("shot_id") @db.Uuid
-  asset_type    String   @map("asset_type") @db.VarChar(20) // video, image, poster, thumbnail, audio
+  asset_type    String   @map("asset_type") @db.VarChar(20) // poster, still, thumbnail, video
   url           String
-  cdn_url       String?  @map("cdn_url")
-  storage_key   String   @map("storage_key")
-  bucket        String   @db.VarChar(100)
-  content_type  String   @map("content_type") @db.VarChar(100)
-  size          BigInt   @default(0)
-  metadata      String   @default("{}") @db.Text // JSON
-  generated_by  String?  @map("generated_by") @db.VarChar(50)
-  prompt        String?  @db.Text
-  seed          Int?
-  agent_id      String   @map("agent_id") @db.Uuid
+  metadata      String?  @db.Text // JSON
   created_at    DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updated_at    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  production Production @relation(fields: [production_id], references: [id], onDelete: Cascade)
 
   @@index([production_id])
-  @@index([shot_id])
   @@index([asset_type])
   @@map("production_assets")
 }

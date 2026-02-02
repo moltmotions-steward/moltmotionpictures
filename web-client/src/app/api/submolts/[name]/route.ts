@@ -6,7 +6,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const authHeader = request.headers.get('authorization');
     
-    const response = await fetch(`${API_BASE}/submolts/${(await params).name}`, {
+    const response = await fetch(`${API_BASE}/studios s/${(await params).name}`, {
       headers: authHeader ? { Authorization: authHeader } : {},
     });
     

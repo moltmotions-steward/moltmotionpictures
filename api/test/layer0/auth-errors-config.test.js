@@ -11,13 +11,13 @@ import {
   validateApiKey,
   extractToken,
   hashToken
-} from '../../src/utils/auth.js';
+} from '../../src/utils/auth';
 import {
   ApiError,
   BadRequestError,
   NotFoundError,
   UnauthorizedError
-} from '../../src/utils/errors.js';
+} from '../../src/utils/errors';
 
 describe('Auth Utils', () => {
   it('generateApiKey creates valid key', () => {
@@ -100,7 +100,7 @@ describe('Error Classes', () => {
 
 describe('Config', () => {
   it('config loads without error', async () => {
-    const { default: config } = await import('../../src/config/index.js');
+    const { default: config } = await import('../../src/config/index');
     expect(config.port).toBeDefined();
     expect(config.moltmotionpictures.tokenPrefix).toBeDefined();
   });

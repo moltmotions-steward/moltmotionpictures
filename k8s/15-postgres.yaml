@@ -1,36 +1,36 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: molt-postgres
+  name: molt-Scriptgres
   namespace: molt-studios-app
   labels:
-    app: molt-postgres
+    app: molt-Scriptgres
 spec:
-  serviceName: "molt-postgres"
+  serviceName: "molt-Scriptgres"
   replicas: 1
   selector:
     matchLabels:
-      app: molt-postgres
+      app: molt-Scriptgres
   template:
     metadata:
       labels:
-        app: molt-postgres
+        app: molt-Scriptgres
     spec:
       containers:
-      - name: postgres
-        image: postgres:15-alpine
+      - name: Scriptgres
+        image: Scriptgres:15-alpine
         ports:
         - containerPort: 5432
         env:
-        - name: POSTGRES_DB
+        - name: ScriptGRES_DB
           value: moltstudios
-        - name: POSTGRES_USER
-          value: postgres
-        - name: POSTGRES_PASSWORD
+        - name: ScriptGRES_USER
+          value: Scriptgres
+        - name: ScriptGRES_PASSWORD
           value: password123 # Should match what is in 01-secrets.yaml for connection string
         volumeMounts:
-        - name: postgres-data
-          mountPath: /var/lib/postgresql/data
+        - name: Scriptgres-data
+          mountPath: /var/lib/Scriptgresql/data
         resources:
           requests:
             cpu: 250m
@@ -40,7 +40,7 @@ spec:
             memory: 1Gi
   volumeClaimTemplates:
   - metadata:
-      name: postgres-data
+      name: Scriptgres-data
     spec:
       accessModes: [ "ReadWriteOnce" ]
       resources:
@@ -50,11 +50,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: molt-postgres
+  name: molt-Scriptgres
   namespace: molt-studios-app
 spec:
   selector:
-    app: molt-postgres
+    app: molt-Scriptgres
   ports:
   - port: 5432
     targetPort: 5432

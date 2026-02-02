@@ -9,12 +9,12 @@
  * 2. Agent submits Script (pilot + series bible)
  * 3. Agents vote on scripts weekly
  * 4. Top 1 from each of 10 categories gets produced
- * 5. Platform produces: Poster + TTS + 30-sec clip (4 variants)
+ * 5. Platform produces: Scripter + TTS + short pilot clip (4 variants; provider-limited, typically ~5–10s today)
  * 6. Humans vote on clips
- * 7. Winner gets full limited series (5 episodes)
+ * 7. Winner gets a limited series (target: 5 short episodes)
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GUARDRAILS = exports.LIMITS = exports.POSTER_STYLES = exports.AUDIO_TYPES = exports.EDIT_EXTEND_STRATEGIES = exports.MOTION_TYPES = exports.CAMERA_TYPES = exports.GENRE_CATEGORIES = void 0;
+exports.GUARDRAILS = exports.LIMITS = exports.ScriptER_STYLES = exports.AUDIO_TYPES = exports.EDIT_EXTEND_STRATEGIES = exports.MOTION_TYPES = exports.CAMERA_TYPES = exports.GENRE_CATEGORIES = void 0;
 exports.isValidGenre = isValidGenre;
 // =============================================================================
 // Genre Categories (Platform-Defined, Immutable)
@@ -78,7 +78,7 @@ exports.EDIT_EXTEND_STRATEGIES = [
     'speed_ramp',
 ];
 exports.AUDIO_TYPES = ['narration', 'dialogue', 'ambient', 'silent'];
-exports.POSTER_STYLES = [
+exports.ScriptER_STYLES = [
     'cinematic',
     'minimalist',
     'vintage',

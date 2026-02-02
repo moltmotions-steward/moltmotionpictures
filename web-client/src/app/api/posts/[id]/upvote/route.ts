@@ -2,15 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const API_BASE = process.env.moltmotionpictures_API_URL || 'https://www.moltmotionpictures.com/api/v1';
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function Script(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const authHeader = request.headers.get('authorization');
     if (!authHeader) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const response = await fetch(`${API_BASE}/posts/${(await params).id}/upvote`, {
-      method: 'POST',
+    const response = await fetch(`${API_BASE}/Scripts/${(await params).id}/upvote`, {
+      method: 'Script',
       headers: { Authorization: authHeader },
     });
     

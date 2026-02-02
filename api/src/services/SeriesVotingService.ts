@@ -29,7 +29,7 @@ export interface ScriptVoteResult {
   vote: ScriptVote | null;
   script: {
     id: string;
-    vote_count: number;
+    score: number;
     upvotes: number;
     downvotes: number;
   };
@@ -54,7 +54,7 @@ export interface VotingPeriodResult {
   scripts: Array<{
     id: string;
     title: string;
-    vote_count: number;
+    score: number;
     upvotes: number;
     downvotes: number;
     studio_name: string;
@@ -90,8 +90,8 @@ export async function voteOnScript(
   }
 
   // Script must be in voting status
-  if (script.status !== 'voting') {
-    throw new Error(`Script is not open for voting (status: ${script.status})`);
+  if (script.pilot_status !== 'voting') {
+    throw new Error(`Script is not open for voting (status: ${script.pilot_status})`);
   }
 
   // Check for existing vote
@@ -164,7 +164,7 @@ export async function voteOnScript(
     where: { id: scriptId },
     select: {
       id: true,
-      vote_count: true,
+      score: true,
       upvotes: true,
       downvotes: true,
     },
@@ -212,7 +212,7 @@ export async function removeScriptVote(
     where: { id: scriptId },
     select: {
       id: true,
-      vote_count: true,
+      score: true,
       upvotes: true,
       downvotes: true,
     },
@@ -442,11 +442,11 @@ export async function activateVotingPeriod(
   // Move submitted scripts to voting
   await prisma.script.updateMany({
     where: {
-      status: 'submitted',
+      pilot_status: 'submitted',
       voting_period_id: null,
     },
     data: {
-      status: 'voting',
+      pilot_status: 'voting',
       voting_period_id: periodId,
       voting_ends_at: period.ends_at,
     },
@@ -469,17 +469,17 @@ export async function closeVotingPeriod(
     throw new Error('Voting period not found');
   }
 
-  // Get scripts in this period, ordered by vote_count
+  // Get scripts in this period, ordered by score
   const scripts = await prisma.script.findMany({
     where: {
       voting_period_id: periodId,
-      status: 'voting',
+      pilot_status: 'voting',
     },
     include: {
       studio: true,
     },
     orderBy: [
-      { vote_count: 'desc' },
+      { score: 'desc' },
       { upvotes: 'desc' },
       { submitted_at: 'asc' }, // Tie-breaker: first submitted wins
     ],
@@ -513,10 +513,10 @@ export async function closeVotingPeriod(
     scripts: scripts.map((s) => ({
       id: s.id,
       title: s.title,
-      vote_count: s.vote_count,
+      score: s.score,
       upvotes: s.upvotes,
       downvotes: s.downvotes,
-      studio_name: s.studio.full_name,
+      studio_name: s.studio.full_name || s.studio_name,
     })),
     winner: winnerId,
   };
@@ -531,19 +531,22 @@ export async function getVotingPeriodStats(periodId: string): Promise<{
   topScripts: Array<{
     id: string;
     title: string;
-    vote_count: number;
+    score: number;
   }>;
 }> {
   const [scripts, totalVotes] = await Promise.all([
     prisma.script.findMany({
       where: { voting_period_id: periodId },
-      orderBy: { vote_count: 'desc' },
+      orderBy: { score: 'desc' },
       take: 10,
     }),
     prisma.scriptVote.count({
       where: {
-        script: {
-          voting_period_id: periodId,
+        script_id: {
+          in: (await prisma.script.findMany({
+            where: { voting_period_id: periodId },
+            select: { id: true },
+          })).map(s => s.id),
         },
       },
     }),
@@ -555,7 +558,7 @@ export async function getVotingPeriodStats(periodId: string): Promise<{
     topScripts: scripts.map((s) => ({
       id: s.id,
       title: s.title,
-      vote_count: s.vote_count,
+      score: s.score,
     })),
   };
 }
@@ -643,7 +646,7 @@ export async function getScriptVoteBreakdown(scriptId: string): Promise<{
     select: {
       upvotes: true,
       downvotes: true,
-      vote_count: true,
+      score: true,
     },
   });
 
@@ -655,6 +658,6 @@ export async function getScriptVoteBreakdown(scriptId: string): Promise<{
     upvotes: script.upvotes,
     downvotes: script.downvotes,
     total: script.upvotes + script.downvotes,
-    score: script.vote_count,
+    score: script.score,
   };
 }

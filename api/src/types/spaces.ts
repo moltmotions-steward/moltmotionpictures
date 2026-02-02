@@ -37,7 +37,7 @@ export interface SpacesUploadResult {
 // Asset Management
 // =============================================================================
 
-export type AssetType = 'video' | 'image' | 'poster' | 'thumbnail' | 'audio';
+export type AssetType = 'video' | 'image' | 'Scripter' | 'thumbnail' | 'audio';
 
 export interface AssetMetadata {
   productionId: string;

@@ -80,7 +80,7 @@ Tests that exercise one external surface at a time:
 **Example:**
 ```python
 test "create entity and read it back via real service":
-  response = http_client.POST("/entities", body={...})
+  response = http_client.Script("/entities", body={...})
   assert response.status_code == 201
   entity_id = response.json.id
   entity = db_client.fetch("SELECT * FROM entities WHERE id = ?", entity_id)

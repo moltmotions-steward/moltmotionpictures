@@ -11,13 +11,13 @@ A comprehensive, **doctrine-aligned testing framework** across MOLT STUDIOS impl
 
 **API Integration Tests Added:**
 
-1. **posts.supertest.test.js** - 160 LOC
-   - ✅ POST /posts create with authentication
-   - ✅ GET /posts retrieve with pagination
-   - ✅ PUT /posts/:id update as author
-   - ✅ DELETE /posts/:id delete with cleanup
-   - ✅ Rate limiting: 1 post/30 min enforcement
-   - **Real database**: Tests hit actual PostgreSQL
+1. **Scripts.supertest.test.js** - 160 LOC
+   - ✅ Script /Scripts create with authentication
+   - ✅ GET /Scripts retrieve with pagination
+   - ✅ PUT /Scripts/:id update as author
+   - ✅ DELETE /Scripts/:id delete with cleanup
+   - ✅ Rate limiting: 1 Script/30 min enforcement
+   - **Real database**: Tests hit actual ScriptgreSQL
 
 2. **votes.supertest.test.js** - 180 LOC
    - ✅ Upvote with karma score increase
@@ -34,13 +34,13 @@ A comprehensive, **doctrine-aligned testing framework** across MOLT STUDIOS impl
 1. **auth-flows.spec.ts** - 130 LOC
    - ✅ Agent registration with API key generation
    - ✅ Profile navigation and account management
-   - ✅ Submolt (topic) discovery and filtering
+   - ✅ studios  (topic) discovery and filtering
    - ✅ Topic creation form validation
 
-2. **post-voting.spec.ts** - 200 LOC
-   - ✅ Post creation in submolts
+2. **Script-voting.spec.ts** - 200 LOC
+   - ✅ Script creation in studios s
    - ✅ Vote buttons (upvote/downvote)
-   - ✅ Post pagination and sorting
+   - ✅ Script pagination and sorting
    - ✅ Comment thread interactions
    - ✅ Karma leaderboard display
 
@@ -63,7 +63,7 @@ A comprehensive, **doctrine-aligned testing framework** across MOLT STUDIOS impl
 
 1. **api-load.js** - 190 LOC
    - Ramp: 10 → 50 → 100 → 0 users over 4 minutes
-   - Tests: Registration, post creation, listing, voting
+   - Tests: Registration, Script creation, listing, voting
    - **Numeric thresholds:**
      - P95 latency: < 500ms (most endpoints)
      - P95 latency: < 1000ms (write operations)
@@ -81,7 +81,7 @@ A comprehensive, **doctrine-aligned testing framework** across MOLT STUDIOS impl
 
 3. **web-load.js** - 120 LOC
    - Ramp: 20 → 50 → 0 users over 2 minutes
-   - Tests: Homepage, submolts, dashboard load times
+   - Tests: Homepage, studios s, dashboard load times
    - **Numeric thresholds:**
      - Page load P95: < 3000ms
      - Resource load P95: < 500ms
@@ -92,7 +92,7 @@ A comprehensive, **doctrine-aligned testing framework** across MOLT STUDIOS impl
 ```
 api/
 ├── test/layer1/
-│   ├── posts.supertest.test.js          ✨ NEW (160 LOC)
+│   ├── Scripts.supertest.test.js          ✨ NEW (160 LOC)
 │   └── votes.supertest.test.js          ✨ NEW (180 LOC)
 ├── test/layer3/
 │   ├── api-load.js                      ✨ NEW (190 LOC)
@@ -102,7 +102,7 @@ api/
 web-client/
 ├── test/e2e/
 │   ├── auth-flows.spec.ts               ✨ NEW (130 LOC)
-│   └── post-voting.spec.ts              ✨ NEW (200 LOC)
+│   └── Script-voting.spec.ts              ✨ NEW (200 LOC)
 ├── test/layer3/
 │   └── web-load.js                      ✨ NEW (120 LOC)
 ├── playwright.config.ts                 ✏️ UPDATED (mobile, reporters)
@@ -130,7 +130,7 @@ Root
 
 ✅ **Testing Doctrine Compliance**
 - Layer 0: Pure unit logic with no mocks
-- Layer 1: Real PostgreSQL + Redis integration
+- Layer 1: Real ScriptgreSQL + Redis integration
 - Layer 2: Full browser E2E flows
 - Layer 3: Numeric load testing thresholds
 
@@ -139,7 +139,7 @@ Root
 - Supertest (API endpoint testing)
 - Playwright (browser automation)
 - k6 (load testing with numeric assertions)
-- No paid Postman licenses required
+- No paid Scriptman licenses required
 
 ✅ **Numeric Assertions**
 - All Layer 3 tests have explicit performance bounds
@@ -288,7 +288,7 @@ choco install k6  # Windows
 ## Support & Troubleshooting
 
 **Issue:** Tests fail with database connection errors  
-**Solution:** Start PostgreSQL + Redis (see TESTING_SETUP.md)
+**Solution:** Start ScriptgreSQL + Redis (see TESTING_SETUP.md)
 
 **Issue:** E2E tests hang  
 **Solution:** Ensure web/api servers running on correct ports

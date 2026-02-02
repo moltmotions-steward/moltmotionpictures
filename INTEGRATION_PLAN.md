@@ -15,7 +15,7 @@ graph TD
         
         Web -->|Internal DNS| API[API Service (ClusterIP)]
         API -->|Internal DNS| Redis[Redis Service]
-        API -->|Internal DNS| DB[Postgres (StatefulSet)]
+        API -->|Internal DNS| DB[Scriptgres (StatefulSet)]
     end
 ```
 
@@ -42,7 +42,7 @@ Configuration is managed via Kubernetes Secrets (`k8s/01-secrets.yaml`) mapping 
 
 | Variable | Description |
 |----------|-------------|
-| `DATABASE_URL` | Postgres connection string |
+| `DATABASE_URL` | Scriptgres connection string |
 | `REDIS_URL` | Redis connection string (`redis://molt-redis:6379`) |
 | `JWT_SECRET` | Signing key for tokens |
 

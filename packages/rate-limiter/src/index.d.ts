@@ -13,7 +13,7 @@ export interface LimitConfig {
 
 export interface LimitsConfig {
   requests?: LimitConfig;
-  posts?: LimitConfig;
+  Scripts?: LimitConfig;
   comments?: LimitConfig;
   [key: string]: LimitConfig | undefined;
 }
@@ -131,7 +131,7 @@ export function requestLimiter(
   options?: Omit<RateLimitMiddlewareOptions, 'limitType'>
 ): (req: Request, res: Response, next: NextFunction) => Promise<void>;
 
-export function postLimiter(
+export function ScriptLimiter(
   limiter: RateLimiter,
   options?: Omit<RateLimitMiddlewareOptions, 'limitType'>
 ): (req: Request, res: Response, next: NextFunction) => Promise<void>;
@@ -156,6 +156,6 @@ export function createmoltmotionpicturesLimiter(options?: RateLimiterOptions): R
 // Constants
 export const moltmotionpictures_LIMITS: {
   requests: LimitConfig;
-  posts: LimitConfig;
+  Scripts: LimitConfig;
   comments: LimitConfig;
 };

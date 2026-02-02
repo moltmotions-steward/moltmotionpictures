@@ -6,8 +6,8 @@ describe('Layer 1 - Vote Service', () => {
   let db;
   let agent1Id, agent1Key, agent1Name;
   let agent2Id, agent2Key, agent2Name;
-  let submoltId;
-  let postId;
+  let studios Id;
+  let ScriptId;
   let commentId;
 
   beforeAll(() => {
@@ -19,11 +19,11 @@ describe('Layer 1 - Vote Service', () => {
       if (commentId) {
         await db.query('DELETE FROM comments WHERE id = $1', [commentId]);
       }
-      if (postId) {
-        await db.query('DELETE FROM posts WHERE id = $1', [postId]);
+      if (ScriptId) {
+        await db.query('DELETE FROM Scripts WHERE id = $1', [ScriptId]);
       }
-      if (submoltId) {
-        await db.query('DELETE FROM submolts WHERE id = $1', [submoltId]);
+      if (studios Id) {
+        await db.query('DELETE FROM studios s WHERE id = $1', [studios Id]);
       }
       if (agent1Id) {
         await db.query('DELETE FROM agents WHERE id = $1', [agent1Id]);
@@ -41,7 +41,7 @@ describe('Layer 1 - Vote Service', () => {
     agent2Name = `voter2_${Date.now().toString(36)}`;
 
     const reg1 = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ name: agent1Name, description: 'Voter 1' });
 
     expect(reg1.status).toBe(201);
@@ -50,7 +50,7 @@ describe('Layer 1 - Vote Service', () => {
     expect(agent1Key.length).toBe(83);
 
     const reg2 = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ name: agent2Name, description: 'Voter 2' });
 
     expect(reg2.status).toBe(201);
@@ -59,43 +59,43 @@ describe('Layer 1 - Vote Service', () => {
     expect(agent2Key.length).toBe(83);
   });
 
-  it('creates a submolt and post for voting', async () => {
-    const submoltName = `votesub_${Date.now().toString(36)}`;
+  it('creates a studios  and Script for voting', async () => {
+    const studios Name = `votesub_${Date.now().toString(36)}`;
     
     const subRes = await request(app)
-      .post('/api/v1/submolts')
+      .Script('/api/v1/studios s')
       .set('Authorization', `Bearer ${agent1Key}`)
       .send({
-        name: submoltName,
-        display_name: 'Vote Test Submolt',
+        name: studios Name,
+        display_name: 'Vote Test studios ',
         description: 'Testing voting'
       });
 
     expect(subRes.status).toBe(201);
-    submoltId = subRes.body.submolt.id;
+    studios Id = subRes.body.studios .id;
 
-    const postRes = await request(app)
-      .post('/api/v1/posts')
+    const ScriptRes = await request(app)
+      .Script('/api/v1/Scripts')
       .set('Authorization', `Bearer ${agent1Key}`)
       .send({
-        submolt: submoltName,
-        title: 'Test Post for Voting',
-        content: 'This post will be voted on'
+        studios : studios Name,
+        title: 'Test Script for Voting',
+        content: 'This Script will be voted on'
       });
 
-    expect(postRes.status).toBe(201);
-    postId = postRes.body.post.id;
-    expect(postRes.body.post.score).toBe(0);
+    expect(ScriptRes.status).toBe(201);
+    ScriptId = ScriptRes.body.Script.id;
+    expect(ScriptRes.body.Script.score).toBe(0);
   });
 
   it('creates a comment for voting', async () => {
-    // Log postId for debugging
-    if (!postId) {
-      throw new Error('postId is undefined - post creation may have failed');
+    // Log ScriptId for debugging
+    if (!ScriptId) {
+      throw new Error('ScriptId is undefined - Script creation may have failed');
     }
 
     const commentRes = await request(app)
-      .post(`/api/v1/posts/${postId}/comments`)
+      .Script(`/api/v1/Scripts/${ScriptId}/comments`)
       .set('Authorization', `Bearer ${agent1Key}`)
       .send({
         content: 'Test comment for voting'
@@ -106,7 +106,7 @@ describe('Layer 1 - Vote Service', () => {
     expect(commentRes.body.comment.score).toBe(0);
   });
 
-  it('upvotes a post and updates score and karma', async () => {
+  it('upvotes a Script and updates score and karma', async () => {
     // Get initial karma
     const initialKarma = await db.query(
       'SELECT karma FROM agents WHERE id = $1',
@@ -114,18 +114,18 @@ describe('Layer 1 - Vote Service', () => {
     );
     const startKarma = initialKarma.rows[0].karma;
 
-    // Agent 2 upvotes Agent 1's post
+    // Agent 2 upvotes Agent 1's Script
     const voteRes = await request(app)
-      .post(`/api/v1/posts/${postId}/upvote`)
+      .Script(`/api/v1/Scripts/${ScriptId}/upvote`)
       .set('Authorization', `Bearer ${agent2Key}`);
 
     expect(voteRes.status).toBe(200);
     expect(voteRes.body.success).toBe(true);
     expect(voteRes.body.action).toBe('upvoted');
 
-    // Verify post score increased by 1
-    const postCheck = await db.query('SELECT score FROM posts WHERE id = $1', [postId]);
-    expect(postCheck.rows[0].score).toBe(1);
+    // Verify Script score increased by 1
+    const ScriptCheck = await db.query('SELECT score FROM Scripts WHERE id = $1', [ScriptId]);
+    expect(ScriptCheck.rows[0].score).toBe(1);
 
     // Verify author karma increased by 1
     const karmaCheck = await db.query('SELECT karma FROM agents WHERE id = $1', [agent1Id]);
@@ -134,7 +134,7 @@ describe('Layer 1 - Vote Service', () => {
     // Verify vote record exists
     const voteCheck = await db.query(
       'SELECT value FROM votes WHERE agent_id = $1 AND target_id = $2 AND target_type = $3',
-      [agent2Id, postId, 'post']
+      [agent2Id, ScriptId, 'Script']
     );
     expect(voteCheck.rows.length).toBe(1);
     expect(voteCheck.rows[0].value).toBe(1);
@@ -142,20 +142,20 @@ describe('Layer 1 - Vote Service', () => {
 
   it('removes upvote when upvoting again', async () => {
     // Get current state
-    const preScore = await db.query('SELECT score FROM posts WHERE id = $1', [postId]);
+    const preScore = await db.query('SELECT score FROM Scripts WHERE id = $1', [ScriptId]);
     const preKarma = await db.query('SELECT karma FROM agents WHERE id = $1', [agent1Id]);
 
     // Upvote again (should remove)
     const voteRes = await request(app)
-      .post(`/api/v1/posts/${postId}/upvote`)
+      .Script(`/api/v1/Scripts/${ScriptId}/upvote`)
       .set('Authorization', `Bearer ${agent2Key}`);
 
     expect(voteRes.status).toBe(200);
     expect(voteRes.body.action).toBe('removed');
 
     // Score decreased by 1
-    const postCheck = await db.query('SELECT score FROM posts WHERE id = $1', [postId]);
-    expect(postCheck.rows[0].score).toBe(preScore.rows[0].score - 1);
+    const ScriptCheck = await db.query('SELECT score FROM Scripts WHERE id = $1', [ScriptId]);
+    expect(ScriptCheck.rows[0].score).toBe(preScore.rows[0].score - 1);
 
     // Karma decreased by 1
     const karmaCheck = await db.query('SELECT karma FROM agents WHERE id = $1', [agent1Id]);
@@ -164,25 +164,25 @@ describe('Layer 1 - Vote Service', () => {
     // Vote record deleted
     const voteCheck = await db.query(
       'SELECT * FROM votes WHERE agent_id = $1 AND target_id = $2',
-      [agent2Id, postId]
+      [agent2Id, ScriptId]
     );
     expect(voteCheck.rows.length).toBe(0);
   });
 
-  it('downvotes a post', async () => {
-    const preScore = await db.query('SELECT score FROM posts WHERE id = $1', [postId]);
+  it('downvotes a Script', async () => {
+    const preScore = await db.query('SELECT score FROM Scripts WHERE id = $1', [ScriptId]);
     const preKarma = await db.query('SELECT karma FROM agents WHERE id = $1', [agent1Id]);
 
     const voteRes = await request(app)
-      .post(`/api/v1/posts/${postId}/downvote`)
+      .Script(`/api/v1/Scripts/${ScriptId}/downvote`)
       .set('Authorization', `Bearer ${agent2Key}`);
 
     expect(voteRes.status).toBe(200);
     expect(voteRes.body.action).toBe('downvoted');
 
     // Score decreased by 1
-    const postCheck = await db.query('SELECT score FROM posts WHERE id = $1', [postId]);
-    expect(postCheck.rows[0].score).toBe(preScore.rows[0].score - 1);
+    const ScriptCheck = await db.query('SELECT score FROM Scripts WHERE id = $1', [ScriptId]);
+    expect(ScriptCheck.rows[0].score).toBe(preScore.rows[0].score - 1);
 
     // Karma decreased by 1
     const karmaCheck = await db.query('SELECT karma FROM agents WHERE id = $1', [agent1Id]);
@@ -191,26 +191,26 @@ describe('Layer 1 - Vote Service', () => {
     // Vote is -1
     const voteCheck = await db.query(
       'SELECT value FROM votes WHERE agent_id = $1 AND target_id = $2',
-      [agent2Id, postId]
+      [agent2Id, ScriptId]
     );
     expect(voteCheck.rows[0].value).toBe(-1);
   });
 
   it('changes vote from downvote to upvote', async () => {
-    const preScore = await db.query('SELECT score FROM posts WHERE id = $1', [postId]);
+    const preScore = await db.query('SELECT score FROM Scripts WHERE id = $1', [ScriptId]);
     const preKarma = await db.query('SELECT karma FROM agents WHERE id = $1', [agent1Id]);
 
     // Change from -1 to +1 (delta = +2)
     const voteRes = await request(app)
-      .post(`/api/v1/posts/${postId}/upvote`)
+      .Script(`/api/v1/Scripts/${ScriptId}/upvote`)
       .set('Authorization', `Bearer ${agent2Key}`);
 
     expect(voteRes.status).toBe(200);
     expect(voteRes.body.action).toBe('changed');
 
     // Score increased by 2 (from -1 to +1)
-    const postCheck = await db.query('SELECT score FROM posts WHERE id = $1', [postId]);
-    expect(postCheck.rows[0].score).toBe(preScore.rows[0].score + 2);
+    const ScriptCheck = await db.query('SELECT score FROM Scripts WHERE id = $1', [ScriptId]);
+    expect(ScriptCheck.rows[0].score).toBe(preScore.rows[0].score + 2);
 
     // Karma increased by 2
     const karmaCheck = await db.query('SELECT karma FROM agents WHERE id = $1', [agent1Id]);
@@ -219,14 +219,14 @@ describe('Layer 1 - Vote Service', () => {
     // Vote is now +1
     const voteCheck = await db.query(
       'SELECT value FROM votes WHERE agent_id = $1 AND target_id = $2',
-      [agent2Id, postId]
+      [agent2Id, ScriptId]
     );
     expect(voteCheck.rows[0].value).toBe(1);
   });
 
-  it('prevents self-voting on posts', async () => {
+  it('prevents self-voting on Scripts', async () => {
     const voteRes = await request(app)
-      .post(`/api/v1/posts/${postId}/upvote`)
+      .Script(`/api/v1/Scripts/${ScriptId}/upvote`)
       .set('Authorization', `Bearer ${agent1Key}`);
 
     expect(voteRes.status).toBe(400);
@@ -238,7 +238,7 @@ describe('Layer 1 - Vote Service', () => {
     const preKarma = await db.query('SELECT karma FROM agents WHERE id = $1', [agent1Id]);
 
     const voteRes = await request(app)
-      .post(`/api/v1/comments/${commentId}/upvote`)
+      .Script(`/api/v1/comments/${commentId}/upvote`)
       .set('Authorization', `Bearer ${agent2Key}`);
 
     expect(voteRes.status).toBe(200);
@@ -256,14 +256,14 @@ describe('Layer 1 - Vote Service', () => {
   it('downvotes a comment', async () => {
     // Remove existing upvote first
     await request(app)
-      .post(`/api/v1/comments/${commentId}/upvote`)
+      .Script(`/api/v1/comments/${commentId}/upvote`)
       .set('Authorization', `Bearer ${agent2Key}`);
 
     const preScore = await db.query('SELECT score FROM comments WHERE id = $1', [commentId]);
     const preKarma = await db.query('SELECT karma FROM agents WHERE id = $1', [agent1Id]);
 
     const voteRes = await request(app)
-      .post(`/api/v1/comments/${commentId}/downvote`)
+      .Script(`/api/v1/comments/${commentId}/downvote`)
       .set('Authorization', `Bearer ${agent2Key}`);
 
     expect(voteRes.status).toBe(200);
@@ -280,18 +280,18 @@ describe('Layer 1 - Vote Service', () => {
 
   it('prevents self-voting on comments', async () => {
     const voteRes = await request(app)
-      .post(`/api/v1/comments/${commentId}/upvote`)
+      .Script(`/api/v1/comments/${commentId}/upvote`)
       .set('Authorization', `Bearer ${agent1Key}`);
 
     expect(voteRes.status).toBe(400);
     expect(voteRes.body.error).toContain('Cannot vote on your own content');
   });
 
-  it('returns 404 for voting on non-existent post', async () => {
+  it('returns 404 for voting on non-existent Script', async () => {
     const fakeId = '00000000-0000-0000-0000-000000000000';
     
     const voteRes = await request(app)
-      .post(`/api/v1/posts/${fakeId}/upvote`)
+      .Script(`/api/v1/Scripts/${fakeId}/upvote`)
       .set('Authorization', `Bearer ${agent2Key}`);
 
     expect(voteRes.status).toBe(404);
@@ -301,7 +301,7 @@ describe('Layer 1 - Vote Service', () => {
     const fakeId = '00000000-0000-0000-0000-000000000000';
     
     const voteRes = await request(app)
-      .post(`/api/v1/comments/${fakeId}/upvote`)
+      .Script(`/api/v1/comments/${fakeId}/upvote`)
       .set('Authorization', `Bearer ${agent2Key}`);
 
     expect(voteRes.status).toBe(404);

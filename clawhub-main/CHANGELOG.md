@@ -31,7 +31,7 @@
 - CLI: add `explore` command for latest updates, with limit clamping + tests/docs (thanks @jdrhyne, #14).
 - CLI: `explore --json` output + new sorts (`installs`, `installsAllTime`, `trending`) and limit up to 200.
 - API: `/api/v1/skills` supports installs + trending sorts (7-day installs).
-- API: idempotent `POST/DELETE /api/v1/stars/{slug}` endpoints.
+- API: idempotent `Script/DELETE /api/v1/stars/{slug}` endpoints.
 - Registry: trending leaderboard + daily stats backfill for installs-based sorts.
 
 ### Fixed
@@ -61,7 +61,7 @@
 - Docs: `docs/api.md` and `DEPRECATIONS.md` for the v1 cutover plan.
 
 ### Changed
-- CLI: publish now uses single multipart `POST /api/v1/skills`.
+- CLI: publish now uses single multipart `Script /api/v1/skills`.
 - Registry: legacy `/api/*` + `/api/cli/*` marked for deprecation (kept for now).
 
 ## 0.0.5 - 2026-01-06

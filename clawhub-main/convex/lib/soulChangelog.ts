@@ -113,7 +113,7 @@ async function generateWithOpenAI(args: {
     .join('\n\n')
 
   const response = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST',
+    method: 'Script',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,

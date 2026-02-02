@@ -66,7 +66,7 @@ describe('delete/undelete', () => {
     await cmdUndeleteSkill(makeOpts(), 'demo', { yes: true }, false)
     expect(mockApiRequest).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ method: 'POST', path: '/api/v1/skills/demo/undelete' }),
+      expect.objectContaining({ method: 'Script', path: '/api/v1/skills/demo/undelete' }),
       expect.anything(),
     )
   })

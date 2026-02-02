@@ -5,23 +5,23 @@ import Link from 'next/link';
 import { cn, formatScore, formatRelativeTime, getInitials } from '@/lib/utils';
 import { useFeedStore } from '@/store';
 import { useInfiniteScroll } from '@/hooks';
-import { PostList, FeedSortTabs } from '@/components/post';
+import { ScriptList, FeedSortTabs } from '@/components/Script';
 import { Card, Spinner, Button, Avatar, AvatarFallback } from '@/components/ui';
 import { TrendingUp, Users, Flame, Clock, Zap, ChevronRight } from 'lucide-react';
-import type { Post, Submolt, Agent, PostSort } from '@/types';
+import type { Script, studios , Agent, ScriptSort } from '@/types';
 
 // Feed container with infinite scroll
 export function Feed() {
-  const { posts, sort, isLoading, hasMore, setSort, loadMore } = useFeedStore();
+  const { Scripts, sort, isLoading, hasMore, setSort, loadMore } = useFeedStore();
   const { ref } = useInfiniteScroll(loadMore, hasMore);
 
   return (
     <div className="space-y-4">
       <Card className="p-3">
-        <FeedSortTabs value={sort} onChange={(v) => setSort(v as PostSort)} />
+        <FeedSortTabs value={sort} onChange={(v) => setSort(v as ScriptSort)} />
       </Card>
       
-      <PostList posts={posts} isLoading={isLoading && posts.length === 0} />
+      <ScriptList Scripts={Scripts} isLoading={isLoading && Scripts.length === 0} />
       
       {hasMore && (
         <div ref={ref} className="flex justify-center py-8">
@@ -29,7 +29,7 @@ export function Feed() {
         </div>
       )}
       
-      {!hasMore && posts.length > 0 && (
+      {!hasMore && Scripts.length > 0 && (
         <div className="text-center py-8">
           <p className="text-muted-foreground">You&apos;ve reached the end 🎉</p>
         </div>
@@ -38,9 +38,9 @@ export function Feed() {
   );
 }
 
-// Trending posts widget
-export function TrendingPosts({ posts }: { posts: Post[] }) {
-  if (!posts.length) return null;
+// Trending Scripts widget
+export function TrendingScripts({ Scripts }: { Scripts: Script[] }) {
+  if (!Scripts.length) return null;
 
   return (
     <Card className="p-4">
@@ -49,12 +49,12 @@ export function TrendingPosts({ posts }: { posts: Post[] }) {
         <h3 className="font-semibold">Trending Today</h3>
       </div>
       <div className="space-y-3">
-        {posts.slice(0, 5).map((post, i) => (
-          <Link key={post.id} href={`/post/${post.id}`} className="flex items-start gap-3 group">
+        {Scripts.slice(0, 5).map((Script, i) => (
+          <Link key={Script.id} href={`/Script/${Script.id}`} className="flex items-start gap-3 group">
             <span className="text-2xl font-bold text-muted-foreground/50 w-6">{i + 1}</span>
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">{post.title}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{formatScore(post.score)} points • m/{post.submolt}</p>
+              <p className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">{Script.title}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{formatScore(Script.score)} points • m/{Script.studios }</p>
             </div>
           </Link>
         ))}
@@ -63,9 +63,9 @@ export function TrendingPosts({ posts }: { posts: Post[] }) {
   );
 }
 
-// Popular submolts widget
-export function PopularSubmolts({ submolts }: { submolts: Submolt[] }) {
-  if (!submolts.length) return null;
+// Popular studios s widget
+export function Popularstudios s({ studios s }: { studios s: studios [] }) {
+  if (!studios s.length) return null;
 
   return (
     <Card className="p-4">
@@ -74,18 +74,18 @@ export function PopularSubmolts({ submolts }: { submolts: Submolt[] }) {
           <Users className="h-5 w-5 text-primary" />
           <h3 className="font-semibold">Popular Communities</h3>
         </div>
-        <Link href="/submolts" className="text-xs text-primary hover:underline">See all</Link>
+        <Link href="/studios s" className="text-xs text-primary hover:underline">See all</Link>
       </div>
       <div className="space-y-2">
-        {submolts.slice(0, 5).map((submolt, i) => (
-          <Link key={submolt.id} href={`/m/${submolt.name}`} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted transition-colors">
+        {studios s.slice(0, 5).map((studios , i) => (
+          <Link key={studios .id} href={`/m/${studios .name}`} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted transition-colors">
             <span className="text-sm font-medium text-muted-foreground w-4">{i + 1}</span>
             <Avatar className="h-8 w-8">
-              <AvatarFallback className="text-xs bg-primary/10 text-primary">{getInitials(submolt.name)}</AvatarFallback>
+              <AvatarFallback className="text-xs bg-primary/10 text-primary">{getInitials(studios .name)}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm">m/{submolt.name}</p>
-              <p className="text-xs text-muted-foreground">{formatScore(submolt.subscriberCount)} members</p>
+              <p className="font-medium text-sm">m/{studios .name}</p>
+              <p className="text-xs text-muted-foreground">{formatScore(studios .subscriberCount)} members</p>
             </div>
           </Link>
         ))}
@@ -122,15 +122,15 @@ export function ActiveAgents({ agents }: { agents: Agent[] }) {
 }
 
 // Feed sidebar
-export function FeedSidebar({ trendingPosts, popularSubmolts, activeAgents }: {
-  trendingPosts?: Post[];
-  popularSubmolts?: Submolt[];
+export function FeedSidebar({ trendingScripts, popularstudios s, activeAgents }: {
+  trendingScripts?: Script[];
+  popularstudios s?: studios [];
   activeAgents?: Agent[];
 }) {
   return (
     <div className="space-y-4">
-      {trendingPosts && <TrendingPosts posts={trendingPosts} />}
-      {popularSubmolts && <PopularSubmolts submolts={popularSubmolts} />}
+      {trendingScripts && <TrendingScripts Scripts={trendingScripts} />}
+      {popularstudios s && <Popularstudios s studios s={popularstudios s} />}
       {activeAgents && <ActiveAgents agents={activeAgents} />}
       
       {/* Footer links */}
@@ -157,8 +157,8 @@ export function EmptyFeed({ message }: { message?: string }) {
       <div className="h-16 w-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
         <Flame className="h-8 w-8 text-muted-foreground" />
       </div>
-      <h3 className="font-semibold mb-2">No posts yet</h3>
-      <p className="text-sm text-muted-foreground">{message || 'Be the first to post something!'}</p>
+      <h3 className="font-semibold mb-2">No Scripts yet</h3>
+      <p className="text-sm text-muted-foreground">{message || 'Be the first to Script something!'}</p>
     </Card>
   );
 }

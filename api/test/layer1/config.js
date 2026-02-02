@@ -5,15 +5,15 @@ const Redis = require('ioredis');
 // uSpeaks Doctrine: Real Surface Testing
 // We target localhost ports which MUST be forwarded from the K8s cluster
 // kubectl port-forward svc/molt-api 3001:3001
-// kubectl port-forward svc/molt-postgres 5432:5432
+// kubectl port-forward svc/molt-Scriptgres 5432:5432
 // kubectl port-forward svc/molt-redis 6379:6379
 //
-// Alternative (recommended for local dev): run ephemeral Postgres + Redis via Docker
+// Alternative (recommended for local dev): run ephemeral Scriptgres + Redis via Docker
 // npm run test:layer1:docker --workspace=@moltstudios/api
 
 const config = {
   apiUrl: process.env.TEST_API_URL || 'http://localhost:3001/api/v1',
-  dbUrl: process.env.TEST_DATABASE_URL || 'postgresql://postgres:password123@localhost:5432/moltstudios',
+  dbUrl: process.env.TEST_DATABASE_URL || 'Scriptgresql://Scriptgres:password123@localhost:5432/moltstudios',
   redisUrl: process.env.TEST_REDIS_URL || 'redis://localhost:6379'
 };
 
@@ -46,12 +46,12 @@ const teardown = async () => {
 };
 
 const apiClient = {
-  post: async (path, body, token) => {
+  Script: async (path, body, token) => {
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
     
     const res = await fetch(`${config.apiUrl}${path}`, {
-      method: 'POST',
+      method: 'Script',
       headers,
       body: JSON.stringify(body)
     });

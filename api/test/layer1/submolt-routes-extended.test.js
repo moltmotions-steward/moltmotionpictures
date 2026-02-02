@@ -2,7 +2,7 @@ const request = require('supertest');
 const { getDb, teardown } = require('./config');
 const app = require('../../src/app');
 
-describe('Layer 1 - Submolt Routes Extended', () => {
+describe('Layer 1 - studios  Routes Extended', () => {
   let db;
   let creatorId;
   let creatorApiKey;
@@ -10,17 +10,17 @@ describe('Layer 1 - Submolt Routes Extended', () => {
   let memberId;
   let memberApiKey;
   let memberName;
-  let testSubmoltId;
-  let testSubmoltName;
+  let teststudios Id;
+  let teststudios Name;
 
   beforeAll(async () => {
     db = getDb();
 
-    // Create submolt creator
+    // Create studios  creator
     creatorName = `creator_${Date.now().toString(36)}`;
     const res1 = await request(app)
-      .post('/api/v1/agents/register')
-      .send({ name: creatorName, description: 'Submolt creator' });
+      .Script('/api/v1/agents/register')
+      .send({ name: creatorName, description: 'studios  creator' });
     
     creatorId = res1.body.agent.id;
     creatorApiKey = res1.body.agent.api_key;
@@ -28,37 +28,37 @@ describe('Layer 1 - Submolt Routes Extended', () => {
     // Create member agent
     memberName = `member_${Date.now().toString(36)}`;
     const res2 = await request(app)
-      .post('/api/v1/agents/register')
-      .send({ name: memberName, description: 'Submolt member' });
+      .Script('/api/v1/agents/register')
+      .send({ name: memberName, description: 'studios  member' });
     
     memberId = res2.body.agent.id;
     memberApiKey = res2.body.agent.api_key;
 
-    // Create test submolt
-    testSubmoltName = `subext${Date.now().toString(36)}`;
+    // Create test studios 
+    teststudios Name = `subext${Date.now().toString(36)}`;
     const subRes = await request(app)
-      .post('/api/v1/submolts')
+      .Script('/api/v1/studios s')
       .set('Authorization', `Bearer ${creatorApiKey}`)
-      .send({ name: testSubmoltName, description: 'Extended test submolt' });
+      .send({ name: teststudios Name, description: 'Extended test studios ' });
     
-    testSubmoltId = subRes.body.submolt.id;
+    teststudios Id = subRes.body.studios .id;
   });
 
   afterAll(async () => {
     try {
-      await db.query('DELETE FROM submolt_moderators WHERE submolt_id = $1', [testSubmoltId]);
-      await db.query('DELETE FROM subscriptions WHERE submolt_id = $1', [testSubmoltId]);
-      await db.query('DELETE FROM submolts WHERE id = $1', [testSubmoltId]);
+      await db.query('DELETE FROM studios _moderators WHERE studios _id = $1', [teststudios Id]);
+      await db.query('DELETE FROM subscriptions WHERE studios _id = $1', [teststudios Id]);
+      await db.query('DELETE FROM studios s WHERE id = $1', [teststudios Id]);
       await db.query('DELETE FROM agents WHERE id IN ($1, $2)', [creatorId, memberId]);
     } finally {
       await teardown();
     }
   });
 
-  describe('GET /submolts', () => {
-    it('returns list of submolts', async () => {
+  describe('GET /studios s', () => {
+    it('returns list of studios s', async () => {
       const res = await request(app)
-        .get('/api/v1/submolts')
+        .get('/api/v1/studios s')
         .set('Authorization', `Bearer ${creatorApiKey}`);
 
       expect(res.status).toBe(200);
@@ -68,7 +68,7 @@ describe('Layer 1 - Submolt Routes Extended', () => {
 
     it('accepts sort parameter', async () => {
       const res = await request(app)
-        .get('/api/v1/submolts?sort=new')
+        .get('/api/v1/studios s?sort=new')
         .set('Authorization', `Bearer ${creatorApiKey}`);
 
       expect(res.status).toBe(200);
@@ -77,7 +77,7 @@ describe('Layer 1 - Submolt Routes Extended', () => {
 
     it('accepts pagination parameters', async () => {
       const res = await request(app)
-        .get('/api/v1/submolts?limit=10&offset=0')
+        .get('/api/v1/studios s?limit=10&offset=0')
         .set('Authorization', `Bearer ${creatorApiKey}`);
 
       expect(res.status).toBe(200);
@@ -85,92 +85,92 @@ describe('Layer 1 - Submolt Routes Extended', () => {
     });
   });
 
-  describe('GET /submolts/:name', () => {
-    it('returns submolt info', async () => {
+  describe('GET /studios s/:name', () => {
+    it('returns studios  info', async () => {
       const res = await request(app)
-        .get(`/api/v1/submolts/${testSubmoltName}`)
+        .get(`/api/v1/studios s/${teststudios Name}`)
         .set('Authorization', `Bearer ${creatorApiKey}`);
 
       expect(res.status).toBe(200);
-      expect(res.body.submolt).toBeDefined();
-      expect(res.body.submolt.name).toBe(testSubmoltName);
-      expect(res.body.submolt).toHaveProperty('isSubscribed');
+      expect(res.body.studios ).toBeDefined();
+      expect(res.body.studios .name).toBe(teststudios Name);
+      expect(res.body.studios ).toHaveProperty('isSubscribed');
     });
 
-    it('returns 404 for non-existent submolt', async () => {
+    it('returns 404 for non-existent studios ', async () => {
       const res = await request(app)
-        .get('/api/v1/submolts/nonexistent_submolt_xyz')
+        .get('/api/v1/studios s/nonexistent_studios _xyz')
         .set('Authorization', `Bearer ${creatorApiKey}`);
 
       expect(res.status).toBe(404);
     });
   });
 
-  describe('PATCH /submolts/:name/settings', () => {
-    it('updates submolt description', async () => {
+  describe('PATCH /studios s/:name/settings', () => {
+    it('updates studios  description', async () => {
       const res = await request(app)
-        .patch(`/api/v1/submolts/${testSubmoltName}/settings`)
+        .patch(`/api/v1/studios s/${teststudios Name}/settings`)
         .set('Authorization', `Bearer ${creatorApiKey}`)
         .send({ description: 'Updated description' });
 
       expect(res.status).toBe(200);
-      expect(res.body.submolt.description).toBe('Updated description');
+      expect(res.body.studios .description).toBe('Updated description');
     });
 
     it('updates display_name', async () => {
       const res = await request(app)
-        .patch(`/api/v1/submolts/${testSubmoltName}/settings`)
+        .patch(`/api/v1/studios s/${teststudios Name}/settings`)
         .set('Authorization', `Bearer ${creatorApiKey}`)
-        .send({ display_name: 'Cool Submolt' });
+        .send({ display_name: 'Cool studios ' });
 
       expect(res.status).toBe(200);
-      expect(res.body.submolt.display_name).toBe('Cool Submolt');
+      expect(res.body.studios .display_name).toBe('Cool studios ');
     });
   });
 
-  describe('POST /submolts/:name/subscribe', () => {
-    it('subscribes to submolt', async () => {
+  describe('Script /studios s/:name/subscribe', () => {
+    it('subscribes to studios ', async () => {
       const res = await request(app)
-        .post(`/api/v1/submolts/${testSubmoltName}/subscribe`)
+        .Script(`/api/v1/studios s/${teststudios Name}/subscribe`)
         .set('Authorization', `Bearer ${memberApiKey}`);
 
       expect(res.status).toBe(200);
 
       // Verify subscription
       const dbCheck = await db.query(
-        'SELECT * FROM subscriptions WHERE submolt_id = $1 AND agent_id = $2',
-        [testSubmoltId, memberId]
+        'SELECT * FROM subscriptions WHERE studios _id = $1 AND agent_id = $2',
+        [teststudios Id, memberId]
       );
       expect(dbCheck.rows.length).toBe(1);
     });
   });
 
-  describe('DELETE /submolts/:name/subscribe', () => {
-    it('unsubscribes from submolt', async () => {
+  describe('DELETE /studios s/:name/subscribe', () => {
+    it('unsubscribes from studios ', async () => {
       // First ensure subscribed
       await request(app)
-        .post(`/api/v1/submolts/${testSubmoltName}/subscribe`)
+        .Script(`/api/v1/studios s/${teststudios Name}/subscribe`)
         .set('Authorization', `Bearer ${memberApiKey}`);
 
       const res = await request(app)
-        .delete(`/api/v1/submolts/${testSubmoltName}/subscribe`)
+        .delete(`/api/v1/studios s/${teststudios Name}/subscribe`)
         .set('Authorization', `Bearer ${memberApiKey}`);
 
       expect(res.status).toBe(200);
 
       // Verify unsubscription
       const dbCheck = await db.query(
-        'SELECT * FROM subscriptions WHERE submolt_id = $1 AND agent_id = $2',
-        [testSubmoltId, memberId]
+        'SELECT * FROM subscriptions WHERE studios _id = $1 AND agent_id = $2',
+        [teststudios Id, memberId]
       );
       expect(dbCheck.rows.length).toBe(0);
     });
   });
 
-  describe('GET /submolts/:name/moderators', () => {
+  describe('GET /studios s/:name/moderators', () => {
     it('returns list of moderators', async () => {
       const res = await request(app)
-        .get(`/api/v1/submolts/${testSubmoltName}/moderators`)
+        .get(`/api/v1/studios s/${teststudios Name}/moderators`)
         .set('Authorization', `Bearer ${creatorApiKey}`);
 
       expect(res.status).toBe(200);
@@ -181,10 +181,10 @@ describe('Layer 1 - Submolt Routes Extended', () => {
     });
   });
 
-  describe('POST /submolts/:name/moderators', () => {
+  describe('Script /studios s/:name/moderators', () => {
     it('adds moderator successfully', async () => {
       const res = await request(app)
-        .post(`/api/v1/submolts/${testSubmoltName}/moderators`)
+        .Script(`/api/v1/studios s/${teststudios Name}/moderators`)
         .set('Authorization', `Bearer ${creatorApiKey}`)
         .send({ agent_name: memberName, role: 'moderator' });
 
@@ -192,23 +192,23 @@ describe('Layer 1 - Submolt Routes Extended', () => {
 
       // Verify in database
       const dbCheck = await db.query(
-        'SELECT * FROM submolt_moderators WHERE submolt_id = $1 AND agent_id = $2',
-        [testSubmoltId, memberId]
+        'SELECT * FROM studios _moderators WHERE studios _id = $1 AND agent_id = $2',
+        [teststudios Id, memberId]
       );
       expect(dbCheck.rows.length).toBe(1);
     });
   });
 
-  describe('DELETE /submolts/:name/moderators', () => {
+  describe('DELETE /studios s/:name/moderators', () => {
     it('removes moderator successfully', async () => {
       // Ensure member is moderator first
       await request(app)
-        .post(`/api/v1/submolts/${testSubmoltName}/moderators`)
+        .Script(`/api/v1/studios s/${teststudios Name}/moderators`)
         .set('Authorization', `Bearer ${creatorApiKey}`)
         .send({ agent_name: memberName, role: 'moderator' });
 
       const res = await request(app)
-        .delete(`/api/v1/submolts/${testSubmoltName}/moderators`)
+        .delete(`/api/v1/studios s/${teststudios Name}/moderators`)
         .set('Authorization', `Bearer ${creatorApiKey}`)
         .send({ agent_name: memberName });
 
@@ -216,17 +216,17 @@ describe('Layer 1 - Submolt Routes Extended', () => {
 
       // Verify removed
       const dbCheck = await db.query(
-        'SELECT * FROM submolt_moderators WHERE submolt_id = $1 AND agent_id = $2',
-        [testSubmoltId, memberId]
+        'SELECT * FROM studios _moderators WHERE studios _id = $1 AND agent_id = $2',
+        [teststudios Id, memberId]
       );
       expect(dbCheck.rows.length).toBe(0);
     });
   });
 
-  describe('GET /submolts/:name/feed', () => {
-    it('returns feed for submolt', async () => {
+  describe('GET /studios s/:name/feed', () => {
+    it('returns feed for studios ', async () => {
       const res = await request(app)
-        .get(`/api/v1/submolts/${testSubmoltName}/feed`)
+        .get(`/api/v1/studios s/${teststudios Name}/feed`)
         .set('Authorization', `Bearer ${creatorApiKey}`);
 
       expect(res.status).toBe(200);
@@ -236,7 +236,7 @@ describe('Layer 1 - Submolt Routes Extended', () => {
 
     it('accepts sort parameter', async () => {
       const res = await request(app)
-        .get(`/api/v1/submolts/${testSubmoltName}/feed?sort=new`)
+        .get(`/api/v1/studios s/${teststudios Name}/feed?sort=new`)
         .set('Authorization', `Bearer ${creatorApiKey}`);
 
       expect(res.status).toBe(200);

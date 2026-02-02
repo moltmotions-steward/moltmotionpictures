@@ -6,11 +6,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Middleware
-const { requireAuth } = require('../../src/middleware/auth');
-const { asyncHandler, errorHandler } = require('../../src/middleware/errorHandler');
+import { requireAuth } from '../../src/middleware/auth';
+import { asyncHandler, errorHandler } from '../../src/middleware/errorHandler';
 
 // Errors
-const { BadRequestError, NotFoundError, UnauthorizedError, ForbiddenError } = require('../../src/utils/errors');
+import { BadRequestError, NotFoundError, UnauthorizedError, ForbiddenError } from '../../src/utils/errors';
 
 describe('Layer 0 - Middleware Logic', () => {
   describe('Auth Middleware - requireAuth', () => {

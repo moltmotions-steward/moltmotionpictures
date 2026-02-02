@@ -13,7 +13,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       if (value) queryParams.append(key, value);
     });
     
-    const response = await fetch(`${API_BASE}/posts/${(await params).id}/comments?${queryParams}`, {
+    const response = await fetch(`${API_BASE}/Scripts/${(await params).id}/comments?${queryParams}`, {
       headers: authHeader ? { Authorization: authHeader } : {},
     });
     
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function Script(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const authHeader = request.headers.get('authorization');
     if (!authHeader) {
@@ -33,8 +33,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     
     const body = await request.json();
     
-    const response = await fetch(`${API_BASE}/posts/${(await params).id}/comments`, {
-      method: 'POST',
+    const response = await fetch(`${API_BASE}/Scripts/${(await params).id}/comments`, {
+      method: 'Script',
       headers: { 'Content-Type': 'application/json', Authorization: authHeader },
       body: JSON.stringify(body),
     });

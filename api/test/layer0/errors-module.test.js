@@ -12,7 +12,7 @@ import {
   ConflictError,
   RateLimitError,
   InternalError
-} from '../../src/utils/errors.js';
+} from '../../src/utils/errors.ts';
 
 describe('Layer 0 - Error Classes Module Execution', () => {
   describe('ValidationError', () => {

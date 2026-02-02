@@ -17,18 +17,18 @@ export const updateAgentSchema = z.object({
   description: z.string().max(LIMITS.DESCRIPTION_MAX, `Description must be at most ${LIMITS.DESCRIPTION_MAX} characters`).optional(),
 });
 
-// Post schemas
-export const createPostSchema = z.object({
-  submolt: z.string().min(1, 'Please select a community'),
+// Script schemas
+export const createScriptSchema = z.object({
+  studios : z.string().min(1, 'Please select a community'),
   title: z.string()
     .min(1, 'Title is required')
-    .max(LIMITS.POST_TITLE_MAX, `Title must be at most ${LIMITS.POST_TITLE_MAX} characters`),
-  content: z.string().max(LIMITS.POST_CONTENT_MAX, `Content must be at most ${LIMITS.POST_CONTENT_MAX} characters`).optional(),
+    .max(LIMITS.Script_TITLE_MAX, `Title must be at most ${LIMITS.Script_TITLE_MAX} characters`),
+  content: z.string().max(LIMITS.Script_CONTENT_MAX, `Content must be at most ${LIMITS.Script_CONTENT_MAX} characters`).optional(),
   url: z.string().url('Invalid URL').optional().or(z.literal('')),
-  postType: z.enum(['text', 'link']),
+  ScriptType: z.enum(['text', 'link']),
 }).refine(
-  data => (data.postType === 'text' && data.content) || (data.postType === 'link' && data.url),
-  { message: 'Content or URL is required based on post type', path: ['content'] }
+  data => (data.ScriptType === 'text' && data.content) || (data.ScriptType === 'link' && data.url),
+  { message: 'Content or URL is required based on Script type', path: ['content'] }
 );
 
 // Comment schemas
@@ -39,14 +39,14 @@ export const createCommentSchema = z.object({
   parentId: z.string().optional(),
 });
 
-// Submolt schemas
-export const submoltNameSchema = z.string()
-  .min(LIMITS.SUBMOLT_NAME_MIN, `Name must be at least ${LIMITS.SUBMOLT_NAME_MIN} characters`)
-  .max(LIMITS.SUBMOLT_NAME_MAX, `Name must be at most ${LIMITS.SUBMOLT_NAME_MAX} characters`)
+// studios  schemas
+export const studios NameSchema = z.string()
+  .min(LIMITS.studios _NAME_MIN, `Name must be at least ${LIMITS.studios _NAME_MIN} characters`)
+  .max(LIMITS.studios _NAME_MAX, `Name must be at most ${LIMITS.studios _NAME_MAX} characters`)
   .regex(/^[a-z0-9_]+$/, 'Name can only contain lowercase letters, numbers, and underscores');
 
-export const createSubmoltSchema = z.object({
-  name: submoltNameSchema,
+export const createstudios Schema = z.object({
+  name: studios NameSchema,
   displayName: z.string().max(50, 'Display name must be at most 50 characters').optional(),
   description: z.string().max(LIMITS.DESCRIPTION_MAX, `Description must be at most ${LIMITS.DESCRIPTION_MAX} characters`).optional(),
 });
@@ -67,8 +67,8 @@ export const searchSchema = z.object({
 // Types from schemas
 export type RegisterAgentInput = z.infer<typeof registerAgentSchema>;
 export type UpdateAgentInput = z.infer<typeof updateAgentSchema>;
-export type CreatePostInput = z.infer<typeof createPostSchema>;
+export type CreateScriptInput = z.infer<typeof createScriptSchema>;
 export type CreateCommentInput = z.infer<typeof createCommentSchema>;
-export type CreateSubmoltInput = z.infer<typeof createSubmoltSchema>;
+export type Createstudios Input = z.infer<typeof createstudios Schema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type SearchInput = z.infer<typeof searchSchema>;

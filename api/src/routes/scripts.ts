@@ -8,13 +8,11 @@
 
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-
-// Use require for JS modules without type declarations
-const { asyncHandler } = require('../middleware/errorHandler');
-const { requireAuth } = require('../middleware/auth');
-const { success, created, paginated } = require('../utils/response');
-const { BadRequestError, NotFoundError, ForbiddenError } = require('../utils/errors');
-const { validatePilotScript, canSubmitScript } = require('../services/ScriptValidationService');
+import { requireAuth } from '../middleware/auth';
+import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
+import { asyncHandler } from '../middleware/errorHandler';
+import { success, paginated, created } from '../utils/response';
+import { validatePilotScript, canSubmitScript } from '../services/ScriptValidationService';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -43,10 +41,11 @@ router.get('/', requireAuth, asyncHandler(async (req: any, res: any) => {
 
   const where: any = {
     studio_id: { in: studioIds },
+    script_type: 'pilot',
   };
 
   if (status) {
-    where.status = status;
+    where.pilot_status = status;
   }
 
   if (category) {
@@ -54,7 +53,8 @@ router.get('/', requireAuth, asyncHandler(async (req: any, res: any) => {
       where: { slug: category as string, is_active: true },
     });
     if (cat) {
-      where.category_id = cat.id;
+      // Filter by studio's category
+      where.studio = { category_id: cat.id };
     }
   }
 
@@ -62,8 +62,9 @@ router.get('/', requireAuth, asyncHandler(async (req: any, res: any) => {
     prisma.script.findMany({
       where,
       include: {
-        studio: true,
-        category: true,
+        studio: {
+          include: { category: true },
+        },
       },
       orderBy: { created_at: 'desc' },
       skip,
@@ -76,11 +77,11 @@ router.get('/', requireAuth, asyncHandler(async (req: any, res: any) => {
     id: s.id,
     title: s.title,
     logline: s.logline,
-    status: s.status,
-    studio: s.studio.full_name,
+    status: s.pilot_status,
+    studio: s.studio.full_name || s.studio.name,
     studio_id: s.studio.id,
-    category: s.category.slug,
-    vote_count: s.vote_count,
+    category: s.studio.category?.slug || null,
+    score: s.score,
     upvotes: s.upvotes,
     downvotes: s.downvotes,
     submitted_at: s.submitted_at,
@@ -109,13 +110,14 @@ router.get('/voting', asyncHandler(async (req: any, res: any) => {
 
     const scripts = await prisma.script.findMany({
       where: {
-        category_id: cat.id,
-        status: 'voting',
+        studio: { category_id: cat.id },
+        pilot_status: 'voting',
+        script_type: 'pilot',
       },
       include: {
         studio: true,
       },
-      orderBy: { vote_count: 'desc' },
+      orderBy: { score: 'desc' },
       take: 20,
     });
 
@@ -125,8 +127,8 @@ router.get('/voting', asyncHandler(async (req: any, res: any) => {
         id: s.id,
         title: s.title,
         logline: s.logline,
-        studio: s.studio.full_name,
-        vote_count: s.vote_count,
+        studio: s.studio.full_name || s.studio.name,
+        score: s.score,
         upvotes: s.upvotes,
         downvotes: s.downvotes,
         submitted_at: s.submitted_at,
@@ -172,16 +174,19 @@ router.post('/', requireAuth, asyncHandler(async (req: any, res: any) => {
 
   const script = await prisma.script.create({
     data: {
+      author_id: req.agent.id,
       studio_id,
-      category_id: studio.category.id,
+      studio_name: studio.name,
       title: title.trim(),
       logline: logline.trim(),
       script_data: JSON.stringify(script_data),
-      status: 'draft',
+      script_type: 'pilot',
+      pilot_status: 'draft',
     },
     include: {
-      studio: true,
-      category: true,
+      studio: {
+        include: { category: true },
+      },
     },
   });
 
@@ -194,20 +199,16 @@ router.post('/', requireAuth, asyncHandler(async (req: any, res: any) => {
     },
   });
 
-  // Type assertion for included relations
-  const scriptWithRelations = script as typeof script & {
-    studio: { full_name: string };
-    category: { slug: string };
-  };
+  const scriptWithRelations = script as any;
 
   created(res, {
     script: {
       id: scriptWithRelations.id,
       title: scriptWithRelations.title,
       logline: scriptWithRelations.logline,
-      status: scriptWithRelations.status,
-      studio: scriptWithRelations.studio.full_name,
-      category: scriptWithRelations.category.slug,
+      status: scriptWithRelations.pilot_status,
+      studio: scriptWithRelations.studio.full_name || scriptWithRelations.studio.name,
+      category: scriptWithRelations.studio.category?.slug || null,
       created_at: scriptWithRelations.created_at,
     },
   });
@@ -223,11 +224,8 @@ router.get('/:scriptId', requireAuth, asyncHandler(async (req: any, res: any) =>
   const script = await prisma.script.findUnique({
     where: { id: scriptId },
     include: {
-      studio: true,
-      category: true,
-      script_votes: {
-        where: { agent_id: req.agent.id },
-        take: 1,
+      studio: {
+        include: { category: true },
       },
     },
   });
@@ -235,6 +233,16 @@ router.get('/:scriptId', requireAuth, asyncHandler(async (req: any, res: any) =>
   if (!script) {
     throw new NotFoundError('Script not found');
   }
+
+  // Get user's vote on this script
+  const userVote = await prisma.scriptVote.findUnique({
+    where: {
+      script_id_agent_id: {
+        script_id: scriptId,
+        agent_id: req.agent.id,
+      },
+    },
+  });
 
   // Parse script data
   let parsedScriptData = null;
@@ -246,24 +254,26 @@ router.get('/:scriptId', requireAuth, asyncHandler(async (req: any, res: any) =>
     }
   }
 
+  const scriptWithRelations = script as any;
+
   success(res, {
     script: {
       id: script.id,
       title: script.title,
       logline: script.logline,
-      status: script.status,
-      studio: script.studio.full_name,
-      studio_id: script.studio.id,
-      category: script.category.slug,
+      status: script.pilot_status,
+      studio: scriptWithRelations.studio.full_name || scriptWithRelations.studio.name,
+      studio_id: scriptWithRelations.studio.id,
+      category: scriptWithRelations.studio.category?.slug || null,
       script_data: parsedScriptData,
-      vote_count: script.vote_count,
+      score: script.score,
       upvotes: script.upvotes,
       downvotes: script.downvotes,
-      user_vote: script.script_votes[0]?.value || null,
+      user_vote: userVote?.value || null,
       submitted_at: script.submitted_at,
       created_at: script.created_at,
     },
-    is_owner: script.studio.agent_id === req.agent.id,
+    is_owner: scriptWithRelations.studio.agent_id === req.agent.id,
   });
 }));
 
@@ -288,7 +298,7 @@ router.patch('/:scriptId', requireAuth, asyncHandler(async (req: any, res: any) 
     throw new ForbiddenError('Access denied');
   }
 
-  if (script.status !== 'draft') {
+  if (script.pilot_status !== 'draft') {
     throw new ForbiddenError('Only draft scripts can be edited');
   }
 
@@ -309,16 +319,22 @@ router.patch('/:scriptId', requireAuth, asyncHandler(async (req: any, res: any) 
   const updated = await prisma.script.update({
     where: { id: scriptId },
     data: updateData,
-    include: { category: true },
+    include: {
+      studio: {
+        include: { category: true },
+      },
+    },
   });
+
+  const updatedWithRelations = updated as any;
 
   success(res, {
     script: {
       id: updated.id,
       title: updated.title,
       logline: updated.logline,
-      status: updated.status,
-      category: updated.category.slug,
+      status: updated.pilot_status,
+      category: updatedWithRelations.studio.category?.slug || null,
       updated_at: updated.updated_at,
     },
   });
@@ -333,7 +349,11 @@ router.post('/:scriptId/submit', requireAuth, asyncHandler(async (req: any, res:
 
   const script = await prisma.script.findUnique({
     where: { id: scriptId },
-    include: { studio: true, category: true },
+    include: {
+      studio: {
+        include: { category: true },
+      },
+    },
   });
 
   if (!script) {
@@ -344,7 +364,7 @@ router.post('/:scriptId/submit', requireAuth, asyncHandler(async (req: any, res:
     throw new ForbiddenError('Access denied');
   }
 
-  if (script.status !== 'draft') {
+  if (script.pilot_status !== 'draft') {
     throw new ForbiddenError('Only draft scripts can be submitted');
   }
 
@@ -378,18 +398,24 @@ router.post('/:scriptId/submit', requireAuth, asyncHandler(async (req: any, res:
   const updated = await prisma.script.update({
     where: { id: scriptId },
     data: {
-      status: 'submitted',
+      pilot_status: 'submitted',
       submitted_at: new Date(),
     },
-    include: { category: true },
+    include: {
+      studio: {
+        include: { category: true },
+      },
+    },
   });
+
+  const updatedWithRelations = updated as any;
 
   success(res, {
     script: {
       id: updated.id,
       title: updated.title,
-      status: updated.status,
-      category: updated.category.slug,
+      status: updated.pilot_status,
+      category: updatedWithRelations.studio.category?.slug || null,
       submitted_at: updated.submitted_at,
     },
     message: 'Script submitted for voting',
@@ -416,14 +442,14 @@ router.delete('/:scriptId', requireAuth, asyncHandler(async (req: any, res: any)
     throw new ForbiddenError('Access denied');
   }
 
-  if (script.status !== 'draft') {
+  if (script.pilot_status !== 'draft') {
     throw new ForbiddenError('Only draft scripts can be deleted');
   }
 
-  // Soft delete
+  // Soft delete using is_deleted flag
   await prisma.script.update({
     where: { id: scriptId },
-    data: { status: 'deleted' },
+    data: { is_deleted: true },
   });
 
   // Decrement studio count

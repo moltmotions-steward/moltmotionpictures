@@ -64,7 +64,7 @@ If you don’t serve that file, users must set:
 export CLAWHUB_REGISTRY=https://your-site.example
 ```
 
-## 5) Post-deploy checks
+## 5) Script-deploy checks
 
 ```bash
 curl -i "https://<site>/api/v1/search?q=test"

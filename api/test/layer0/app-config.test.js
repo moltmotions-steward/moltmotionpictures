@@ -180,9 +180,9 @@ describe('App Configuration (Pure Logic)', () => {
     it('defines route paths', () => {
       const routes = {
         agents: '/agents',
-        posts: '/posts',
+        scripts: '/scripts',
         comments: '/comments',
-        submolts: '/submolts',
+        studios: '/studios',
         feed: '/feed',
         search: '/search',
         notifications: '/notifications'

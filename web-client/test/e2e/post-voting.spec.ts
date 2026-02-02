@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Layer 2 / E2E: Post Creation & Voting Flows
+ * Layer 2 / E2E: Script Creation & Voting Flows
  * 
  * Tests end-to-end workflows for:
- * - Creating posts in submolts
+ * - Creating Scripts in studios s
  * - Upvoting and downvoting
  * - Viewing karma scores
  * - Comment threads
@@ -12,57 +12,57 @@ import { test, expect } from '@playwright/test';
  * Run with: npm run test:e2e
  */
 
-test.describe('Post Creation & Viewing', () => {
-  test('should create a new post in a submolt', async ({ page, context }) => {
+test.describe('Script Creation & Viewing', () => {
+  test('should create a new Script in a studios ', async ({ page, context }) => {
     const isAuthenticated = await context.storageState();
     
     if (isAuthenticated) {
-      await page.goto('/submolts');
+      await page.goto('/studios s');
 
-      // Navigate to first submolt
-      const firstSubmolt = page.locator('[data-testid="submolt-list"] a, .submolt-card a').first();
-      if (await firstSubmolt.isVisible()) {
-        await firstSubmolt.click();
+      // Navigate to first studios 
+      const firststudios  = page.locator('[data-testid="studios -list"] a, .studios -card a').first();
+      if (await firststudios .isVisible()) {
+        await firststudios .click();
         await page.waitForNavigation();
 
-        // Click "Create Post" button
-        const createPostBtn = page.locator('button:has-text("Create Post"), button:has-text("New Post")');
-        if (await createPostBtn.isVisible()) {
-          await createPostBtn.click();
+        // Click "Create Script" button
+        const createScriptBtn = page.locator('button:has-text("Create Script"), button:has-text("New Script")');
+        if (await createScriptBtn.isVisible()) {
+          await createScriptBtn.click();
 
-          // Fill post content
+          // Fill Script content
           const contentInput = page.locator(
-            'textarea[name="content"], textarea[placeholder*="content"], textarea[placeholder*="post"]'
+            'textarea[name="content"], textarea[placeholder*="content"], textarea[placeholder*="Script"]'
           );
           
           if (await contentInput.isVisible()) {
-            const postContent = `E2E test post at ${new Date().toISOString()}`;
-            await contentInput.fill(postContent);
+            const ScriptContent = `E2E test Script at ${new Date().toISOString()}`;
+            await contentInput.fill(ScriptContent);
 
             // Submit
-            const submitBtn = page.locator('button:has-text("Post"), button[type="submit"]');
+            const submitBtn = page.locator('button:has-text("Script"), button[type="submit"]');
             await submitBtn.click();
 
-            // Verify post appears
-            const postElement = page.locator(`text="${postContent}"`);
-            await expect(postElement).toBeVisible({ timeout: 5000 }).catch(() => {});
+            // Verify Script appears
+            const ScriptElement = page.locator(`text="${ScriptContent}"`);
+            await expect(ScriptElement).toBeVisible({ timeout: 5000 }).catch(() => {});
           }
         }
       }
     }
   });
 
-  test('should display posts with vote counts', async ({ page }) => {
-    await page.goto('/submolts');
+  test('should display Scripts with vote counts', async ({ page }) => {
+    await page.goto('/studios s');
 
-    const firstSubmolt = page.locator('[data-testid="submolt-list"] a, .submolt-card a').first();
-    if (await firstSubmolt.isVisible()) {
-      await firstSubmolt.click();
+    const firststudios  = page.locator('[data-testid="studios -list"] a, .studios -card a').first();
+    if (await firststudios .isVisible()) {
+      await firststudios .click();
       await page.waitForNavigation();
 
-      // Wait for posts to load
-      const postCards = page.locator('[data-testid="post-card"], .post-card, [role="article"]');
-      await expect(postCards.first()).toBeVisible({ timeout: 5000 });
+      // Wait for Scripts to load
+      const ScriptCards = page.locator('[data-testid="Script-card"], .Script-card, [role="article"]');
+      await expect(ScriptCards.first()).toBeVisible({ timeout: 5000 });
 
       // Verify vote count is displayed
       const voteCount = page.locator('[data-testid="vote-count"], .vote-count, text=/\\d+ (upvotes|votes|points)/i');
@@ -73,12 +73,12 @@ test.describe('Post Creation & Viewing', () => {
     }
   });
 
-  test('should paginate through posts', async ({ page }) => {
-    await page.goto('/submolts');
+  test('should paginate through Scripts', async ({ page }) => {
+    await page.goto('/studios s');
 
-    const firstSubmolt = page.locator('[data-testid="submolt-list"] a, .submolt-card a').first();
-    if (await firstSubmolt.isVisible()) {
-      await firstSubmolt.click();
+    const firststudios  = page.locator('[data-testid="studios -list"] a, .studios -card a').first();
+    if (await firststudios .isVisible()) {
+      await firststudios .click();
       await page.waitForNavigation();
 
       // Look for pagination
@@ -90,22 +90,22 @@ test.describe('Post Creation & Viewing', () => {
 
         // URL or content should change
         const afterUrl = page.url();
-        expect(beforeUrl !== afterUrl || page.locator('[data-testid="post-card"]').isVisible()).toBeTruthy();
+        expect(beforeUrl !== afterUrl || page.locator('[data-testid="Script-card"]').isVisible()).toBeTruthy();
       }
     }
   });
 });
 
 test.describe('Voting System', () => {
-  test('should upvote a post', async ({ page, context }) => {
+  test('should upvote a Script', async ({ page, context }) => {
     const isAuthenticated = await context.storageState();
     
     if (isAuthenticated) {
-      await page.goto('/submolts');
+      await page.goto('/studios s');
 
-      const firstSubmolt = page.locator('[data-testid="submolt-list"] a, .submolt-card a').first();
-      if (await firstSubmolt.isVisible()) {
-        await firstSubmolt.click();
+      const firststudios  = page.locator('[data-testid="studios -list"] a, .studios -card a').first();
+      if (await firststudios .isVisible()) {
+        await firststudios .click();
         await page.waitForNavigation();
 
         // Get initial vote count
@@ -133,15 +133,15 @@ test.describe('Voting System', () => {
     }
   });
 
-  test('should downvote a post', async ({ page, context }) => {
+  test('should downvote a Script', async ({ page, context }) => {
     const isAuthenticated = await context.storageState();
     
     if (isAuthenticated) {
-      await page.goto('/submolts');
+      await page.goto('/studios s');
 
-      const firstSubmolt = page.locator('[data-testid="submolt-list"] a, .submolt-card a').first();
-      if (await firstSubmolt.isVisible()) {
-        await firstSubmolt.click();
+      const firststudios  = page.locator('[data-testid="studios -list"] a, .studios -card a').first();
+      if (await firststudios .isVisible()) {
+        await firststudios .click();
         await page.waitForNavigation();
 
         // Click downvote button
@@ -185,18 +185,18 @@ test.describe('Voting System', () => {
 });
 
 test.describe('Comments & Discussions', () => {
-  test('should open post and display comments', async ({ page }) => {
-    await page.goto('/submolts');
+  test('should open Script and display comments', async ({ page }) => {
+    await page.goto('/studios s');
 
-    const firstSubmolt = page.locator('[data-testid="submolt-list"] a, .submolt-card a').first();
-    if (await firstSubmolt.isVisible()) {
-      await firstSubmolt.click();
+    const firststudios  = page.locator('[data-testid="studios -list"] a, .studios -card a').first();
+    if (await firststudios .isVisible()) {
+      await firststudios .click();
       await page.waitForNavigation();
 
-      // Click on a post to view details
-      const postLink = page.locator('[data-testid="post-card"] a, .post-card a').first();
-      if (await postLink.isVisible()) {
-        await postLink.click();
+      // Click on a Script to view details
+      const ScriptLink = page.locator('[data-testid="Script-card"] a, .Script-card a').first();
+      if (await ScriptLink.isVisible()) {
+        await ScriptLink.click();
         await page.waitForNavigation();
 
         // Look for comments section
@@ -208,20 +208,20 @@ test.describe('Comments & Discussions', () => {
     }
   });
 
-  test('should add comment to post (when authenticated)', async ({ page, context }) => {
+  test('should add comment to Script (when authenticated)', async ({ page, context }) => {
     const isAuthenticated = await context.storageState();
     
     if (isAuthenticated) {
-      await page.goto('/submolts');
+      await page.goto('/studios s');
 
-      const firstSubmolt = page.locator('[data-testid="submolt-list"] a, .submolt-card a').first();
-      if (await firstSubmolt.isVisible()) {
-        await firstSubmolt.click();
+      const firststudios  = page.locator('[data-testid="studios -list"] a, .studios -card a').first();
+      if (await firststudios .isVisible()) {
+        await firststudios .click();
         await page.waitForNavigation();
 
-        const postLink = page.locator('[data-testid="post-card"] a, .post-card a').first();
-        if (await postLink.isVisible()) {
-          await postLink.click();
+        const ScriptLink = page.locator('[data-testid="Script-card"] a, .Script-card a').first();
+        if (await ScriptLink.isVisible()) {
+          await ScriptLink.click();
           await page.waitForNavigation();
 
           // Find comment input
@@ -234,7 +234,7 @@ test.describe('Comments & Discussions', () => {
             await commentInput.fill(commentText);
 
             // Submit comment
-            const submitBtn = page.locator('button:has-text("Comment"), button:has-text("Post"), button[type="submit"]');
+            const submitBtn = page.locator('button:has-text("Comment"), button:has-text("Script"), button[type="submit"]');
             await submitBtn.click();
 
             // Verify comment appears

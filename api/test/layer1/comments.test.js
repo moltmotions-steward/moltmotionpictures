@@ -8,9 +8,9 @@ describe('Layer 1 - Comment Routes', () => {
   let authorApiKey;
   let commenterId;
   let commenterApiKey;
-  let submoltName;
-  let submoltId;
-  let postId;
+  let studios Name;
+  let studios Id;
+  let ScriptId;
   let commentId;
 
   beforeAll(async () => {
@@ -19,7 +19,7 @@ describe('Layer 1 - Comment Routes', () => {
     // Create author agent
     const authorName = `l1comment_author_${Date.now().toString(36)}`;
     const authorRes = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ name: authorName, description: 'Comment test author' });
     
     authorId = authorRes.body.agent.id;
@@ -28,32 +28,32 @@ describe('Layer 1 - Comment Routes', () => {
     // Create commenter agent
     const commenterName = `l1comment_user_${Date.now().toString(36)}`;
     const commenterRes = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ name: commenterName, description: 'Comment test commenter' });
     
     commenterId = commenterRes.body.agent.id;
     commenterApiKey = commenterRes.body.agent.api_key;
 
-    // Create submolt
-    submoltName = `commenttest${Date.now().toString(36)}`;
-    const submoltRes = await request(app)
-      .post('/api/v1/submolts')
+    // Create studios 
+    studios Name = `commenttest${Date.now().toString(36)}`;
+    const studios Res = await request(app)
+      .Script('/api/v1/studios s')
       .set('Authorization', `Bearer ${authorApiKey}`)
-      .send({ name: submoltName, description: 'For comment tests' });
+      .send({ name: studios Name, description: 'For comment tests' });
     
-    submoltId = submoltRes.body.submolt.id;
+    studios Id = studios Res.body.studios .id;
 
-    // Create post using submolt name
-    const postRes = await request(app)
-      .post('/api/v1/posts')
+    // Create Script using studios  name
+    const ScriptRes = await request(app)
+      .Script('/api/v1/Scripts')
       .set('Authorization', `Bearer ${authorApiKey}`)
       .send({
-        title: 'Test Post for Comments',
-        content: 'This post will receive comments',
-        submolt: submoltName
+        title: 'Test Script for Comments',
+        content: 'This Script will receive comments',
+        studios : studios Name
       });
     
-    postId = postRes.body.post.id;
+    ScriptId = ScriptRes.body.Script.id;
   });
 
   afterAll(async () => {
@@ -61,11 +61,11 @@ describe('Layer 1 - Comment Routes', () => {
       if (commentId) {
         await db.query('DELETE FROM comments WHERE id = $1', [commentId]);
       }
-      if (postId) {
-        await db.query('DELETE FROM posts WHERE id = $1', [postId]);
+      if (ScriptId) {
+        await db.query('DELETE FROM Scripts WHERE id = $1', [ScriptId]);
       }
-      if (submoltId) {
-        await db.query('DELETE FROM submolts WHERE id = $1', [submoltId]);
+      if (studios Id) {
+        await db.query('DELETE FROM studios s WHERE id = $1', [studios Id]);
       }
       if (authorId) {
         await db.query('DELETE FROM agents WHERE id = $1', [authorId]);
@@ -78,11 +78,11 @@ describe('Layer 1 - Comment Routes', () => {
     }
   });
 
-  describe('POST /posts/:id/comments', () => {
-    it('creates a comment on a post successfully', async () => {
-      const commentContent = 'This is a test comment on the post';
+  describe('Script /Scripts/:id/comments', () => {
+    it('creates a comment on a Script successfully', async () => {
+      const commentContent = 'This is a test comment on the Script';
       const res = await request(app)
-        .post(`/api/v1/posts/${postId}/comments`)
+        .Script(`/api/v1/Scripts/${ScriptId}/comments`)
         .set('Authorization', `Bearer ${commenterApiKey}`)
         .send({ content: commentContent });
 
@@ -102,7 +102,7 @@ describe('Layer 1 - Comment Routes', () => {
     it('creates a reply to an existing comment', async () => {
       const replyContent = 'This is a reply to the comment';
       const res = await request(app)
-        .post(`/api/v1/posts/${postId}/comments`)
+        .Script(`/api/v1/Scripts/${ScriptId}/comments`)
         .set('Authorization', `Bearer ${authorApiKey}`)
         .send({
           content: replyContent,
@@ -120,7 +120,7 @@ describe('Layer 1 - Comment Routes', () => {
 
     it('rejects comment without authentication', async () => {
       const res = await request(app)
-        .post(`/api/v1/posts/${postId}/comments`)
+        .Script(`/api/v1/Scripts/${ScriptId}/comments`)
         .send({ content: 'Unauthenticated comment' });
 
       expect(res.status).toBe(401);
@@ -128,7 +128,7 @@ describe('Layer 1 - Comment Routes', () => {
 
     it('rejects comment without content', async () => {
       const res = await request(app)
-        .post(`/api/v1/posts/${postId}/comments`)
+        .Script(`/api/v1/Scripts/${ScriptId}/comments`)
         .set('Authorization', `Bearer ${commenterApiKey}`)
         .send({});
 
@@ -136,10 +136,10 @@ describe('Layer 1 - Comment Routes', () => {
     });
   });
 
-  describe('GET /posts/:id/comments', () => {
-    it('retrieves all comments for a post', async () => {
+  describe('GET /Scripts/:id/comments', () => {
+    it('retrieves all comments for a Script', async () => {
       const res = await request(app)
-        .get(`/api/v1/posts/${postId}/comments`)
+        .get(`/api/v1/Scripts/${ScriptId}/comments`)
         .set('Authorization', `Bearer ${commenterApiKey}`);
 
       expect(res.status).toBe(200);
@@ -149,17 +149,17 @@ describe('Layer 1 - Comment Routes', () => {
 
     it('requires authentication', async () => {
       const res = await request(app)
-        .get(`/api/v1/posts/${postId}/comments`);
+        .get(`/api/v1/Scripts/${ScriptId}/comments`);
 
       expect(res.status).toBe(401);
     });
 
-    it('returns empty array for non-existent post', async () => {
+    it('returns empty array for non-existent Script', async () => {
       const res = await request(app)
-        .get('/api/v1/posts/00000000-0000-0000-0000-000000000000/comments')
+        .get('/api/v1/Scripts/00000000-0000-0000-0000-000000000000/comments')
         .set('Authorization', `Bearer ${commenterApiKey}`);
 
-      // Route returns empty array for non-existent post, not 404
+      // Route returns empty array for non-existent Script, not 404
       expect(res.status).toBe(200);
       expect(res.body.comments).toEqual([]);
     });
@@ -196,7 +196,7 @@ describe('Layer 1 - Comment Routes', () => {
     it('allows author to delete their comment', async () => {
       // First create a temp comment
       const tempRes = await request(app)
-        .post(`/api/v1/posts/${postId}/comments`)
+        .Script(`/api/v1/Scripts/${ScriptId}/comments`)
         .set('Authorization', `Bearer ${commenterApiKey}`)
         .send({ content: 'Temp comment to delete' });
       
@@ -222,10 +222,10 @@ describe('Layer 1 - Comment Routes', () => {
     });
   });
 
-  describe('POST /comments/:id/upvote', () => {
+  describe('Script /comments/:id/upvote', () => {
     it('upvotes a comment', async () => {
       const res = await request(app)
-        .post(`/api/v1/comments/${commentId}/upvote`)
+        .Script(`/api/v1/comments/${commentId}/upvote`)
         .set('Authorization', `Bearer ${authorApiKey}`);
 
       expect(res.status).toBeLessThan(300);
@@ -233,16 +233,16 @@ describe('Layer 1 - Comment Routes', () => {
 
     it('requires authentication', async () => {
       const res = await request(app)
-        .post(`/api/v1/comments/${commentId}/upvote`);
+        .Script(`/api/v1/comments/${commentId}/upvote`);
 
       expect(res.status).toBe(401);
     });
   });
 
-  describe('POST /comments/:id/downvote', () => {
+  describe('Script /comments/:id/downvote', () => {
     it('downvotes a comment', async () => {
       const res = await request(app)
-        .post(`/api/v1/comments/${commentId}/downvote`)
+        .Script(`/api/v1/comments/${commentId}/downvote`)
         .set('Authorization', `Bearer ${authorApiKey}`);
 
       expect(res.status).toBeLessThan(300);

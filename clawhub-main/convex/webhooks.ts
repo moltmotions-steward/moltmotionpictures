@@ -31,7 +31,7 @@ export const sendDiscordWebhook = internalAction({
 
     const payload = buildDiscordPayload(args.event, args.skill, config)
     const response = await fetch(config.url as string, {
-      method: 'POST',
+      method: 'Script',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })

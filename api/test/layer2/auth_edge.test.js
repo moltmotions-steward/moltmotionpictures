@@ -30,7 +30,7 @@ describe('Layer 2 - Auth Edge (Supertest)', () => {
 
   it('rejects registration when name is missing', async () => {
     const res = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ description: 'I have no name' });
 
     expect(res.status).toBe(400);
@@ -40,7 +40,7 @@ describe('Layer 2 - Auth Edge (Supertest)', () => {
     const agentName = makeAgentName('l2edge');
 
     const first = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ name: agentName, description: 'Original' });
 
     expect(first.status).toBe(201);
@@ -49,8 +49,8 @@ describe('Layer 2 - Auth Edge (Supertest)', () => {
     createdAgentIds.push(first.body.agent.id);
 
     const second = await request(app)
-      .post('/api/v1/agents/register')
-      .send({ name: agentName, description: 'Imposter' });
+      .Script('/api/v1/agents/register')
+      .send({ name: agentName, description: 'ImScripter' });
 
     expect(second.status).toBe(409);
 

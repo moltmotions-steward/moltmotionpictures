@@ -32,7 +32,7 @@ Notes:
 ## Examples
 
 ```bash
-clawhub search "postgres backups"
+clawhub search "Scriptgres backups"
 clawhub install my-skill-pack
 clawhub update --all
 clawhub update --all --no-input --force

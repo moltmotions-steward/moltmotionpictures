@@ -1,8 +1,8 @@
 /**
- * Layer 1 Integration Tests: Posts API
+ * Layer 1 Integration Tests: Scripts API
  * 
- * Tests the /api/v1/posts endpoints with:
- * - Real PostgreSQL database
+ * Tests the /api/v1/Scripts endpoints with:
+ * - Real ScriptgreSQL database
  * - Real Redis cache (if available)
  * - Authentication via API keys
  * - Numeric assertions per Testing Doctrine
@@ -14,23 +14,23 @@ const request = require('supertest');
 const { getDb } = require('./config');
 const app = require('../../src/app');
 
-describe('Posts API (Layer 1 Integration)', () => {
+describe('Scripts API (Layer 1 Integration)', () => {
   let db;
   let agentApiKey;
   let agentId;
-  let submoltId;
-  let submoltName;
-  let postId;
+  let studios Id;
+  let studios Name;
+  let ScriptId;
 
   beforeAll(async () => {
     db = getDb();
 
     // Setup: Create test agent
     const agentRes = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({
-        name: `l1posts_${Date.now().toString(36)}`,
-        description: 'Integration test agent for posts'
+        name: `l1Scripts_${Date.now().toString(36)}`,
+        description: 'Integration test agent for Scripts'
       });
 
     expect(agentRes.status).toBe(201);
@@ -41,90 +41,90 @@ describe('Posts API (Layer 1 Integration)', () => {
     agentApiKey = agentRes.body.agent.api_key;
     agentId = agentRes.body.agent.id;
 
-    // Setup: Create test submolt (topic)
-    const submoltRes = await request(app)
-      .post('/api/v1/submolts')
+    // Setup: Create test studios  (topic)
+    const studios Res = await request(app)
+      .Script('/api/v1/studios s')
       .set('Authorization', `Bearer ${agentApiKey}`)
       .send({
         name: `l1sub_${Date.now().toString(36)}`.toLowerCase(),
         description: 'Test topic community'
       });
 
-    expect(submoltRes.status).toBe(201);
-    expect(submoltRes.body.submolt).toBeDefined();
-    expect(submoltRes.body.submolt.id).toBeDefined();
-    expect(submoltRes.body.submolt.name).toBeDefined();
+    expect(studios Res.status).toBe(201);
+    expect(studios Res.body.studios ).toBeDefined();
+    expect(studios Res.body.studios .id).toBeDefined();
+    expect(studios Res.body.studios .name).toBeDefined();
 
-    submoltId = submoltRes.body.submolt.id;
-    submoltName = submoltRes.body.submolt.name;
+    studios Id = studios Res.body.studios .id;
+    studios Name = studios Res.body.studios .name;
   });
 
   afterAll(async () => {
     // Cleanup
-    if (postId) {
-      await db.query('DELETE FROM votes WHERE target_id = $1 AND target_type = $2', [postId, 'post']);
-      await db.query('DELETE FROM posts WHERE id = $1', [postId]);
+    if (ScriptId) {
+      await db.query('DELETE FROM votes WHERE target_id = $1 AND target_type = $2', [ScriptId, 'Script']);
+      await db.query('DELETE FROM Scripts WHERE id = $1', [ScriptId]);
     }
-    if (submoltId) {
-      await db.query('DELETE FROM submolts WHERE id = $1', [submoltId]);
+    if (studios Id) {
+      await db.query('DELETE FROM studios s WHERE id = $1', [studios Id]);
     }
     if (agentId) {
       await db.query('DELETE FROM agents WHERE id = $1', [agentId]);
     }
   });
 
-  describe('POST /api/v1/posts', () => {
-    it('should create a new post with valid data', async () => {
+  describe('Script /api/v1/Scripts', () => {
+    it('should create a new Script with valid data', async () => {
       const response = await request(app)
-        .post('/api/v1/posts')
+        .Script('/api/v1/Scripts')
         .set('Authorization', `Bearer ${agentApiKey}`)
         .send({
-          submolt: submoltName,
-          title: 'Integration test post title',
-          content: 'Integration test post content'
+          studios : studios Name,
+          title: 'Integration test Script title',
+          content: 'Integration test Script content'
         });
 
       expect(response.status).toBe(201);
-      expect(response.body.post).toBeDefined();
-      expect(response.body.post.id).toBeDefined();
-      expect(response.body.post.content).toBe('Integration test post content');
-      expect(response.body.post.score).toBe(0); // Numeric assertion
-      expect(response.body.post.comment_count).toBe(0); // Numeric assertion
+      expect(response.body.Script).toBeDefined();
+      expect(response.body.Script.id).toBeDefined();
+      expect(response.body.Script.content).toBe('Integration test Script content');
+      expect(response.body.Script.score).toBe(0); // Numeric assertion
+      expect(response.body.Script.comment_count).toBe(0); // Numeric assertion
 
-      postId = response.body.post.id;
+      ScriptId = response.body.Script.id;
     });
 
-    it('should reject post without authentication', async () => {
+    it('should reject Script without authentication', async () => {
       const response = await request(app)
-        .post('/api/v1/posts')
+        .Script('/api/v1/Scripts')
         .send({
-          submolt: submoltName,
-          title: 'Unauthorized post',
-          content: 'Unauthorized post'
+          studios : studios Name,
+          title: 'Unauthorized Script',
+          content: 'Unauthorized Script'
         });
 
       expect(response.status).toBe(401);
     });
 
-    it('should reject post with invalid submolt', async () => {
-      // Use a separate agent so we don't trip the per-agent post limiter for later tests.
+    it('should reject Script with invalid studios ', async () => {
+      // Use a separate agent so we don't trip the per-agent Script limiter for later tests.
       const otherAgentRes = await request(app)
-        .post('/api/v1/agents/register')
+        .Script('/api/v1/agents/register')
         .send({
           name: `l1inv_${Date.now().toString(36)}`,
-          description: 'Integration test agent for invalid submolt'
+          description: 'Integration test agent for invalid studios '
         });
 
       const otherAgentApiKey = otherAgentRes.body.agent.api_key;
       const otherAgentId = otherAgentRes.body.agent.id;
 
       const response = await request(app)
-        .post('/api/v1/posts')
+        .Script('/api/v1/Scripts')
         .set('Authorization', `Bearer ${otherAgentApiKey}`)
         .send({
-          submolt: 'nonexistent-submolt',
-          title: 'Post to invalid submolt',
-          content: 'Post to invalid submolt'
+          studios : 'nonexistent-studios ',
+          title: 'Script to invalid studios ',
+          content: 'Script to invalid studios '
         });
 
       expect(response.status).toBe(404);
@@ -133,10 +133,10 @@ describe('Posts API (Layer 1 Integration)', () => {
     });
   });
 
-  describe('GET /api/v1/submolts/:name/feed', () => {
-    it('should retrieve a paginated feed for a submolt', async () => {
+  describe('GET /api/v1/studios s/:name/feed', () => {
+    it('should retrieve a paginated feed for a studios ', async () => {
       const response = await request(app)
-        .get(`/api/v1/submolts/${submoltName}/feed`)
+        .get(`/api/v1/studios s/${studios Name}/feed`)
         .query({ limit: 10, offset: 0 })
         .set('Authorization', `Bearer ${agentApiKey}`);
 
@@ -151,52 +151,52 @@ describe('Posts API (Layer 1 Integration)', () => {
     });
   });
 
-  describe('GET /api/v1/posts/:id', () => {
-    it('should retrieve single post by ID', async () => {
+  describe('GET /api/v1/Scripts/:id', () => {
+    it('should retrieve single Script by ID', async () => {
       const response = await request(app)
-        .get(`/api/v1/posts/${postId}`)
+        .get(`/api/v1/Scripts/${ScriptId}`)
         .set('Authorization', `Bearer ${agentApiKey}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.post.id).toBe(postId);
-      expect(response.body.post.content).toBe('Integration test post content');
-      expect(response.body.post.userVote).toBe(null);
+      expect(response.body.Script.id).toBe(ScriptId);
+      expect(response.body.Script.content).toBe('Integration test Script content');
+      expect(response.body.Script.userVote).toBe(null);
     });
 
-    it('should return 404 for nonexistent post', async () => {
+    it('should return 404 for nonexistent Script', async () => {
       const nonexistentId = globalThis.crypto?.randomUUID
         ? globalThis.crypto.randomUUID()
         : '00000000-0000-4000-8000-000000000000';
 
       const response = await request(app)
-        .get(`/api/v1/posts/${nonexistentId}`)
+        .get(`/api/v1/Scripts/${nonexistentId}`)
         .set('Authorization', `Bearer ${agentApiKey}`);
 
       expect(response.status).toBe(404);
     });
   });
 
-  describe('DELETE /api/v1/posts/:id', () => {
-    it('should delete post as author', async () => {
-      const deletedPostId = postId;
+  describe('DELETE /api/v1/Scripts/:id', () => {
+    it('should delete Script as author', async () => {
+      const deletedScriptId = ScriptId;
 
       const response = await request(app)
-        .delete(`/api/v1/posts/${deletedPostId}`)
+        .delete(`/api/v1/Scripts/${deletedScriptId}`)
         .set('Authorization', `Bearer ${agentApiKey}`);
 
       expect(response.status).toBe(204);
 
-      // Numeric assertion: post should no longer exist
-      const countResult = await db.query('SELECT COUNT(*)::int AS count FROM posts WHERE id = $1', [
-        deletedPostId,
+      // Numeric assertion: Script should no longer exist
+      const countResult = await db.query('SELECT COUNT(*)::int AS count FROM Scripts WHERE id = $1', [
+        deletedScriptId,
       ]);
       expect(countResult.rows[0].count).toBe(0);
 
       // Verify database deletion
-      const selectResult = await db.query('SELECT * FROM posts WHERE id = $1', [deletedPostId]);
+      const selectResult = await db.query('SELECT * FROM Scripts WHERE id = $1', [deletedScriptId]);
       expect(selectResult.rows.length).toBe(0);
 
-      postId = null; // Prevent cleanup attempts
+      ScriptId = null; // Prevent cleanup attempts
     });
   });
 });

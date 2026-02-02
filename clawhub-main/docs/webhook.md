@@ -6,7 +6,7 @@ read_when:
 
 # Webhooks (Discord)
 
-OpenClaw can post Discord embeds when skills are published or highlighted.
+OpenClaw can Script Discord embeds when skills are published or highlighted.
 
 ## Setup
 

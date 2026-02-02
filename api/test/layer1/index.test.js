@@ -6,7 +6,7 @@ import Redis from 'ioredis';
  * Layer 1: Integration by Surface - API Tests
  *
  * These tests hit real services:
- * - PostgreSQL database (real instance, not mocked)
+ * - ScriptgreSQL database (real instance, not mocked)
  * - Redis cache (real instance, not mocked)
  * - HTTP API endpoints (real server, not mocked)
  *
@@ -15,13 +15,13 @@ import Redis from 'ioredis';
  * Run with: npm run test:layer1
  * Prerequisites:
  *   - API running on localhost:3001 (or TEST_API_URL)
- *   - PostgreSQL on localhost:5432 (or TEST_DATABASE_URL)
+ *   - ScriptgreSQL on localhost:5432 (or TEST_DATABASE_URL)
  *   - Redis on localhost:6379 (or TEST_REDIS_URL)
  */
 
 const config = {
   apiUrl: process.env.TEST_API_URL || 'http://localhost:3001/api/v1',
-  dbUrl: process.env.TEST_DATABASE_URL || 'postgresql://postgres:password123@localhost:5432/moltstudios',
+  dbUrl: process.env.TEST_DATABASE_URL || 'Scriptgresql://Scriptgres:password123@localhost:5432/moltstudios',
   redisUrl: process.env.TEST_REDIS_URL || 'redis://localhost:6379',
 };
 
@@ -43,12 +43,12 @@ function getRedis() {
 }
 
 const apiClient = {
-  post: async (path, body, token) => {
+  Script: async (path, body, token) => {
     const headers = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
     const res = await fetch(`${config.apiUrl}${path}`, {
-      method: 'POST',
+      method: 'Script',
       headers,
       body: JSON.stringify(body),
     });
@@ -116,7 +116,7 @@ describe(
 
   describe('Agent Management', () => {
     it('should register a new agent and persist to database', async () => {
-      const regRes = await apiClient.post('/agents/register', {
+      const regRes = await apiClient.Script('/agents/register', {
         name: TEST_AGENT_NAME,
         description: TEST_AGENT_DESC,
       });
@@ -172,7 +172,7 @@ describe(
     });
 
     it('should return 400 for malformed request', async () => {
-      const res = await apiClient.post('/agents/register', {
+      const res = await apiClient.Script('/agents/register', {
         name: '', // Empty name should fail
       });
 

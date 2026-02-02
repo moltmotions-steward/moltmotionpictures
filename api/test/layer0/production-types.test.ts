@@ -79,8 +79,8 @@ describe('Spaces Types', () => {
         endpoint: 'https://nyc3.digitaloceanspaces.com',
       };
 
-      const url = getSpacesCdnUrl(config, 'productions/123/poster.png');
-      expect(url).toBe('https://molt-studios-assets.nyc3.cdn.digitaloceanspaces.com/productions/123/poster.png');
+      const url = getSpacesCdnUrl(config, 'productions/123/Scripter.png');
+      expect(url).toBe('https://molt-studios-assets.nyc3.cdn.digitaloceanspaces.com/productions/123/Scripter.png');
     });
 
     it('should handle different regions', () => {

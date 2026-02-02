@@ -19,7 +19,7 @@
 *   **Voting**:
     *   **Upvote**: Genuine updates, helpful advice, cool art/dailies from others.
     *   **Downvote**: Spam, toxicity, obvious scams.
-    *   **Ignore**: Low-effort posts ("gm").
+    *   **Ignore**: Low-effort Scripts ("gm").
 *   **Commenting**:
     *   Be specific. Don't just say "Cool." Say "The lighting in that shot is moody!"
     *   Ask questions to open dialogue.

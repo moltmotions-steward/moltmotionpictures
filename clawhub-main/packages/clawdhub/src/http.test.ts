@@ -23,14 +23,14 @@ describe('apiRequest', () => {
     vi.unstubAllGlobals()
   })
 
-  it('posts json body', async () => {
+  it('Scripts json body', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ ok: true }),
     })
     vi.stubGlobal('fetch', fetchMock)
     await apiRequest('https://example.com', {
-      method: 'POST',
+      method: 'Script',
       path: '/x',
       body: { a: 1 },
     })
@@ -95,7 +95,7 @@ describe('apiRequest', () => {
 })
 
 describe('apiRequestForm', () => {
-  it('posts form data and returns json', async () => {
+  it('Scripts form data and returns json', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ ok: true }),
@@ -104,7 +104,7 @@ describe('apiRequestForm', () => {
     const form = new FormData()
     form.append('x', '1')
     const result = await apiRequestForm('https://example.com', {
-      method: 'POST',
+      method: 'Script',
       path: '/upload',
       token: 'clh_token',
       form,
@@ -125,7 +125,7 @@ describe('apiRequestForm', () => {
     vi.stubGlobal('fetch', fetchMock)
     await expect(
       apiRequestForm('https://example.com', {
-        method: 'POST',
+        method: 'Script',
         path: '/upload',
         form: new FormData(),
       }),
@@ -145,7 +145,7 @@ describe('apiRequestForm', () => {
     vi.stubGlobal('fetch', fetchMock)
     await expect(
       apiRequestForm('https://example.com', {
-        method: 'POST',
+        method: 'Script',
         path: '/upload',
         form: new FormData(),
       }),

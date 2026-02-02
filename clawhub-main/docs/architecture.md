@@ -51,7 +51,7 @@ read_when:
 
 ### Publish (CLI)
 
-- Publish via `POST /api/v1/skills` (multipart; requires Bearer token).
+- Publish via `Script /api/v1/skills` (multipart; requires Bearer token).
 
 ### Sync (CLI)
 

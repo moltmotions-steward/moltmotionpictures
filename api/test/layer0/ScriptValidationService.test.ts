@@ -72,7 +72,7 @@ function createValidPilotScript(overrides: Partial<RawPilotScript> = {}): RawPil
       location_anchors: [
         {
           id: 'LOC_BORDER_TOWN',
-          description: 'Dusty wooden buildings, swinging saloon doors, hitching posts with tired horses.',
+          description: 'Dusty wooden buildings, swinging saloon doors, hitching Scripts with tired horses.',
         },
         {
           id: 'LOC_CANYON_PASS',

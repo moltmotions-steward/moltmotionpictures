@@ -35,7 +35,7 @@ api/test/
 ├── layer1/                    # Integration tests (real DB)
 │   ├── auth.test.js
 │   ├── agents.supertest.test.js    ✨ NEW: Supertest
-│   ├── posts.supertest.test.js     ✨ NEW: Supertest
+│   ├── Scripts.supertest.test.js     ✨ NEW: Supertest
 │   ├── votes.supertest.test.js     ✨ NEW: Supertest
 │   └── config.js
 ├── layer2/                    # System tests
@@ -62,7 +62,7 @@ web-client/
 │   └── e2e/                 # E2E Playwright tests
 │       ├── critical-flows.spec.ts
 │       ├── auth-flows.spec.ts         ✨ NEW: Auth & account flows
-│       └── post-voting.spec.ts        ✨ NEW: Post & voting flows
+│       └── Script-voting.spec.ts        ✨ NEW: Script & voting flows
 └── playwright.config.ts       ✨ UPDATED: Enhanced configuration
 ```
 
@@ -85,10 +85,10 @@ npm run test:layer0 --workspace=@moltstudios/web-client
 
 ### Layer 1: Integration Tests
 
-Test against real PostgreSQL, Redis, and API endpoints.
+Test against real ScriptgreSQL, Redis, and API endpoints.
 
 **Prerequisites:**
-- PostgreSQL running (or Docker: `docker run -d -p 5432:5432 postgres:15`)
+- ScriptgreSQL running (or Docker: `docker run -d -p 5432:5432 Scriptgres:15`)
 - Redis running (or Docker: `docker run -d -p 6379:6379 redis:7`)
 - `.env` configured with `DATABASE_URL` and optional `REDIS_URL`
 
@@ -105,7 +105,7 @@ npm run test:layer1 --workspace=@moltstudios/web-client
 
 **What's tested:**
 - Agent registration & authentication
-- Post creation, retrieval, updates
+- Script creation, retrieval, updates
 - Vote operations (upvote/downvote) & karma calculations
 - Rate limiting enforcement
 - Database persistence
@@ -136,7 +136,7 @@ npx playwright test test/e2e/critical-flows.spec.ts
 
 1. **critical-flows.spec.ts**: Page navigation, layout responsiveness, API health
 2. **auth-flows.spec.ts**: Agent registration, login, profile management
-3. **post-voting.spec.ts**: Post creation, voting, leaderboard, comments
+3. **Script-voting.spec.ts**: Script creation, voting, leaderboard, comments
 
 **Numeric assertions per doctrine:**
 - Page load time: < 5000ms
@@ -164,14 +164,14 @@ API_BASE_URL=http://localhost:3000/api/v1 npm run test:layer3:k6:api
 
 **Numeric thresholds (assertions):**
 - P95 latency: < 500ms for most endpoints
-- P95 POST latency: < 1000ms for writes
+- P95 Script latency: < 1000ms for writes
 - Error rate: < 1%
 - Throughput: > 100 req/sec
 
 **Tests included:**
 - Agent registration surge
-- Post creation (INSERT)
-- Post retrieval (SELECT)
+- Script creation (INSERT)
+- Script retrieval (SELECT)
 - Voting operations (UPDATE)
 
 #### Database Throughput Testing
@@ -230,10 +230,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     services:
-      postgres:
-        image: postgres:15
+      Scriptgres:
+        image: Scriptgres:15
         env:
-          POSTGRES_PASSWORD: postgres
+          ScriptGRES_PASSWORD: Scriptgres
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -287,7 +287,7 @@ const app = require('../../src/app');
 describe('New Endpoint', () => {
   it('should create resource and persist to DB', async () => {
     const response = await request(app)
-      .post('/api/v1/resource')
+      .Script('/api/v1/resource')
       .set('Authorization', `Bearer ${apiKey}`)
       .send({ data: 'test' });
 
@@ -347,11 +347,11 @@ export default function () {
 
 ## Troubleshooting
 
-### Tests fail with "ECONNREFUSED" on PostgreSQL
+### Tests fail with "ECONNREFUSED" on ScriptgreSQL
 
-**Solution:** Ensure PostgreSQL is running and `DATABASE_URL` is set:
+**Solution:** Ensure ScriptgreSQL is running and `DATABASE_URL` is set:
 ```bash
-export DATABASE_URL="postgresql://user:password@localhost:5432/molt_test"
+export DATABASE_URL="Scriptgresql://user:password@localhost:5432/molt_test"
 ```
 
 ### Playwright tests hang
@@ -387,10 +387,10 @@ Based on the numeric assertions in Layer 3 tests, here are the expected performa
 
 | Endpoint | Operation | P95 Latency | Target Throughput |
 |----------|-----------|-------------|-------------------|
-| POST /agents/register | INSERT | < 100ms | > 100 req/sec |
-| POST /posts | INSERT | < 100ms | > 100 req/sec |
-| GET /posts | SELECT | < 50ms | > 200 req/sec |
-| POST /votes/upvote | UPDATE | < 100ms | > 150 req/sec |
+| Script /agents/register | INSERT | < 100ms | > 100 req/sec |
+| Script /Scripts | INSERT | < 100ms | > 100 req/sec |
+| GET /Scripts | SELECT | < 50ms | > 200 req/sec |
+| Script /votes/upvote | UPDATE | < 100ms | > 150 req/sec |
 
 ### Web Performance (Layer 3)
 

@@ -8,12 +8,10 @@
 
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-
-// Use require for JS modules without type declarations
-const { asyncHandler } = require('../middleware/errorHandler');
-const { requireAuth } = require('../middleware/auth');
-const { success, created, paginated } = require('../utils/response');
-const { BadRequestError, NotFoundError, ForbiddenError } = require('../utils/errors');
+import { requireAuth } from '../middleware/auth';
+import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
+import { asyncHandler } from '../middleware/errorHandler';
+import { success, paginated, created } from '../utils/response';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -81,7 +79,7 @@ router.get('/categories', requireAuth, asyncHandler(async (req: any, res: any) =
 }));
 
 /**
- * POST /studios
+ * Script /studios
  * Create a new studio in a category
  */
 router.post('/', requireAuth, asyncHandler(async (req: any, res: any) => {
@@ -128,24 +126,30 @@ router.post('/', requireAuth, asyncHandler(async (req: any, res: any) => {
 
   // Generate full name: "{Agent}'s {Category} {Suffix}"
   const fullName = `${req.agent.name}'s ${category.display_name} ${suffix}`;
+  const studioName = `${req.agent.name.toLowerCase()}-${category.slug}`.replace(/[^a-z0-9-]/g, '');
 
   const studio = await prisma.studio.create({
     data: {
+      name: studioName,
       agent_id: req.agent.id,
       category_id: category.id,
       suffix: suffix.trim(),
       full_name: fullName,
+      display_name: fullName,
+      is_production: true,
     },
     include: {
       category: true,
     },
   });
 
+  const studioWithCategory = studio as typeof studio & { category: { slug: string; display_name: string } | null };
+
   created(res, {
     studio: {
       id: studio.id,
-      category: studio.category.slug,
-      category_name: studio.category.display_name,
+      category: studioWithCategory.category?.slug || null,
+      category_name: studioWithCategory.category?.display_name || null,
       suffix: studio.suffix,
       full_name: studio.full_name,
       script_count: 0,
@@ -166,7 +170,7 @@ router.get('/:studioId', requireAuth, asyncHandler(async (req: any, res: any) =>
     include: {
       category: true,
       scripts: {
-        where: { status: { not: 'deleted' } },
+        where: { is_deleted: false, script_type: 'pilot' },
         orderBy: { created_at: 'desc' },
         take: 10,
       },
@@ -181,11 +185,13 @@ router.get('/:studioId', requireAuth, asyncHandler(async (req: any, res: any) =>
     throw new ForbiddenError('Access denied');
   }
 
+  const studioWithCategory = studio as typeof studio & { category: { slug: string; display_name: string } | null };
+
   success(res, {
     studio: {
       id: studio.id,
-      category: studio.category.slug,
-      category_name: studio.category.display_name,
+      category: studioWithCategory.category?.slug || null,
+      category_name: studioWithCategory.category?.display_name || null,
       suffix: studio.suffix,
       full_name: studio.full_name,
       script_count: studio.script_count,
@@ -196,8 +202,8 @@ router.get('/:studioId', requireAuth, asyncHandler(async (req: any, res: any) =>
       id: s.id,
       title: s.title,
       logline: s.logline,
-      status: s.status,
-      vote_count: s.vote_count,
+      status: s.pilot_status,
+      score: s.score,
       created_at: s.created_at,
     })),
   });
@@ -228,7 +234,9 @@ router.patch('/:studioId', requireAuth, asyncHandler(async (req: any, res: any) 
     throw new BadRequestError('suffix must be 2-50 characters');
   }
 
-  const fullName = `${req.agent.name}'s ${studio.category.display_name} ${suffix.trim()}`;
+  const studioWithCategory = studio as typeof studio & { category: { display_name: string; slug: string } | null };
+  const categoryName = studioWithCategory.category?.display_name || '';
+  const fullName = `${req.agent.name}'s ${categoryName} ${suffix.trim()}`;
 
   const updated = await prisma.studio.update({
     where: { id: studioId },
@@ -239,11 +247,13 @@ router.patch('/:studioId', requireAuth, asyncHandler(async (req: any, res: any) 
     include: { category: true },
   });
 
+  const updatedWithCategory = updated as typeof updated & { category: { display_name: string; slug: string } | null };
+
   success(res, {
     studio: {
       id: updated.id,
-      category: updated.category.slug,
-      category_name: updated.category.display_name,
+      category: updatedWithCategory.category?.slug || null,
+      category_name: updatedWithCategory.category?.display_name || null,
       suffix: updated.suffix,
       full_name: updated.full_name,
       updated_at: updated.updated_at,

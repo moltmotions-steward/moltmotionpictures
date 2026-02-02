@@ -2,23 +2,23 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { cn, formatScore, formatRelativeTime, extractDomain, truncate, getInitials, getPostUrl, getSubmoltUrl, getAgentUrl } from '@/lib/utils';
-import { usePostVote, useAuth } from '@/hooks';
+import { cn, formatScore, formatRelativeTime, extractDomain, truncate, getInitials, getScriptUrl, getstudios Url, getAgentUrl } from '@/lib/utils';
+import { useScriptVote, useAuth } from '@/hooks';
 import { useUIStore } from '@/store';
 import { Button, Avatar, AvatarImage, AvatarFallback, Card, Skeleton, Badge } from '@/components/ui';
 import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, MoreHorizontal, ExternalLink, Flag, Eye, EyeOff, Trash2 } from 'lucide-react';
-import type { Post, VoteDirection } from '@/types';
+import type { Script, VoteDirection } from '@/types';
 
-interface PostCardProps {
-  post: Post;
+interface ScriptCardProps {
+  Script: Script;
   isCompact?: boolean;
-  showSubmolt?: boolean;
+  showstudios ?: boolean;
   onVote?: (direction: 'up' | 'down') => void;
 }
 
-export function PostCard({ post, isCompact = false, showSubmolt = true, onVote }: PostCardProps) {
+export function ScriptCard({ Script, isCompact = false, showstudios  = true, onVote }: ScriptCardProps) {
   const { isAuthenticated } = useAuth();
-  const { vote, isVoting } = usePostVote(post.id);
+  const { vote, isVoting } = useScriptVote(Script.id);
   const [showMenu, setShowMenu] = React.useState(false);
   
   const handleVote = async (direction: 'up' | 'down') => {
@@ -27,12 +27,12 @@ export function PostCard({ post, isCompact = false, showSubmolt = true, onVote }
     onVote?.(direction);
   };
   
-  const domain = post.url ? extractDomain(post.url) : null;
-  const isUpvoted = post.userVote === 'up';
-  const isDownvoted = post.userVote === 'down';
+  const domain = Script.url ? extractDomain(Script.url) : null;
+  const isUpvoted = Script.userVote === 'up';
+  const isDownvoted = Script.userVote === 'down';
   
   return (
-    <Card className={cn('post-card group', isCompact ? 'p-3' : 'p-4')}>
+    <Card className={cn('Script-card group', isCompact ? 'p-3' : 'p-4')}>
       <div className="flex gap-3">
         {/* Vote buttons */}
         <div className="flex flex-col items-center gap-1">
@@ -44,8 +44,8 @@ export function PostCard({ post, isCompact = false, showSubmolt = true, onVote }
           >
             <ArrowBigUp className={cn('h-6 w-6', isUpvoted && 'fill-current')} />
           </button>
-          <span className={cn('text-sm font-medium karma', post.score > 0 && 'karma-positive', post.score < 0 && 'karma-negative')}>
-            {formatScore(post.score)}
+          <span className={cn('text-sm font-medium karma', Script.score > 0 && 'karma-positive', Script.score < 0 && 'karma-negative')}>
+            {formatScore(Script.score)}
           </span>
           <button
             onClick={() => handleVote('down')}
@@ -60,31 +60,31 @@ export function PostCard({ post, isCompact = false, showSubmolt = true, onVote }
         {/* Content */}
         <div className="flex-1 min-w-0">
           {/* Meta */}
-          <div className="post-meta mb-1 flex-wrap">
-            {showSubmolt && (
+          <div className="Script-meta mb-1 flex-wrap">
+            {showstudios  && (
               <>
-                <Link href={getSubmoltUrl(post.submolt)} className="submolt-badge">
-                  m/{post.submolt}
+                <Link href={getstudios Url(Script.studios )} className="studios -badge">
+                  m/{Script.studios }
                 </Link>
                 <span>•</span>
               </>
             )}
-            <Link href={getAgentUrl(post.authorName)} className="agent-badge">
+            <Link href={getAgentUrl(Script.authorName)} className="agent-badge">
               <Avatar className="h-5 w-5">
-                <AvatarImage src={post.authorAvatarUrl} />
-                <AvatarFallback className="text-[10px]">{getInitials(post.authorName)}</AvatarFallback>
+                <AvatarImage src={Script.authorAvatarUrl} />
+                <AvatarFallback className="text-[10px]">{getInitials(Script.authorName)}</AvatarFallback>
               </Avatar>
-              <span>u/{post.authorName}</span>
+              <span>u/{Script.authorName}</span>
             </Link>
             <span>•</span>
-            <span title={post.createdAt}>{formatRelativeTime(post.createdAt)}</span>
-            {post.editedAt && <span className="text-xs">(edited)</span>}
+            <span title={Script.createdAt}>{formatRelativeTime(Script.createdAt)}</span>
+            {Script.editedAt && <span className="text-xs">(edited)</span>}
           </div>
           
           {/* Title */}
-          <Link href={getPostUrl(post.id, post.submolt)}>
-            <h3 className={cn('post-title', isCompact ? 'text-base' : 'text-lg')}>
-              {post.title}
+          <Link href={getScriptUrl(Script.id, Script.studios )}>
+            <h3 className={cn('Script-title', isCompact ? 'text-base' : 'text-lg')}>
+              {Script.title}
               {domain && (
                 <span className="ml-2 text-xs text-muted-foreground font-normal inline-flex items-center gap-1">
                   <ExternalLink className="h-3 w-3" />
@@ -95,27 +95,27 @@ export function PostCard({ post, isCompact = false, showSubmolt = true, onVote }
           </Link>
           
           {/* Content preview */}
-          {!isCompact && post.content && (
+          {!isCompact && Script.content && (
             <p className="mt-2 text-sm text-muted-foreground line-clamp-3">
-              {truncate(post.content, 300)}
+              {truncate(Script.content, 300)}
             </p>
           )}
           
           {/* Link preview */}
-          {!isCompact && post.url && (
-            <a href={post.url} target="_blank" rel="noopener noreferrer" className="mt-2 block p-3 rounded-md border bg-muted/50 hover:bg-muted transition-colors">
+          {!isCompact && Script.url && (
+            <a href={Script.url} target="_blank" rel="noopener noreferrer" className="mt-2 block p-3 rounded-md border bg-muted/50 hover:bg-muted transition-colors">
               <div className="flex items-center gap-2 text-sm text-primary">
                 <ExternalLink className="h-4 w-4" />
-                {truncate(post.url, 60)}
+                {truncate(Script.url, 60)}
               </div>
             </a>
           )}
           
           {/* Actions */}
           <div className="flex items-center gap-1 mt-3">
-            <Link href={getPostUrl(post.id, post.submolt)} className="flex items-center gap-1.5 px-2 py-1 text-sm text-muted-foreground hover:bg-muted rounded transition-colors">
+            <Link href={getScriptUrl(Script.id, Script.studios )} className="flex items-center gap-1.5 px-2 py-1 text-sm text-muted-foreground hover:bg-muted rounded transition-colors">
               <MessageSquare className="h-4 w-4" />
-              <span>{post.commentCount} comments</span>
+              <span>{Script.commentCount} comments</span>
             </Link>
             
             <button className="flex items-center gap-1.5 px-2 py-1 text-sm text-muted-foreground hover:bg-muted rounded transition-colors">
@@ -124,9 +124,9 @@ export function PostCard({ post, isCompact = false, showSubmolt = true, onVote }
             </button>
             
             {isAuthenticated && (
-              <button className={cn('flex items-center gap-1.5 px-2 py-1 text-sm text-muted-foreground hover:bg-muted rounded transition-colors', post.isSaved && 'text-primary')}>
-                <Bookmark className={cn('h-4 w-4', post.isSaved && 'fill-current')} />
-                <span className="hidden sm:inline">{post.isSaved ? 'Saved' : 'Save'}</span>
+              <button className={cn('flex items-center gap-1.5 px-2 py-1 text-sm text-muted-foreground hover:bg-muted rounded transition-colors', Script.isSaved && 'text-primary')}>
+                <Bookmark className={cn('h-4 w-4', Script.isSaved && 'fill-current')} />
+                <span className="hidden sm:inline">{Script.isSaved ? 'Saved' : 'Save'}</span>
               </button>
             )}
             
@@ -138,7 +138,7 @@ export function PostCard({ post, isCompact = false, showSubmolt = true, onVote }
               {showMenu && (
                 <div className="absolute right-0 top-full mt-1 w-40 rounded-md border bg-popover shadow-lg z-10">
                   <button className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted text-left">
-                    <Eye className="h-4 w-4" /> Hide post
+                    <Eye className="h-4 w-4" /> Hide Script
                   </button>
                   <button className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted text-left text-destructive">
                     <Flag className="h-4 w-4" /> Report
@@ -153,37 +153,37 @@ export function PostCard({ post, isCompact = false, showSubmolt = true, onVote }
   );
 }
 
-// Post List
-export function PostList({ posts, isLoading, showSubmolt = true }: { posts: Post[]; isLoading?: boolean; showSubmolt?: boolean }) {
+// Script List
+export function ScriptList({ Scripts, isLoading, showstudios  = true }: { Scripts: Script[]; isLoading?: boolean; showstudios ?: boolean }) {
   if (isLoading) {
     return (
       <div className="space-y-4">
         {Array.from({ length: 5 }).map((_, i) => (
-          <PostCardSkeleton key={i} />
+          <ScriptCardSkeleton key={i} />
         ))}
       </div>
     );
   }
   
-  if (posts.length === 0) {
+  if (Scripts.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">No posts yet</p>
+        <p className="text-muted-foreground">No Scripts yet</p>
       </div>
     );
   }
   
   return (
     <div className="space-y-4">
-      {posts.map(post => (
-        <PostCard key={post.id} post={post} showSubmolt={showSubmolt} />
+      {Scripts.map(Script => (
+        <ScriptCard key={Script.id} Script={Script} showstudios ={showstudios } />
       ))}
     </div>
   );
 }
 
-// Post Card Skeleton
-export function PostCardSkeleton() {
+// Script Card Skeleton
+export function ScriptCardSkeleton() {
   return (
     <Card className="p-4">
       <div className="flex gap-3">
@@ -240,10 +240,10 @@ export function FeedSortTabs({ value, onChange }: { value: string; onChange: (va
   );
 }
 
-// Create Post Card
-export function CreatePostCard({ submolt }: { submolt?: string }) {
+// Create Script Card
+export function CreateScriptCard({ studios  }: { studios ?: string }) {
   const { agent, isAuthenticated } = useAuth();
-  const { openCreatePost } = useUIStore();
+  const { openCreateScript } = useUIStore();
   
   if (!isAuthenticated) return null;
   
@@ -255,10 +255,10 @@ export function CreatePostCard({ submolt }: { submolt?: string }) {
           <AvatarFallback>{agent?.name ? getInitials(agent.name) : '?'}</AvatarFallback>
         </Avatar>
         <button
-          onClick={openCreatePost}
+          onClick={openCreateScript}
           className="flex-1 px-4 py-2 text-left text-muted-foreground bg-muted rounded-md hover:bg-muted/80 transition-colors"
         >
-          Create a post...
+          Create a Script...
         </button>
       </div>
     </Card>

@@ -11,7 +11,7 @@
     "arc",
     "series_bible",
     "shots",
-    "poster_spec"
+    "Scripter_spec"
   ],
   "properties": {
     "title": {
@@ -93,7 +93,7 @@
     },
     "series_bible": {
       "type": "object",
-      "description": "Continuity anchors for consistent generation across all 5 episodes",
+      "description": "Continuity anchors for consistent generation across episodes in a limited series",
       "required": ["global_style_bible", "location_anchors", "character_anchors"],
       "properties": {
         "global_style_bible": {
@@ -207,9 +207,9 @@
           },
           "gen_clip_seconds": {
             "type": "integer",
-            "minimum": 3,
-            "maximum": 6,
-            "description": "What the model actually generates (Luma = 3-6s)"
+            "minimum": 4,
+            "maximum": 10,
+            "description": "What the model actually generates (provider-limited; typically ~5–10s today)"
           },
           "duration_seconds": {
             "type": "integer",
@@ -311,7 +311,7 @@
         "additionalProperties": false
       }
     },
-    "poster_spec": {
+    "Scripter_spec": {
       "type": "object",
       "required": ["style", "key_visual"],
       "properties": {
@@ -335,7 +335,7 @@
           "type": "string",
           "minLength": 10,
           "maxLength": 300,
-          "description": "The main visual element of the poster"
+          "description": "The main visual element of the Scripter"
         },
         "color_palette": {
           "type": "array",

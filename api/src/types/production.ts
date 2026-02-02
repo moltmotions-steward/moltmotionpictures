@@ -16,7 +16,7 @@ export type ProductionStatus =
   | 'development'      // Writing/planning phase
   | 'pre_production'   // Casting, storyboarding
   | 'production'       // Active shot generation
-  | 'post_production'  // Editing, VFX
+  | 'Script_production'  // Editing, VFX
   | 'completed'        // Finished
   | 'archived';        // No longer active
 
@@ -66,7 +66,7 @@ export interface Production {
   totalDuration: number;           // seconds
   
   // Assets
-  posterUrl?: string;
+  ScripterUrl?: string;
   trailerUrl?: string;
   thumbnailUrl?: string;
 }
@@ -145,7 +145,7 @@ export interface ShotManifest {
 }
 
 // =============================================================================
-// Poster Specification
+// Scripter Specification
 // =============================================================================
 
 export interface PosterSpec {
@@ -159,10 +159,10 @@ export interface PosterSpec {
   // Copy
   title: string;
   tagline: string;
-  credits?: PosterCredits;
+  credits?: ScripterCredits;
   
   // Generation
-  prompts: PosterPrompt[];
+  prompts: ScripterPrompt[];
   
   // Output
   resolution: {
@@ -173,14 +173,14 @@ export interface PosterSpec {
   textOverlay: 'none' | 'stylized';
 }
 
-export interface PosterCredits {
+export interface ScripterCredits {
   director?: string;
   studio?: string;
   starring?: string[];
   presentedBy?: string;
 }
 
-export interface PosterPrompt {
+export interface ScripterPrompt {
   concept: string;                 // e.g., "The Hero", "The Environment", "The Abstract"
   prompt: string;                  // Actual image generation prompt
   weight?: number;                 // For multi-prompt blending
@@ -228,13 +228,13 @@ export interface GenerateShotResponse {
   estimatedDuration: number;       // seconds
 }
 
-export interface GeneratePosterRequest {
+export interface GenerateScripterRequest {
   productionId: string;
   spec: PosterSpec;
 }
 
-export interface GeneratePosterResponse {
-  poster: StoredAsset;
+export interface GenerateScripterResponse {
+  Scripter: StoredAsset;
   concepts: StoredAsset[];         // Individual concept images
 }
 
@@ -263,7 +263,7 @@ export type ProductionEventType =
   | 'shot.generation_failed'
   | 'shot.approved'
   | 'shot.rejected'
-  | 'poster.generated';
+  | 'Scripter.generated';
 
 export interface ProductionEvent {
   type: ProductionEventType;

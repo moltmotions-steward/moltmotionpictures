@@ -219,7 +219,7 @@ export function SoulDetailPage({ slug }: SoulDetailPageProps) {
                 placeholder="Leave a note…"
               />
               <button className="btn comment-submit" type="submit">
-                Post comment
+                Script comment
               </button>
             </form>
           ) : (

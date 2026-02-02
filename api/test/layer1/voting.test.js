@@ -66,7 +66,7 @@ describe('Layer 1 - Voting Routes', () => {
         gen_clip_seconds: 4, duration_seconds: 5, edit_extend_strategy: 'none'
       }
     ],
-    poster_spec: {
+    Scripter_spec: {
       style: 'cinematic',
       key_visual: 'Comedian with microphone under spotlight',
       mood: 'Light and funny'
@@ -89,7 +89,7 @@ describe('Layer 1 - Voting Routes', () => {
     // Create script owner agent
     const agentName = `l1vote_owner_${Date.now().toString(36)}`;
     const agentRes = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ name: agentName, description: 'Script owner agent' });
     
     agentId = agentRes.body.agent.id;
@@ -98,7 +98,7 @@ describe('Layer 1 - Voting Routes', () => {
     // Create voter agent
     const voterName = `l1vote_voter_${Date.now().toString(36)}`;
     const voterRes = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ name: voterName, description: 'Voter agent' });
     
     voterAgentId = voterRes.body.agent.id;
@@ -157,10 +157,10 @@ describe('Layer 1 - Voting Routes', () => {
     }
   });
 
-  describe('POST /voting/scripts/:scriptId/upvote', () => {
+  describe('Script /voting/scripts/:scriptId/upvote', () => {
     it('allows agent to upvote a script', async () => {
       const res = await request(app)
-        .post(`/api/v1/voting/scripts/${scriptId}/upvote`)
+        .Script(`/api/v1/voting/scripts/${scriptId}/upvote`)
         .set('Authorization', `Bearer ${voterAgentApiKey}`);
 
       expect(res.status).toBe(200);
@@ -179,13 +179,13 @@ describe('Layer 1 - Voting Routes', () => {
 
     it('requires authentication', async () => {
       const res = await request(app)
-        .post(`/api/v1/voting/scripts/${scriptId}/upvote`);
+        .Script(`/api/v1/voting/scripts/${scriptId}/upvote`);
 
       expect(res.status).toBe(401);
     });
   });
 
-  describe('POST /voting/scripts/:scriptId/downvote', () => {
+  describe('Script /voting/scripts/:scriptId/downvote', () => {
     it('allows agent to downvote a script', async () => {
       // First remove any existing vote
       await request(app)
@@ -193,7 +193,7 @@ describe('Layer 1 - Voting Routes', () => {
         .set('Authorization', `Bearer ${voterAgentApiKey}`);
 
       const res = await request(app)
-        .post(`/api/v1/voting/scripts/${scriptId}/downvote`)
+        .Script(`/api/v1/voting/scripts/${scriptId}/downvote`)
         .set('Authorization', `Bearer ${voterAgentApiKey}`);
 
       expect(res.status).toBe(200);
@@ -207,7 +207,7 @@ describe('Layer 1 - Voting Routes', () => {
     it('removes agent vote from script', async () => {
       // First ensure there's a vote to remove
       await request(app)
-        .post(`/api/v1/voting/scripts/${scriptId}/upvote`)
+        .Script(`/api/v1/voting/scripts/${scriptId}/upvote`)
         .set('Authorization', `Bearer ${voterAgentApiKey}`);
 
       const res = await request(app)
@@ -239,7 +239,7 @@ describe('Layer 1 - Voting Routes', () => {
     it('returns vote info for script', async () => {
       // First, add a vote back
       await request(app)
-        .post(`/api/v1/voting/scripts/${scriptId}/upvote`)
+        .Script(`/api/v1/voting/scripts/${scriptId}/upvote`)
         .set('Authorization', `Bearer ${voterAgentApiKey}`);
 
       const res = await request(app)

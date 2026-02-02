@@ -117,7 +117,7 @@ export class GradientClient {
     request: ChatCompletionRequest
   ): Promise<ChatCompletionResponse> {
     return this.request('/v1/chat/completions', {
-      method: 'POST',
+      method: 'Script',
       body: JSON.stringify(request),
     });
   }
@@ -161,7 +161,7 @@ export class GradientClient {
     // FLUX.1 uses the same chat completions endpoint with special formatting
     // The response includes base64 images or URLs depending on the model
     return this.request('/v1/images/generations', {
-      method: 'POST',
+      method: 'Script',
       body: JSON.stringify({
         model: request.model,
         prompt: request.prompt,
@@ -175,9 +175,9 @@ export class GradientClient {
   }
 
   /**
-   * Generate a movie poster using FLUX.1
+   * Generate a movie Scripter using FLUX.1
    */
-  async generatePoster(
+  async generateScripter(
     prompt: string,
     options: {
       negativePrompt?: string;
@@ -191,7 +191,7 @@ export class GradientClient {
       prompt,
       negative_prompt: options.negativePrompt,
       width: options.width || 2048,
-      height: options.height || 3072, // 2:3 aspect ratio for posters
+      height: options.height || 3072, // 2:3 aspect ratio for Scripters
     });
   }
 
@@ -199,18 +199,26 @@ export class GradientClient {
   // Video Generation API (Luma Dream Machine)
   // ---------------------------------------------------------------------------
 
+  private normalizeLumaDurationSeconds(duration?: number): 5 | 10 {
+    if (duration === 10) return 10;
+    if (duration === 5) return 5;
+    if (typeof duration !== 'number' || !Number.isFinite(duration)) return 5;
+    return duration <= 5 ? 5 : 10;
+  }
+
   async generateVideo(
     request: VideoGenerationRequest
   ): Promise<VideoGenerationResponse> {
+    const durationSeconds = this.normalizeLumaDurationSeconds(request.duration);
     // Luma Dream Machine endpoint
     return this.request('/v1/video/generations', {
-      method: 'POST',
+      method: 'Script',
       body: JSON.stringify({
         model: 'luma-dream-machine',
         prompt: request.prompt,
         negative_prompt: request.negative_prompt,
         aspect_ratio: request.aspect_ratio || '16:9',
-        duration: request.duration || 5,
+        duration: durationSeconds,
         loop: request.loop || false,
         camera_motion: request.camera_motion,
         keyframes: request.keyframes,
@@ -279,15 +287,15 @@ Output ONLY the refined prompt, no explanations.`;
   }
 
   /**
-   * Generate a poster prompt from a movie logline
+   * Generate a Scripter prompt from a movie logline
    */
-  async generatePosterPrompt(
+  async generateScripterPrompt(
     title: string,
     logline: string,
     genre: string
   ): Promise<string> {
-    const systemPrompt = `You are a movie poster designer and prompt engineer for AI image generation.
-Your task is to create detailed prompts for FLUX.1 that will generate compelling movie posters.
+    const systemPrompt = `You are a movie Scripter designer and prompt engineer for AI image generation.
+Your task is to create detailed prompts for FLUX.1 that will generate compelling movie Scripters.
 
 Guidelines:
 - Describe the key visual elements and composition
@@ -299,7 +307,7 @@ Guidelines:
 
 Output ONLY the prompt, no explanations.`;
 
-    const userPrompt = `Create a poster prompt for:
+    const userPrompt = `Create a Scripter prompt for:
 Title: ${title}
 Genre: ${genre}
 Logline: ${logline}`;

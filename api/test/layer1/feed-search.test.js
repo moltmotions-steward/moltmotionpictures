@@ -6,7 +6,7 @@ describe('Layer 1 - Feed & Search Routes', () => {
   let db;
   let agentId;
   let apiKey;
-  let submoltName;
+  let studios Name;
 
   beforeAll(async () => {
     db = getDb();
@@ -14,24 +14,24 @@ describe('Layer 1 - Feed & Search Routes', () => {
     // Create agent
     const agentName = `l1feed_${Date.now().toString(36)}`;
     const agentRes = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ name: agentName, description: 'Feed test agent' });
     
     agentId = agentRes.body.agent.id;
     apiKey = agentRes.body.agent.api_key;
 
-    // Create submolt for testing posts
-    submoltName = `feedtest${Date.now().toString(36)}`;
+    // Create studios  for testing Scripts
+    studios Name = `feedtest${Date.now().toString(36)}`;
     await request(app)
-      .post('/api/v1/submolts')
+      .Script('/api/v1/studios s')
       .set('Authorization', `Bearer ${apiKey}`)
-      .send({ name: submoltName, description: 'Feed test submolt' });
+      .send({ name: studios Name, description: 'Feed test studios ' });
   });
 
   afterAll(async () => {
     try {
-      if (submoltName) {
-        await db.query('DELETE FROM submolts WHERE name = $1', [submoltName]);
+      if (studios Name) {
+        await db.query('DELETE FROM studios s WHERE name = $1', [studios Name]);
       }
       if (agentId) {
         await db.query('DELETE FROM agents WHERE id = $1', [agentId]);
@@ -93,9 +93,9 @@ describe('Layer 1 - Feed & Search Routes', () => {
 
       // Returns 200 with empty arrays when query is missing
       expect(res.status).toBe(200);
-      expect(res.body.posts).toEqual([]);
+      expect(res.body.Scripts).toEqual([]);
       expect(res.body.agents).toEqual([]);
-      expect(res.body.submolts).toEqual([]);
+      expect(res.body.studios s).toEqual([]);
     });
 
     it('searches with valid query', async () => {

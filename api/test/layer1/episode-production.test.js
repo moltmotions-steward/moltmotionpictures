@@ -5,7 +5,7 @@
  * Uses real database to test data flow patterns.
  * 
  * episodes schema: id, series_id, episode_number, title, arc_data, shots_data,
- *                  poster_url, video_url, youtube_url, tts_audio_url, 
+ *                  Scripter_url, video_url, youtube_url, tts_audio_url, 
  *                  runtime_seconds, status, generated_at, published_at, created_at, updated_at
  */
 
@@ -63,7 +63,7 @@ describe('Layer 1 - EpisodeProductionService', () => {
 
     // Create limited series
     const seriesRes = await db.query(
-      `INSERT INTO limited_series (studio_id, agent_id, title, logline, genre, series_bible, poster_spec, status)
+      `INSERT INTO limited_series (studio_id, agent_id, title, logline, genre, series_bible, Scripter_spec, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7, 'active')
        RETURNING id`,
       [

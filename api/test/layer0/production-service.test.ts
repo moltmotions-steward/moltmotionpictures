@@ -36,7 +36,7 @@ describe('ProductionService Validation Logic', () => {
 
     it('should remove special characters', () => {
       expect(slugify('test!@#$%movie')).toBe('test-movie');
-      // Apostrophe becomes hyphen, so "Tom's" -> "tom-s"
+      // AScriptrophe becomes hyphen, so "Tom's" -> "tom-s"
       expect(slugify("Tom's Adventure")).toBe('tom-s-adventure');
     });
 
@@ -229,14 +229,14 @@ describe('ProductionService Validation Logic', () => {
   });
 
   describe('Production Status Transitions', () => {
-    type ProductionStatus = 'development' | 'pre_production' | 'production' | 'post_production' | 'completed' | 'archived';
+    type ProductionStatus = 'development' | 'pre_production' | 'production' | 'Script_production' | 'completed' | 'archived';
 
     const canTransitionProduction = (current: ProductionStatus, target: ProductionStatus): boolean => {
       const allowedTransitions: Record<ProductionStatus, ProductionStatus[]> = {
         development: ['pre_production', 'archived'],
         pre_production: ['production', 'development', 'archived'],
-        production: ['post_production', 'archived'],
-        post_production: ['completed', 'archived'],
+        production: ['Script_production', 'archived'],
+        Script_production: ['completed', 'archived'],
         completed: ['archived'],
         archived: ['development'], // Can unarchive back to development
       };
@@ -246,8 +246,8 @@ describe('ProductionService Validation Logic', () => {
     it('should follow linear production pipeline', () => {
       expect(canTransitionProduction('development', 'pre_production')).toBe(true);
       expect(canTransitionProduction('pre_production', 'production')).toBe(true);
-      expect(canTransitionProduction('production', 'post_production')).toBe(true);
-      expect(canTransitionProduction('post_production', 'completed')).toBe(true);
+      expect(canTransitionProduction('production', 'Script_production')).toBe(true);
+      expect(canTransitionProduction('Script_production', 'completed')).toBe(true);
     });
 
     it('should allow archiving from any active state', () => {
@@ -267,8 +267,8 @@ describe('ProductionService Validation Logic', () => {
     });
   });
 
-  describe('Poster Spec Validation', () => {
-    interface PosterSpec {
+  describe('Scripter Spec Validation', () => {
+    interface ScripterSpec {
       style: string;
       mood?: string;
       colorPalette?: string[];
@@ -278,7 +278,7 @@ describe('ProductionService Validation Logic', () => {
 
     const validStyles = ['cinematic', 'minimalist', 'vintage', 'illustrated', 'photographic'];
 
-    const validatePosterSpec = (spec: PosterSpec): string | null => {
+    const validateScripterSpec = (spec: ScripterSpec): string | null => {
       if (!spec.style) {
         return 'Style is required';
       }
@@ -291,9 +291,9 @@ describe('ProductionService Validation Logic', () => {
       return null;
     };
 
-    it('should accept valid poster spec', () => {
-      expect(validatePosterSpec({ style: 'cinematic' })).toBeNull();
-      expect(validatePosterSpec({ 
+    it('should accept valid Scripter spec', () => {
+      expect(validateScripterSpec({ style: 'cinematic' })).toBeNull();
+      expect(validateScripterSpec({ 
         style: 'minimalist',
         mood: 'mysterious',
         colorPalette: ['#000000', '#FFFFFF'],
@@ -302,16 +302,16 @@ describe('ProductionService Validation Logic', () => {
     });
 
     it('should reject missing style', () => {
-      expect(validatePosterSpec({ style: '' })).toBe('Style is required');
+      expect(validateScripterSpec({ style: '' })).toBe('Style is required');
     });
 
     it('should reject invalid style', () => {
-      expect(validatePosterSpec({ style: 'invalid' })).toBe('Invalid style: invalid');
+      expect(validateScripterSpec({ style: 'invalid' })).toBe('Invalid style: invalid');
     });
 
     it('should reject too many colors', () => {
       const manyColors = Array(11).fill('#FF0000');
-      expect(validatePosterSpec({ 
+      expect(validateScripterSpec({ 
         style: 'cinematic', 
         colorPalette: manyColors 
       })).toBe('Color palette cannot have more than 10 colors');
@@ -421,7 +421,7 @@ describe('ProductionService Types', () => {
   });
 
   it('should export valid ProductionStatus types', () => {
-    const statuses = ['development', 'pre_production', 'production', 'post_production', 'completed', 'archived'];
+    const statuses = ['development', 'pre_production', 'production', 'Script_production', 'completed', 'archived'];
     expect(statuses).toHaveLength(6);
   });
 

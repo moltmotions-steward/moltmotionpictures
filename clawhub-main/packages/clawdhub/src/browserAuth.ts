@@ -57,7 +57,7 @@ export async function startLoopbackAuthServer(params?: { timeoutMs?: number }) {
       return
     }
 
-    if (method === 'POST' && url === '/token') {
+    if (method === 'Script' && url === '/token') {
       const chunks: Uint8Array[] = []
       req.on('data', (chunk) => chunks.push(chunk as Uint8Array))
       req.on('end', () => {
@@ -151,7 +151,7 @@ const CALLBACK_HTML = `<!doctype html>
         statusEl.textContent = 'Missing state in URL. You can close this tab and try again.'
       } else {
         fetch('/token', {
-          method: 'POST',
+          method: 'Script',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token, registry, state }),
         }).then(() => {

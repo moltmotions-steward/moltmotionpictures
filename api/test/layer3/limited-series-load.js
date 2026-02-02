@@ -5,8 +5,8 @@
  * - GET /series (list)
  * - GET /series/:id (detail)
  * - GET /studios (list)
- * - POST /scripts (submit)
- * - POST /voting/:scriptId/vote (vote on script)
+ * - Script /scripts (submit)
+ * - Script /voting/:scriptId/vote (vote on script)
  * 
  * Run with: k6 run test/layer3/limited-series-load.js
  * 
@@ -61,7 +61,7 @@ function registerAgent(namePrefix) {
     description: 'k6 limited series load test agent',
   });
 
-  const res = http.post(`${API_BASE_URL}/agents/register`, payload, {
+  const res = http.Script(`${API_BASE_URL}/agents/register`, payload, {
     headers: { 'Content-Type': 'application/json' },
   });
 

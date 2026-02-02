@@ -61,9 +61,9 @@ function defaultOnRateLimited(req, res, info) {
  * // Basic usage
  * app.use('/api/v1', rateLimitMiddleware(limiter));
  * 
- * // Post limiter
- * app.post('/api/v1/posts', rateLimitMiddleware(limiter, {
- *   limitType: 'posts',
+ * // Script limiter
+ * app.Script('/api/v1/Scripts', rateLimitMiddleware(limiter, {
+ *   limitType: 'Scripts',
  *   keyGenerator: (req) => req.token
  * }));
  */
@@ -142,12 +142,12 @@ function requestLimiter(limiter, options = {}) {
 }
 
 /**
- * Post rate limit middleware (1/30min)
+ * Script rate limit middleware (1/30min)
  */
-function postLimiter(limiter, options = {}) {
+function ScriptLimiter(limiter, options = {}) {
   return rateLimitMiddleware(limiter, {
     ...options,
-    limitType: 'posts'
+    limitType: 'Scripts'
   });
 }
 
@@ -195,7 +195,7 @@ function rateLimitStatus(limiter, options = {}) {
 module.exports = {
   rateLimitMiddleware,
   requestLimiter,
-  postLimiter,
+  ScriptLimiter,
   commentLimiter,
   rateLimitStatus,
   defaultKeyGenerator,

@@ -15,7 +15,7 @@ describe('Layer 1 - Middleware', () => {
     // Create test agent for auth tests
     const agentName = `l1mw_${Date.now().toString(36)}`;
     const regRes = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ name: agentName, description: 'Middleware test agent' });
     
     testAgentId = regRes.body.agent.id;
@@ -93,7 +93,7 @@ describe('Layer 1 - Middleware', () => {
 
     it('handles errors gracefully with proper JSON format', async () => {
       const res = await request(app)
-        .post('/api/v1/agents/register')
+        .Script('/api/v1/agents/register')
         .send({}); // Missing required fields
 
       expect(res.status).toBeGreaterThanOrEqual(400);
@@ -102,7 +102,7 @@ describe('Layer 1 - Middleware', () => {
 
     it('returns proper error structure for validation failures', async () => {
       const res = await request(app)
-        .post('/api/v1/agents/register')
+        .Script('/api/v1/agents/register')
         .send({ name: 'a' }); // Name too short
 
       expect(res.status).toBeGreaterThanOrEqual(400);
@@ -116,7 +116,7 @@ describe('Layer 1 - Middleware', () => {
       const uniqueAgent = `l1rl_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 8)}`;
       
       const res = await request(app)
-        .post('/api/v1/agents/register')
+        .Script('/api/v1/agents/register')
         .send({ name: uniqueAgent, description: 'Rate limit test' });
 
       expect(res.status).toBe(201);
@@ -174,7 +174,7 @@ describe('Layer 1 - Middleware', () => {
     it('parses JSON request bodies', async () => {
       const agentName = `l1bp_${Date.now().toString(36)}`;
       const res = await request(app)
-        .post('/api/v1/agents/register')
+        .Script('/api/v1/agents/register')
         .set('Content-Type', 'application/json')
         .send(JSON.stringify({ name: agentName, description: 'Body parser test' }));
 
@@ -188,7 +188,7 @@ describe('Layer 1 - Middleware', () => {
 
     it('rejects requests with invalid JSON', async () => {
       const res = await request(app)
-        .post('/api/v1/agents/register')
+        .Script('/api/v1/agents/register')
         .set('Content-Type', 'application/json')
         .send('{ invalid json }');
 
@@ -200,7 +200,7 @@ describe('Layer 1 - Middleware', () => {
       const agentName = `l1large_${Date.now().toString(36)}`;
       
       const res = await request(app)
-        .post('/api/v1/agents/register')
+        .Script('/api/v1/agents/register')
         .send({ name: agentName, description: largeDescription });
 
       expect(res.status).toBeLessThan(500);

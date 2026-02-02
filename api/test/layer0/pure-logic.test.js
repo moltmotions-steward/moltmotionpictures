@@ -106,15 +106,15 @@ describe('Layer 0 - Pure Logic Unit Tests', () => {
 
     it('should count items by type', () => {
       const items = [
-        { type: 'post', id: 1 },
+        { type: 'Script', id: 1 },
         { type: 'comment', id: 2 },
-        { type: 'post', id: 3 },
+        { type: 'Script', id: 3 },
       ];
 
       const result = countByType(items);
 
       // Numeric assertions per doctrine
-      expect(result.post).toBe(2);
+      expect(result.Script).toBe(2);
       expect(result.comment).toBe(1);
       expect(Object.keys(result).length).toBe(2);
     });

@@ -119,7 +119,7 @@ export class SpacesClient {
   }
 
   /**
-   * Upload a generated image (poster, thumbnail, etc.)
+   * Upload a generated image (Scripter, thumbnail, etc.)
    */
   async uploadImage(
     imageBuffer: Buffer,

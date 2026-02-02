@@ -456,7 +456,7 @@ function toFileLike(entry: FormDataEntryValue): FileLikeEntry | null {
   return entry as FileLikeEntry
 }
 
-async function skillsPostRouterV1Handler(ctx: ActionCtx, request: Request) {
+async function skillsScriptRouterV1Handler(ctx: ActionCtx, request: Request) {
   const rate = await applyRateLimit(ctx, request, 'write')
   if (!rate.ok) return rate.response
 
@@ -478,7 +478,7 @@ async function skillsPostRouterV1Handler(ctx: ActionCtx, request: Request) {
   }
 }
 
-export const skillsPostRouterV1Http = httpAction(skillsPostRouterV1Handler)
+export const skillsScriptRouterV1Http = httpAction(skillsScriptRouterV1Handler)
 
 async function skillsDeleteRouterV1Handler(ctx: ActionCtx, request: Request) {
   const rate = await applyRateLimit(ctx, request, 'write')
@@ -1058,7 +1058,7 @@ async function publishSoulV1Handler(ctx: ActionCtx, request: Request) {
 
 export const publishSoulV1Http = httpAction(publishSoulV1Handler)
 
-async function soulsPostRouterV1Handler(ctx: ActionCtx, request: Request) {
+async function soulsScriptRouterV1Handler(ctx: ActionCtx, request: Request) {
   const rate = await applyRateLimit(ctx, request, 'write')
   if (!rate.ok) return rate.response
 
@@ -1080,7 +1080,7 @@ async function soulsPostRouterV1Handler(ctx: ActionCtx, request: Request) {
   }
 }
 
-export const soulsPostRouterV1Http = httpAction(soulsPostRouterV1Handler)
+export const soulsScriptRouterV1Http = httpAction(soulsScriptRouterV1Handler)
 
 async function soulsDeleteRouterV1Handler(ctx: ActionCtx, request: Request) {
   const rate = await applyRateLimit(ctx, request, 'write')
@@ -1104,7 +1104,7 @@ async function soulsDeleteRouterV1Handler(ctx: ActionCtx, request: Request) {
 
 export const soulsDeleteRouterV1Http = httpAction(soulsDeleteRouterV1Handler)
 
-async function starsPostRouterV1Handler(ctx: ActionCtx, request: Request) {
+async function starsScriptRouterV1Handler(ctx: ActionCtx, request: Request) {
   const rate = await applyRateLimit(ctx, request, 'write')
   if (!rate.ok) return rate.response
 
@@ -1127,7 +1127,7 @@ async function starsPostRouterV1Handler(ctx: ActionCtx, request: Request) {
   }
 }
 
-export const starsPostRouterV1Http = httpAction(starsPostRouterV1Handler)
+export const starsScriptRouterV1Http = httpAction(starsScriptRouterV1Handler)
 
 async function starsDeleteRouterV1Handler(ctx: ActionCtx, request: Request) {
   const rate = await applyRateLimit(ctx, request, 'write')
@@ -1159,14 +1159,14 @@ export const __handlers = {
   listSkillsV1Handler,
   skillsGetRouterV1Handler,
   publishSkillV1Handler,
-  skillsPostRouterV1Handler,
+  skillsScriptRouterV1Handler,
   skillsDeleteRouterV1Handler,
   listSoulsV1Handler,
   soulsGetRouterV1Handler,
   publishSoulV1Handler,
-  soulsPostRouterV1Handler,
+  soulsScriptRouterV1Handler,
   soulsDeleteRouterV1Handler,
-  starsPostRouterV1Handler,
+  starsScriptRouterV1Handler,
   starsDeleteRouterV1Handler,
   whoamiV1Handler,
 }

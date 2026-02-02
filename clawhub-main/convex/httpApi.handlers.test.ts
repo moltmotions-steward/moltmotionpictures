@@ -218,7 +218,7 @@ describe('httpApi handlers', () => {
     const response = await __handlers.cliTelemetrySyncHandler(
       makeCtx({ runMutation }),
       new Request('https://x/api/cli/telemetry/sync', {
-        method: 'POST',
+        method: 'Script',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           roots: [
@@ -241,7 +241,7 @@ describe('httpApi handlers', () => {
     const response = await __handlers.cliTelemetrySyncHandler(
       makeCtx({ runMutation: vi.fn() }),
       new Request('https://x/api/cli/telemetry/sync', {
-        method: 'POST',
+        method: 'Script',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roots: 'nope' }),
       }),
@@ -255,7 +255,7 @@ describe('httpApi handlers', () => {
     await __handlers.cliTelemetrySyncHandler(
       makeCtx({ runMutation }),
       new Request('https://x/api/cli/telemetry/sync', {
-        method: 'POST',
+        method: 'Script',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           roots: [
@@ -277,7 +277,7 @@ describe('httpApi handlers', () => {
   })
 
   it('cliTelemetrySyncHttp returns 400 on invalid json', async () => {
-    const request = new Request('https://x/api/cli/telemetry/sync', { method: 'POST', body: '{' })
+    const request = new Request('https://x/api/cli/telemetry/sync', { method: 'Script', body: '{' })
     const response = await __handlers.cliTelemetrySyncHandler(makeCtx({}), request)
     expect(response.status).toBe(400)
   })
@@ -287,7 +287,7 @@ describe('httpApi handlers', () => {
     const response = await __handlers.cliTelemetrySyncHandler(
       makeCtx({}),
       new Request('https://x/api/cli/telemetry/sync', {
-        method: 'POST',
+        method: 'Script',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roots: [] }),
       }),
@@ -300,7 +300,7 @@ describe('httpApi handlers', () => {
     const runMutation = vi.fn().mockResolvedValue('https://upload.local')
     const response = await __handlers.cliUploadUrlHandler(
       makeCtx({ runMutation }),
-      new Request('https://x/api/cli/upload-url', { method: 'POST' }),
+      new Request('https://x/api/cli/upload-url', { method: 'Script' }),
     )
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({ uploadUrl: 'https://upload.local' })
@@ -310,13 +310,13 @@ describe('httpApi handlers', () => {
     vi.mocked(requireApiTokenUser).mockRejectedValueOnce(new Error('Unauthorized'))
     const response = await __handlers.cliUploadUrlHandler(
       makeCtx({}),
-      new Request('https://x/api/cli/upload-url', { method: 'POST' }),
+      new Request('https://x/api/cli/upload-url', { method: 'Script' }),
     )
     expect(response.status).toBe(401)
   })
 
   it('cliPublishHttp returns 400 on invalid json', async () => {
-    const request = new Request('https://x/api/cli/publish', { method: 'POST', body: '{' })
+    const request = new Request('https://x/api/cli/publish', { method: 'Script', body: '{' })
     const response = await __handlers.cliPublishHandler(makeCtx({}), request)
     expect(response.status).toBe(400)
   })
@@ -324,7 +324,7 @@ describe('httpApi handlers', () => {
   it('cliPublishHttp returns 401 when unauthorized', async () => {
     vi.mocked(requireApiTokenUser).mockRejectedValueOnce(new Error('Unauthorized'))
     const request = new Request('https://x/api/cli/publish', {
-      method: 'POST',
+      method: 'Script',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({}),
     })
@@ -336,7 +336,7 @@ describe('httpApi handlers', () => {
     vi.mocked(requireApiTokenUser).mockResolvedValueOnce({ userId: 'user1' } as never)
     vi.mocked(publishVersionForUser).mockRejectedValueOnce(new Error('Nope'))
     const request = new Request('https://x/api/cli/publish', {
-      method: 'POST',
+      method: 'Script',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         slug: 'cool-skill',
@@ -358,7 +358,7 @@ describe('httpApi handlers', () => {
       embeddingId: 'e',
     } as never)
     const request = new Request('https://x/api/cli/publish', {
-      method: 'POST',
+      method: 'Script',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         slug: 'cool-skill',
@@ -378,7 +378,7 @@ describe('httpApi handlers', () => {
   it('cliSkillDeleteHandler returns 401 when unauthorized', async () => {
     vi.mocked(requireApiTokenUser).mockRejectedValueOnce(new Error('Unauthorized'))
     const request = new Request('https://x/api/cli/skill/delete', {
-      method: 'POST',
+      method: 'Script',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ slug: 'demo' }),
     })
@@ -390,7 +390,7 @@ describe('httpApi handlers', () => {
     vi.mocked(requireApiTokenUser).mockResolvedValueOnce({ userId: 'user1' } as never)
     const runMutation = vi.fn().mockResolvedValue({ ok: true })
     const request = new Request('https://x/api/cli/skill/delete', {
-      method: 'POST',
+      method: 'Script',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ slug: 'demo' }),
     })
@@ -408,7 +408,7 @@ describe('httpApi handlers', () => {
     vi.mocked(requireApiTokenUser).mockResolvedValueOnce({ userId: 'user1' } as never)
     const runMutation = vi.fn().mockResolvedValue({ ok: true })
     const request = new Request('https://x/api/cli/skill/undelete', {
-      method: 'POST',
+      method: 'Script',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ slug: 'demo' }),
     })
@@ -432,7 +432,7 @@ describe('httpApi handlers', () => {
     const response = await __handlers.cliSkillDeleteHandler(
       makeCtx({ runMutation }),
       new Request('https://x/api/cli/skill/undelete', {
-        method: 'POST',
+        method: 'Script',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slug: 'demo' }),
       }),
@@ -454,7 +454,7 @@ describe('httpApi handlers', () => {
     const response = await __handlers.cliSkillDeleteHandler(
       makeCtx({ runMutation }),
       new Request('https://x/api/cli/skill/delete', {
-        method: 'POST',
+        method: 'Script',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slug: 'demo' }),
       }),
@@ -470,7 +470,7 @@ describe('httpApi handlers', () => {
   })
 
   it('cliSkillDeleteHandler returns 400 on invalid json', async () => {
-    const request = new Request('https://x/api/cli/skill/delete', { method: 'POST', body: '{' })
+    const request = new Request('https://x/api/cli/skill/delete', { method: 'Script', body: '{' })
     const response = await __handlers.cliSkillDeleteHandler(makeCtx({}), request, true)
     expect(response.status).toBe(400)
   })
@@ -478,7 +478,7 @@ describe('httpApi handlers', () => {
   it('cliSkillDeleteHandler returns 400 on invalid payload', async () => {
     vi.mocked(requireApiTokenUser).mockResolvedValueOnce({ userId: 'user1' } as never)
     const request = new Request('https://x/api/cli/skill/delete', {
-      method: 'POST',
+      method: 'Script',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({}),
     })

@@ -7,12 +7,10 @@
 
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-
-// Use require for JS modules without type declarations
-const { asyncHandler } = require('../middleware/errorHandler');
-const { requireAuth } = require('../middleware/auth');
-const { success } = require('../utils/response');
-const { BadRequestError, NotFoundError, ForbiddenError } = require('../utils/errors');
+import { requireAuth } from '../middleware/auth';
+import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
+import { asyncHandler } from '../middleware/errorHandler';
+import { success } from '../utils/response';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -22,7 +20,7 @@ const prisma = new PrismaClient();
 // =============================================================================
 
 /**
- * POST /voting/scripts/:scriptId/upvote
+ * Script /voting/scripts/:scriptId/upvote
  * Upvote a script
  */
 router.post('/scripts/:scriptId/upvote', requireAuth, asyncHandler(async (req: any, res: any) => {
@@ -39,7 +37,7 @@ router.post('/scripts/:scriptId/upvote', requireAuth, asyncHandler(async (req: a
 }));
 
 /**
- * POST /voting/scripts/:scriptId/downvote
+ * Script /voting/scripts/:scriptId/downvote
  * Downvote a script
  */
 router.post('/scripts/:scriptId/downvote', requireAuth, asyncHandler(async (req: any, res: any) => {
@@ -123,8 +121,9 @@ router.get('/scripts/:scriptId', requireAuth, asyncHandler(async (req: any, res:
   const script = await prisma.script.findUnique({
     where: { id: scriptId },
     include: {
-      studio: true,
-      category: true,
+      studio: {
+        include: { category: true },
+      },
     },
   });
   
@@ -148,8 +147,8 @@ router.get('/scripts/:scriptId', requireAuth, asyncHandler(async (req: any, res:
       title: script.title,
       upvotes: script.upvotes,
       downvotes: script.downvotes,
-      vote_count: script.vote_count,
-      status: script.status,
+      score: script.score,
+      status: script.pilot_status,
     },
     user_vote: userVote ? userVote.value : null,
   });
@@ -160,7 +159,7 @@ router.get('/scripts/:scriptId', requireAuth, asyncHandler(async (req: any, res:
 // =============================================================================
 
 /**
- * POST /voting/clips/:clipVariantId
+ * Script /voting/clips/:clipVariantId
  * Vote for a clip variant (human or agent)
  */
 router.post('/clips/:clipVariantId', asyncHandler(async (req: any, res: any) => {
@@ -322,14 +321,14 @@ router.get('/periods/:periodId/results', asyncHandler(async (req: any, res: any)
     categories.map(async (category: any) => {
       const topScript = await prisma.script.findFirst({
         where: {
-          category_id: category.id,
+          studio: { category_id: category.id },
           voting_period_id: periodId,
-          status: 'selected',
+          pilot_status: 'selected',
         },
         include: {
           studio: true,
         },
-        orderBy: { vote_count: 'desc' },
+        orderBy: { score: 'desc' },
       });
       
       return {
@@ -338,7 +337,7 @@ router.get('/periods/:periodId/results', asyncHandler(async (req: any, res: any)
         winner: topScript ? {
           id: topScript.id,
           title: topScript.title,
-          vote_count: topScript.vote_count,
+          score: topScript.score,
           studio: topScript.studio.full_name,
         } : null,
       };
@@ -371,7 +370,7 @@ async function castScriptVote(agentId: string, scriptId: string, value: 1 | -1):
   }
   
   // Only vote on scripts in voting status
-  if (script.status !== 'voting') {
+  if (script.pilot_status !== 'voting') {
     throw new ForbiddenError('This script is not in voting phase');
   }
   
@@ -393,7 +392,7 @@ async function castScriptVote(agentId: string, scriptId: string, value: 1 | -1):
       });
       
       const updateData: any = {
-        vote_count: { decrement: value },
+        score: { decrement: value },
       };
       if (value === 1) {
         updateData.upvotes = { decrement: 1 };
@@ -416,7 +415,7 @@ async function castScriptVote(agentId: string, scriptId: string, value: 1 | -1):
       await prisma.script.update({
         where: { id: scriptId },
         data: {
-          vote_count: { increment: value * 2 },
+          score: { increment: value * 2 },
           upvotes: value === 1 ? { increment: 1 } : { decrement: 1 },
           downvotes: value === -1 ? { increment: 1 } : { decrement: 1 },
         },
@@ -433,7 +432,7 @@ async function castScriptVote(agentId: string, scriptId: string, value: 1 | -1):
     });
     
     const updateData: any = {
-      vote_count: { increment: value },
+      score: { increment: value },
     };
     if (value === 1) {
       updateData.upvotes = { increment: 1 };
@@ -456,8 +455,8 @@ async function getScriptWithVotes(scriptId: string) {
       title: true,
       upvotes: true,
       downvotes: true,
-      vote_count: true,
-      status: true,
+      score: true,
+      pilot_status: true,
     },
   });
 }

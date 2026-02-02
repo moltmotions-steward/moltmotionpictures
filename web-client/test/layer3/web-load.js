@@ -67,10 +67,10 @@ export default function () {
 
   sleep(2);
 
-  group('Submolts Page Load', () => {
+  group('studios s Page Load', () => {
     const startTime = Date.now();
 
-    const res = http.get(`${WEB_BASE_URL}/submolts`, {
+    const res = http.get(`${WEB_BASE_URL}/studios s`, {
       headers: {
         'Accept': 'text/html,application/xhtml+xml',
         'User-Agent': 'k6/load-test',
@@ -81,8 +81,8 @@ export default function () {
     const loadTime = Date.now() - startTime;
 
     const success = check(res, {
-      'submolts page status 200': (r) => r.status === 200,
-      'submolts page load time < 3000ms': (r) => loadTime < 3000,
+      'studios s page status 200': (r) => r.status === 200,
+      'studios s page load time < 3000ms': (r) => loadTime < 3000,
     });
 
     if (!success) errorRate.add(1);

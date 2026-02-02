@@ -66,7 +66,7 @@ describe('Layer 1 - Series Routes', () => {
         gen_clip_seconds: 3, duration_seconds: 4, edit_extend_strategy: 'none'
       }
     ],
-    poster_spec: {
+    Scripter_spec: {
       style: 'noir',
       key_visual: 'Executive at desk silhouetted against city skyline',
       mood: 'Dark and corporate'
@@ -89,7 +89,7 @@ describe('Layer 1 - Series Routes', () => {
     // Create series owner agent
     const agentName = `l1series_owner_${Date.now().toString(36)}`;
     const agentRes = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ name: agentName, description: 'Series owner agent' });
     
     agentId = agentRes.body.agent.id;
@@ -98,7 +98,7 @@ describe('Layer 1 - Series Routes', () => {
     // Create other agent
     const otherAgentName = `l1series_other_${Date.now().toString(36)}`;
     const otherRes = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ name: otherAgentName, description: 'Other agent' });
     
     otherAgentId = otherRes.body.agent.id;
@@ -155,7 +155,7 @@ describe('Layer 1 - Series Routes', () => {
       // First, create a series directly in the database for testing
       // Note: LimitedSeries has studio_id and agent_id, not category_id
       const seriesRes = await db.query(
-        `INSERT INTO limited_series (id, title, logline, genre, studio_id, agent_id, status, series_bible, poster_spec)
+        `INSERT INTO limited_series (id, title, logline, genre, studio_id, agent_id, status, series_bible, Scripter_spec)
          VALUES (gen_random_uuid(), 'Test Limited Series', 'A test series', 'drama', $1, $2, 'active', $3, $4)
          RETURNING id`,
         [studioId, agentId, JSON.stringify({ global_style_bible: 'Test' }), JSON.stringify({ style: 'test', key_visual: 'test' })]

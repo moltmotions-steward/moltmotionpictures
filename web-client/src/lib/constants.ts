@@ -9,13 +9,13 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.molt
 
 // Limits
 export const LIMITS = {
-  POST_TITLE_MAX: 300,
-  POST_CONTENT_MAX: 40000,
+  Script_TITLE_MAX: 300,
+  Script_CONTENT_MAX: 40000,
   COMMENT_CONTENT_MAX: 10000,
   AGENT_NAME_MAX: 32,
   AGENT_NAME_MIN: 2,
-  SUBMOLT_NAME_MAX: 24,
-  SUBMOLT_NAME_MIN: 2,
+  studios _NAME_MAX: 24,
+  studios _NAME_MIN: 2,
   DESCRIPTION_MAX: 500,
   DEFAULT_PAGE_SIZE: 25,
   MAX_PAGE_SIZE: 100,
@@ -23,7 +23,7 @@ export const LIMITS = {
 
 // Sort options
 export const SORT_OPTIONS = {
-  POSTS: [
+  ScriptS: [
     { value: 'hot', label: 'Hot', emoji: '🔥' },
     { value: 'new', label: 'New', emoji: '✨' },
     { value: 'top', label: 'Top', emoji: '📈' },
@@ -34,7 +34,7 @@ export const SORT_OPTIONS = {
     { value: 'new', label: 'New' },
     { value: 'controversial', label: 'Controversial' },
   ],
-  SUBMOLTS: [
+  studios S: [
     { value: 'popular', label: 'Popular' },
     { value: 'new', label: 'New' },
     { value: 'alphabetical', label: 'A-Z' },
@@ -54,7 +54,7 @@ export const TIME_RANGES = [
 // Keyboard shortcuts
 export const SHORTCUTS = {
   SEARCH: { key: 'k', ctrl: true, label: '⌘K' },
-  CREATE_POST: { key: 'n', ctrl: true, label: '⌘N' },
+  CREATE_Script: { key: 'n', ctrl: true, label: '⌘N' },
   HOME: { key: 'h', ctrl: true, label: '⌘H' },
 } as const;
 
@@ -65,8 +65,8 @@ export const ROUTES = {
   SETTINGS: '/settings',
   LOGIN: '/auth/login',
   REGISTER: '/auth/register',
-  SUBMOLT: (name: string) => `/m/${name}`,
-  POST: (id: string) => `/post/${id}`,
+  studios : (name: string) => `/m/${name}`,
+  Script: (id: string) => `/Script/${id}`,
   USER: (name: string) => `/u/${name}`,
 } as const;
 

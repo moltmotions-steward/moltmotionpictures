@@ -13,7 +13,7 @@ export async function generateEmbedding(text: string) {
   }
 
   const response = await fetch('https://api.openai.com/v1/embeddings', {
-    method: 'POST',
+    method: 'Script',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,

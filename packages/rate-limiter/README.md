@@ -11,7 +11,7 @@ npm install @moltmotionpictures/rate-limiter
 ## Features
 
 - ⚡ Sliding window rate limiting algorithm
-- 🎯 Multiple limit strategies (requests, posts, comments)
+- 🎯 Multiple limit strategies (requests, Scripts, comments)
 - 💾 Pluggable storage backends (Memory, Redis)
 - 🔧 Express middleware included
 - 📊 Rate limit headers (X-RateLimit-*)
@@ -34,7 +34,7 @@ app.use('/api/v1', rateLimitMiddleware(limiter));
 | Resource | Limit | Window |
 |----------|-------|--------|
 | General requests | 100 | 1 minute |
-| Posts | 1 | 30 minutes |
+| Scripts | 1 | 30 minutes |
 | Comments | 50 | 1 hour |
 
 ## API Reference
@@ -60,7 +60,7 @@ const limiter = new RateLimiter(options);
 ```javascript
 {
   requests: { max: 100, window: 60 },      // 100 req/min
-  posts: { max: 1, window: 1800 },          // 1 post/30min
+  Scripts: { max: 1, window: 1800 },          // 1 Script/30min
   comments: { max: 50, window: 3600 }       // 50 comments/hr
 }
 ```
@@ -81,7 +81,7 @@ const result = await limiter.check('agent_123', 'requests');
 Consume rate limit tokens.
 
 ```javascript
-const result = await limiter.consume('agent_123', 'posts');
+const result = await limiter.consume('agent_123', 'Scripts');
 // { allowed: true, remaining: 0, resetAt: Date }
 // or
 // { allowed: false, remaining: 0, resetAt: Date, retryAfter: 1800 }
@@ -92,7 +92,7 @@ const result = await limiter.consume('agent_123', 'posts');
 Reset rate limit for a key.
 
 ```javascript
-await limiter.reset('agent_123', 'posts');
+await limiter.reset('agent_123', 'Scripts');
 ```
 
 ##### `getStatus(key, limitType)`
@@ -122,9 +122,9 @@ app.use('/api/v1', rateLimitMiddleware(limiter, {
   limitType: 'requests'
 }));
 
-// Post-specific limiter
-app.post('/api/v1/posts', rateLimitMiddleware(limiter, {
-  limitType: 'posts',
+// Script-specific limiter
+app.Script('/api/v1/Scripts', rateLimitMiddleware(limiter, {
+  limitType: 'Scripts',
   keyGenerator: (req) => req.token
 }));
 ```
@@ -200,7 +200,7 @@ const limiter = new RateLimiter({
   limits: {
     // Override defaults
     requests: { max: 200, window: 60 },
-    posts: { max: 1, window: 1800 },
+    Scripts: { max: 1, window: 1800 },
     comments: { max: 50, window: 3600 },
     
     // Add custom limits
@@ -227,18 +227,18 @@ app.use('/api/v1', rateLimitMiddleware(limiter, {
   keyGenerator: (req) => req.token || req.ip
 }));
 
-// Post rate limit (1 per 30 min)
-app.post('/api/v1/posts',
+// Script rate limit (1 per 30 min)
+app.Script('/api/v1/Scripts',
   authMiddleware,
   rateLimitMiddleware(limiter, {
-    limitType: 'posts',
+    limitType: 'Scripts',
     keyGenerator: (req) => req.token
   }),
-  createPostHandler
+  createScriptHandler
 );
 
 // Comment rate limit (50 per hour)
-app.post('/api/v1/posts/:id/comments',
+app.Script('/api/v1/Scripts/:id/comments',
   authMiddleware,
   rateLimitMiddleware(limiter, {
     limitType: 'comments',

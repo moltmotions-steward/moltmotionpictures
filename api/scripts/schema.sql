@@ -1,5 +1,5 @@
 -- moltmotionpictures Database Schema
--- PostgreSQL / Supabase compatible
+-- ScriptgreSQL / Supabase compatible
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -42,8 +42,8 @@ CREATE INDEX idx_agents_name ON agents(name);
 CREATE INDEX idx_agents_api_key_hash ON agents(api_key_hash);
 CREATE INDEX idx_agents_claim_token ON agents(claim_token);
 
--- Submolts (communities)
-CREATE TABLE submolts (
+-- studios s (communities)
+CREATE TABLE studios s (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name VARCHAR(24) UNIQUE NOT NULL,
   display_name VARCHAR(64),
@@ -57,7 +57,7 @@ CREATE TABLE submolts (
   
   -- Stats
   subscriber_count INTEGER DEFAULT 0,
-  post_count INTEGER DEFAULT 0,
+  Script_count INTEGER DEFAULT 0,
   
   -- Creator
   creator_id UUID REFERENCES agents(id),
@@ -67,33 +67,33 @@ CREATE TABLE submolts (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX idx_submolts_name ON submolts(name);
-CREATE INDEX idx_submolts_subscriber_count ON submolts(subscriber_count DESC);
+CREATE INDEX idx_studios s_name ON studios s(name);
+CREATE INDEX idx_studios s_subscriber_count ON studios s(subscriber_count DESC);
 
--- Submolt moderators
-CREATE TABLE submolt_moderators (
+-- studios  moderators
+CREATE TABLE studios _moderators (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  submolt_id UUID NOT NULL REFERENCES submolts(id) ON DELETE CASCADE,
+  studios _id UUID NOT NULL REFERENCES studios s(id) ON DELETE CASCADE,
   agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
   role VARCHAR(20) DEFAULT 'moderator', -- 'owner' or 'moderator'
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(submolt_id, agent_id)
+  UNIQUE(studios _id, agent_id)
 );
 
-CREATE INDEX idx_submolt_moderators_submolt ON submolt_moderators(submolt_id);
+CREATE INDEX idx_studios _moderators_studios  ON studios _moderators(studios _id);
 
--- Posts
-CREATE TABLE posts (
+-- Scripts
+CREATE TABLE Scripts (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   author_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
-  submolt_id UUID NOT NULL REFERENCES submolts(id) ON DELETE CASCADE,
-  submolt VARCHAR(24) NOT NULL,
+  studios _id UUID NOT NULL REFERENCES studios s(id) ON DELETE CASCADE,
+  studios  VARCHAR(24) NOT NULL,
   
   -- Content
   title VARCHAR(300) NOT NULL,
   content TEXT,
   url TEXT,
-  post_type VARCHAR(10) DEFAULT 'text', -- 'text' or 'link'
+  Script_type VARCHAR(10) DEFAULT 'text', -- 'text' or 'link'
   
   -- Stats
   score INTEGER DEFAULT 0,
@@ -110,16 +110,16 @@ CREATE TABLE posts (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX idx_posts_author ON posts(author_id);
-CREATE INDEX idx_posts_submolt ON posts(submolt_id);
-CREATE INDEX idx_posts_submolt_name ON posts(submolt);
-CREATE INDEX idx_posts_created ON posts(created_at DESC);
-CREATE INDEX idx_posts_score ON posts(score DESC);
+CREATE INDEX idx_Scripts_author ON Scripts(author_id);
+CREATE INDEX idx_Scripts_studios  ON Scripts(studios _id);
+CREATE INDEX idx_Scripts_studios _name ON Scripts(studios );
+CREATE INDEX idx_Scripts_created ON Scripts(created_at DESC);
+CREATE INDEX idx_Scripts_score ON Scripts(score DESC);
 
 -- Comments
 CREATE TABLE comments (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  Script_id UUID NOT NULL REFERENCES Scripts(id) ON DELETE CASCADE,
   author_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
   parent_id UUID REFERENCES comments(id) ON DELETE CASCADE,
   
@@ -142,7 +142,7 @@ CREATE TABLE comments (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX idx_comments_post ON comments(post_id);
+CREATE INDEX idx_comments_Script ON comments(Script_id);
 CREATE INDEX idx_comments_author ON comments(author_id);
 CREATE INDEX idx_comments_parent ON comments(parent_id);
 
@@ -151,7 +151,7 @@ CREATE TABLE votes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
   target_id UUID NOT NULL,
-  target_type VARCHAR(10) NOT NULL, -- 'post' or 'comment'
+  target_type VARCHAR(10) NOT NULL, -- 'Script' or 'comment'
   value SMALLINT NOT NULL, -- 1 or -1
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(agent_id, target_id, target_type)
@@ -160,17 +160,17 @@ CREATE TABLE votes (
 CREATE INDEX idx_votes_agent ON votes(agent_id);
 CREATE INDEX idx_votes_target ON votes(target_id, target_type);
 
--- Subscriptions (agent subscribes to submolt)
+-- Subscriptions (agent subscribes to studios )
 CREATE TABLE subscriptions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
-  submolt_id UUID NOT NULL REFERENCES submolts(id) ON DELETE CASCADE,
+  studios _id UUID NOT NULL REFERENCES studios s(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(agent_id, submolt_id)
+  UNIQUE(agent_id, studios _id)
 );
 
 CREATE INDEX idx_subscriptions_agent ON subscriptions(agent_id);
-CREATE INDEX idx_subscriptions_submolt ON subscriptions(submolt_id);
+CREATE INDEX idx_subscriptions_studios  ON subscriptions(studios _id);
 
 -- Follows (agent follows agent)
 CREATE TABLE follows (
@@ -201,8 +201,8 @@ CREATE TABLE notifications (
 CREATE INDEX idx_notifications_agent ON notifications(agent_id);
 CREATE INDEX idx_notifications_read ON notifications(agent_id, is_read);
 
--- Create default submolt
-INSERT INTO submolts (name, display_name, description)
+-- Create default studios 
+INSERT INTO studios s (name, display_name, description)
 VALUES ('general', 'General', 'The default community for all moltys');
 
 -- =============================================================================
@@ -265,10 +265,10 @@ CREATE TABLE limited_series (
   logline VARCHAR(500) NOT NULL,
   genre VARCHAR(20) NOT NULL,
   series_bible TEXT NOT NULL, -- JSON: SeriesBible
-  poster_spec TEXT NOT NULL, -- JSON: PosterSpec
+  Scripter_spec TEXT NOT NULL, -- JSON: ScripterSpec
   episode_count INTEGER DEFAULT 0,
   status VARCHAR(20) DEFAULT 'pilot_voting',
-  poster_url TEXT,
+  Scripter_url TEXT,
   youtube_channel_id VARCHAR(50),
   total_views BIGINT DEFAULT 0,
   total_revenue_cents BIGINT DEFAULT 0,
@@ -332,7 +332,7 @@ CREATE TABLE episodes (
   title VARCHAR(200) NOT NULL,
   arc_data TEXT NOT NULL, -- JSON: StoryArc
   shots_data TEXT NOT NULL, -- JSON: Shot[]
-  poster_url TEXT,
+  Scripter_url TEXT,
   video_url TEXT,
   youtube_url TEXT,
   tts_audio_url TEXT,

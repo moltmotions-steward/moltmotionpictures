@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Runs Layer 3 k6 load scripts against a locally started API that uses
-# ephemeral Dockerized Postgres + Redis.
+# ephemeral Dockerized Scriptgres + Redis.
 #
 # Usage:
 #   MODE=api bash scripts/test-layer3-k6-docker.sh
@@ -22,7 +22,7 @@ API_ROOT="${REPO_ROOT}/api"
 
 MODE="${MODE:-all}"
 
-PG_CONTAINER="molt-layer3-postgres"
+PG_CONTAINER="molt-layer3-Scriptgres"
 REDIS_CONTAINER="molt-layer3-redis"
 NET_NAME="molt-layer3-net"
 
@@ -54,16 +54,16 @@ cleanup
 
 docker network create "${NET_NAME}" >/dev/null
 
-# Postgres (schema auto-applied on first init via docker-entrypoint-initdb.d)
+# Scriptgres (schema auto-applied on first init via docker-entrypoint-initdb.d)
 docker run -d \
   --name "${PG_CONTAINER}" \
   --network "${NET_NAME}" \
-  -e POSTGRES_PASSWORD="${PG_PASSWORD}" \
-  -e POSTGRES_USER="postgres" \
-  -e POSTGRES_DB="${PG_DB}" \
+  -e ScriptGRES_PASSWORD="${PG_PASSWORD}" \
+  -e ScriptGRES_USER="Scriptgres" \
+  -e ScriptGRES_DB="${PG_DB}" \
   -p "${PG_PORT}:5432" \
   -v "${SCHEMA_SQL}:/docker-entrypoint-initdb.d/00-schema.sql:ro" \
-  postgres:16-alpine >/dev/null
+  Scriptgres:16-alpine >/dev/null
 
 # Redis
 docker run -d \
@@ -72,21 +72,21 @@ docker run -d \
   -p "${REDIS_PORT}:6379" \
   redis:7-alpine >/dev/null
 
-# Wait for Postgres ready
+# Wait for Scriptgres ready
 for _ in $(seq 1 60); do
-  if docker exec "${PG_CONTAINER}" pg_isready -U postgres -d "${PG_DB}" >/dev/null 2>&1; then
+  if docker exec "${PG_CONTAINER}" pg_isready -U Scriptgres -d "${PG_DB}" >/dev/null 2>&1; then
     break
   fi
   sleep 1
   if [[ "$_" == "60" ]]; then
-    echo "Postgres did not become ready in time" >&2
+    echo "Scriptgres did not become ready in time" >&2
     exit 1
   fi
 done
 
-# Wait for schema to be present (submolts table should exist)
+# Wait for schema to be present (studios s table should exist)
 for _ in $(seq 1 60); do
-  if docker exec "${PG_CONTAINER}" psql -U postgres -d "${PG_DB}" -c "SELECT 1 FROM submolts LIMIT 1;" >/dev/null 2>&1; then
+  if docker exec "${PG_CONTAINER}" psql -U Scriptgres -d "${PG_DB}" -c "SELECT 1 FROM studios s LIMIT 1;" >/dev/null 2>&1; then
     break
   fi
   sleep 1
@@ -97,7 +97,7 @@ for _ in $(seq 1 60); do
   fi
 done
 
-export DATABASE_URL="postgresql://postgres:${PG_PASSWORD}@localhost:${PG_PORT}/${PG_DB}"
+export DATABASE_URL="Scriptgresql://Scriptgres:${PG_PASSWORD}@localhost:${PG_PORT}/${PG_DB}"
 export REDIS_URL="redis://localhost:${REDIS_PORT}"
 export NODE_ENV="test"
 export JWT_SECRET="dev_layer3_secret"

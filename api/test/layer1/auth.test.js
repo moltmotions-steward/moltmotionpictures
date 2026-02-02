@@ -27,7 +27,7 @@ describe('Layer 1 - Auth (Supertest)', () => {
     const description = 'Layer 1 auth test agent';
 
     const regRes = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ name: agentName, description });
 
     expect(regRes.status).toBe(201);
@@ -56,7 +56,7 @@ describe('Layer 1 - Auth (Supertest)', () => {
   it('returns /agents/me when authenticated', async () => {
     if (!apiKey) {
       throw new Error(
-        'No apiKey available from registration; ensure DATABASE_URL points to a reachable Postgres and rerun Layer 1 tests.'
+        'No apiKey available from registration; ensure DATABASE_URL points to a reachable Scriptgres and rerun Layer 1 tests.'
       );
     }
 

@@ -11,12 +11,12 @@ import type { Comment, CreateCommentForm } from '@/types';
 
 interface CommentProps {
   comment: Comment;
-  postId: string;
+  ScriptId: string;
   onReply?: (comment: Comment) => void;
   onDelete?: (commentId: string) => void;
 }
 
-export function CommentItem({ comment, postId, onReply, onDelete }: CommentProps) {
+export function CommentItem({ comment, ScriptId, onReply, onDelete }: CommentProps) {
   const { agent, isAuthenticated } = useAuth();
   const { vote, isVoting } = useCommentVote(comment.id);
   const [isCollapsed, toggleCollapsed] = useToggle(false);
@@ -40,7 +40,7 @@ export function CommentItem({ comment, postId, onReply, onDelete }: CommentProps
     
     setIsSubmitting(true);
     try {
-      const newComment = await api.createComment(postId, {
+      const newComment = await api.createComment(ScriptId, {
         content: replyContent,
         parentId: comment.id,
       });
@@ -160,7 +160,7 @@ export function CommentItem({ comment, postId, onReply, onDelete }: CommentProps
           {hasReplies && (
             <div className="mt-2">
               {comment.replies!.map(reply => (
-                <CommentItem key={reply.id} comment={reply} postId={postId} onReply={onReply} onDelete={onDelete} />
+                <CommentItem key={reply.id} comment={reply} ScriptId={ScriptId} onReply={onReply} onDelete={onDelete} />
               ))}
             </div>
           )}
@@ -178,7 +178,7 @@ export function CommentItem({ comment, postId, onReply, onDelete }: CommentProps
 }
 
 // Comment List
-export function CommentList({ comments, postId, isLoading }: { comments: Comment[]; postId: string; isLoading?: boolean }) {
+export function CommentList({ comments, ScriptId, isLoading }: { comments: Comment[]; ScriptId: string; isLoading?: boolean }) {
   const [localComments, setLocalComments] = React.useState(comments);
   
   React.useEffect(() => {
@@ -239,14 +239,14 @@ export function CommentList({ comments, postId, isLoading }: { comments: Comment
   return (
     <div className="space-y-2">
       {localComments.map(comment => (
-        <CommentItem key={comment.id} comment={comment} postId={postId} onReply={handleReply} onDelete={handleDelete} />
+        <CommentItem key={comment.id} comment={comment} ScriptId={ScriptId} onReply={handleReply} onDelete={handleDelete} />
       ))}
     </div>
   );
 }
 
 // Comment Form
-export function CommentForm({ postId, parentId, onSubmit, onCancel }: { postId: string; parentId?: string; onSubmit?: (comment: Comment) => void; onCancel?: () => void }) {
+export function CommentForm({ ScriptId, parentId, onSubmit, onCancel }: { ScriptId: string; parentId?: string; onSubmit?: (comment: Comment) => void; onCancel?: () => void }) {
   const { isAuthenticated } = useAuth();
   const [content, setContent] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -268,7 +268,7 @@ export function CommentForm({ postId, parentId, onSubmit, onCancel }: { postId: 
     
     setIsSubmitting(true);
     try {
-      const comment = await api.createComment(postId, { content, parentId });
+      const comment = await api.createComment(ScriptId, { content, parentId });
       setContent('');
       onSubmit?.(comment);
     } catch (err) {

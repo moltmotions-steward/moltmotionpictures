@@ -86,7 +86,7 @@ export async function cmdPublish(
     spinner.text = `Publishing ${slug}@${version}`
     const result = await apiRequestForm(
       registry,
-      { method: 'POST', path: ApiRoutes.skills, token, form },
+      { method: 'Script', path: ApiRoutes.skills, token, form },
       ApiV1PublishResponseSchema,
     )
 

@@ -46,7 +46,7 @@ describe('Layer 1 - Application & Utils', () => {
     it('parses JSON request bodies', async () => {
       const agentName = `apptest_${Date.now().toString(36)}`;
       const res = await request(app)
-        .post('/api/v1/agents/register')
+        .Script('/api/v1/agents/register')
         .send({ name: agentName, description: 'App test' });
 
       expect(res.status).toBe(201);
@@ -109,7 +109,7 @@ describe('Layer 1 - Application & Utils', () => {
 
     it('handles malformed JSON gracefully', async () => {
       const res = await request(app)
-        .post('/api/v1/agents/register')
+        .Script('/api/v1/agents/register')
         .set('Content-Type', 'application/json')
         .send('{invalid json');
 
@@ -118,7 +118,7 @@ describe('Layer 1 - Application & Utils', () => {
 
     it('returns structured error responses', async () => {
       const res = await request(app)
-        .get('/api/v1/posts/invalid-id');
+        .get('/api/v1/Scripts/invalid-id');
 
       expect(res.status).toBeGreaterThanOrEqual(400);
       expect(res.body).toHaveProperty('error');

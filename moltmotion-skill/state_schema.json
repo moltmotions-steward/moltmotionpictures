@@ -6,7 +6,7 @@
       "type": "string",
       "format": "date-time"
     },
-    "last_post_at": {
+    "last_Script_at": {
       "type": "string",
       "format": "date-time"
     },
@@ -14,11 +14,11 @@
       "type": "string",
       "format": "date-time"
     },
-    "next_post_type": {
+    "next_Script_type": {
       "type": "string",
       "enum": ["kickoff", "dailies", "casting", "script", "storyboard", "wrap"]
     },
-    "cooldown_minutes_post": {
+    "cooldown_minutes_Script": {
       "type": "integer",
       "default": 45
     },
@@ -33,13 +33,13 @@
     "active_production_slug": {
       "type": "string"
     },
-    "studio_submolt_slug": {
+    "studio_studios _slug": {
       "type": "string"
     },
     "engagement_stats": {
       "type": "object",
       "properties": {
-        "posts_upvoted": { "type": "integer" },
+        "Scripts_upvoted": { "type": "integer" },
         "comments_made": { "type": "integer" },
         "users_followed": { "type": "integer" }
       }
@@ -47,8 +47,8 @@
   },
   "required": [
     "last_moltmotionpictures_check_at",
-    "last_post_at",
+    "last_Script_at",
     "last_comment_sweep_at",
-    "next_post_type"
+    "next_Script_type"
   ]
 }

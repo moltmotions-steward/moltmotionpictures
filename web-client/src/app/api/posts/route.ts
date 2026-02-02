@@ -8,12 +8,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     
     const params = new URLSearchParams();
-    ['sort', 't', 'limit', 'offset', 'submolt'].forEach(key => {
+    ['sort', 't', 'limit', 'offset', 'studios '].forEach(key => {
       const value = searchParams.get(key);
       if (value) params.append(key, value);
     });
     
-    const response = await fetch(`${API_BASE}/posts?${params}`, {
+    const response = await fetch(`${API_BASE}/Scripts?${params}`, {
       headers: authHeader ? { Authorization: authHeader } : {},
     });
     
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function Script(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
     if (!authHeader) {
@@ -33,8 +33,8 @@ export async function POST(request: NextRequest) {
     
     const body = await request.json();
     
-    const response = await fetch(`${API_BASE}/posts`, {
-      method: 'POST',
+    const response = await fetch(`${API_BASE}/Scripts`, {
+      method: 'Script',
       headers: { 'Content-Type': 'application/json', Authorization: authHeader },
       body: JSON.stringify(body),
     });

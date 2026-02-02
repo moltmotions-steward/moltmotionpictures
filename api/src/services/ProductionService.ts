@@ -4,7 +4,7 @@
  * Core service for managing AI-generated movie productions.
  * Integrates with DigitalOcean Gradient (video/image gen) and Spaces (storage).
  * 
- * This is the Molt Studios equivalent of SubmoltService but for film productions.
+ * This is the Molt Studios equivalent of studios Service but for film productions.
  */
 
 import crypto from 'crypto';
@@ -22,8 +22,8 @@ import type {
   CreateShotResponse,
   GenerateShotRequest,
   GenerateShotResponse,
-  GeneratePosterRequest,
-  GeneratePosterResponse,
+  GenerateScripterRequest,
+  GenerateScripterResponse,
   UpdateShotStatusRequest,
   UpdateShotStatusResponse,
   AspectRatio,
@@ -331,7 +331,7 @@ export class ProductionService {
     return {
       projectId: productionId,
       version: '1.0',
-      aspectRatio: production.posterUrl ? '16:9' : '16:9', // Could be dynamic
+      aspectRatio: production.ScripterUrl ? '16:9' : '16:9', // Could be dynamic
       shots: mappedShots,
       metadata: {
         totalDuration,
@@ -511,12 +511,12 @@ export class ProductionService {
   }
 
   /**
-   * Generate a movie poster using FLUX.1
+   * Generate a movie Scripter using FLUX.1
    */
-  async generatePoster(
+  async generateScripter(
     studioId: string,
-    request: GeneratePosterRequest
-  ): Promise<GeneratePosterResponse> {
+    request: GenerateScripterRequest
+  ): Promise<GenerateScripterResponse> {
     const production = await this.getProduction(request.productionId);
 
     if (production.studioId !== studioId) {
@@ -527,7 +527,7 @@ export class ProductionService {
 
     // Generate each concept
     for (const concept of request.spec.prompts) {
-      const result = await this.gradient.generatePoster(concept.prompt, {
+      const result = await this.gradient.generateScripter(concept.prompt, {
         negativePrompt: 'text, watermark, logo, signature, blurry, low quality',
         width: request.spec.resolution.width,
         height: request.spec.resolution.height,
@@ -541,7 +541,7 @@ export class ProductionService {
 
         const asset = await this.spaces.uploadImage(buffer, {
           productionId: request.productionId,
-          type: 'poster',
+          type: 'Scripter',
           format: request.spec.format as 'png' | 'jpg' | 'webp',
           agentId: studioId,
         });
@@ -550,30 +550,30 @@ export class ProductionService {
       }
     }
 
-    // Use first concept as main poster (could be more sophisticated)
-    const mainPoster = concepts[0];
+    // Use first concept as main Scripter (could be more sophisticated)
+    const mainScripter = concepts[0];
 
-    if (mainPoster) {
-      // Update production with poster URL
+    if (mainScripter) {
+      // Update production with Scripter URL
       await queryOne(
         'UPDATE productions SET poster_url = $1, updated_at = NOW() WHERE id = $2',
-        [mainPoster.cdnUrl || mainPoster.url, request.productionId]
+        [mainScripter.cdnUrl || mainScripter.url, request.productionId]
       );
     }
 
     return {
-      poster: mainPoster,
+      Scripter: mainScripter,
       concepts,
     };
   }
 
   /**
-   * Auto-generate a poster prompt from production details
+   * Auto-generate a Scripter prompt from production details
    */
-  async generatePosterPrompt(productionId: string): Promise<string> {
+  async generateScripterPrompt(productionId: string): Promise<string> {
     const production = await this.getProduction(productionId);
     
-    return this.gradient.generatePosterPrompt(
+    return this.gradient.generateScripterPrompt(
       production.title,
       production.logline,
       production.genre
@@ -664,7 +664,7 @@ export class ProductionService {
       shotCount: parseInt(row.shot_count as string || '0', 10),
       completedShotCount: parseInt(row.completed_shot_count as string || '0', 10),
       totalDuration: parseInt(row.total_duration as string || '0', 10),
-      posterUrl: row.poster_url as string | undefined,
+      ScripterUrl: row.poster_url as string | undefined,
       trailerUrl: row.trailer_url as string | undefined,
       thumbnailUrl: row.thumbnail_url as string | undefined,
     };

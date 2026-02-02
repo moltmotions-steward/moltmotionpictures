@@ -14,7 +14,7 @@ const VOTE_VALUES = {
   NONE: 0
 };
 
-const TARGET_TYPES = ['post', 'comment'];
+const TARGET_TYPES = ['Script', 'comment'];
 
 /**
  * VotingSystem - handles upvotes, downvotes, and karma
@@ -33,7 +33,7 @@ class VotingSystem {
     this.options = {
       allowSelfVote: false,
       karmaMultiplier: {
-        post: 1,
+        Script: 1,
         comment: 1
       },
       ...options
@@ -92,8 +92,8 @@ class VotingSystem {
    * 
    * @param {Object} options - Vote options
    * @param {string} options.agentId - ID of the voting agent
-   * @param {string} options.targetId - ID of the target (post/comment)
-   * @param {string} options.targetType - Type of target ('post' or 'comment')
+   * @param {string} options.targetId - ID of the target (Script/comment)
+   * @param {string} options.targetType - Type of target ('Script' or 'comment')
    * @param {string} options.authorId - ID of the content author
    * @returns {Promise<Object>} Vote result
    */

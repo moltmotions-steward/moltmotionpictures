@@ -7,7 +7,7 @@ import { useSearch, useDebounce, useKeyboardShortcut } from '@/hooks';
 import { useUIStore } from '@/store';
 import { Dialog, DialogContent, Input, Skeleton } from '@/components/ui';
 import { Search, ArrowRight, Hash, Users, FileText, Clock, X } from 'lucide-react';
-import { cn, getAgentUrl, getSubmoltUrl, getPostUrl, formatScore, getInitials } from '@/lib/utils';
+import { cn, getAgentUrl, getstudios Url, getScriptUrl, formatScore, getInitials } from '@/lib/utils';
 
 export function SearchModal() {
   const router = useRouter();
@@ -67,7 +67,7 @@ export function SearchModal() {
     }
   };
   
-  const hasResults = data && (data.posts?.length || data.agents?.length || data.submolts?.length);
+  const hasResults = data && (data.Scripts?.length || data.agents?.length || data.studios s?.length);
   
   return (
     <Dialog open={searchOpen} onOpenChange={(open) => !open && closeSearch()}>
@@ -130,23 +130,23 @@ export function SearchModal() {
                   </div>
                 )}
                 
-                {/* Submolts */}
-                {data.submolts && data.submolts.length > 0 && (
+                {/* studios s */}
+                {data.studios s && data.studios s.length > 0 && (
                   <div className="mb-2">
                     <div className="px-4 py-1 text-xs font-semibold text-muted-foreground uppercase">Communities</div>
-                    {data.submolts.slice(0, 3).map(submolt => (
+                    {data.studios s.slice(0, 3).map(studios  => (
                       <Link
-                        key={submolt.id}
-                        href={getSubmoltUrl(submolt.name)}
-                        onClick={() => handleResultClick(submolt.name)}
+                        key={studios .id}
+                        href={getstudios Url(studios .name)}
+                        onClick={() => handleResultClick(studios .name)}
                         className="flex items-center gap-3 px-4 py-2 hover:bg-muted transition-colors"
                       >
                         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
                           <Hash className="h-4 w-4 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{submolt.displayName || submolt.name}</p>
-                          <p className="text-xs text-muted-foreground">m/{submolt.name} • {formatScore(submolt.subscriberCount)} members</p>
+                          <p className="font-medium truncate">{studios .displayName || studios .name}</p>
+                          <p className="text-xs text-muted-foreground">m/{studios .name} • {formatScore(studios .subscriberCount)} members</p>
                         </div>
                         <Hash className="h-4 w-4 text-muted-foreground" />
                       </Link>
@@ -154,23 +154,23 @@ export function SearchModal() {
                   </div>
                 )}
                 
-                {/* Posts */}
-                {data.posts && data.posts.length > 0 && (
+                {/* Scripts */}
+                {data.Scripts && data.Scripts.length > 0 && (
                   <div className="mb-2">
-                    <div className="px-4 py-1 text-xs font-semibold text-muted-foreground uppercase">Posts</div>
-                    {data.posts.slice(0, 5).map(post => (
+                    <div className="px-4 py-1 text-xs font-semibold text-muted-foreground uppercase">Scripts</div>
+                    {data.Scripts.slice(0, 5).map(Script => (
                       <Link
-                        key={post.id}
-                        href={getPostUrl(post.id, post.submolt)}
-                        onClick={() => handleResultClick(post.title)}
+                        key={Script.id}
+                        href={getScriptUrl(Script.id, Script.studios )}
+                        onClick={() => handleResultClick(Script.title)}
                         className="flex items-center gap-3 px-4 py-2 hover:bg-muted transition-colors"
                       >
                         <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
                           <FileText className="h-4 w-4 text-muted-foreground" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{post.title}</p>
-                          <p className="text-xs text-muted-foreground">m/{post.submolt} • {formatScore(post.score)} points</p>
+                          <p className="font-medium truncate">{Script.title}</p>
+                          <p className="text-xs text-muted-foreground">m/{Script.studios } • {formatScore(Script.score)} points</p>
                         </div>
                         <ArrowRight className="h-4 w-4 text-muted-foreground" />
                       </Link>

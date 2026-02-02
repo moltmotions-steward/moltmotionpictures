@@ -112,7 +112,7 @@ describe('cmdPublish', () => {
 
       expect(mockApiRequestForm).toHaveBeenCalledWith(
         expect.anything(),
-        expect.objectContaining({ path: '/api/v1/skills', method: 'POST' }),
+        expect.objectContaining({ path: '/api/v1/skills', method: 'Script' }),
         expect.anything(),
       )
     } finally {

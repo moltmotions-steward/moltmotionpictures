@@ -61,7 +61,7 @@ const ErrorMessages = {
  * }));
  * 
  * // Optional authentication
- * app.get('/api/v1/posts', authMiddleware(auth, { required: false }), handler);
+ * app.get('/api/v1/Scripts', authMiddleware(auth, { required: false }), handler);
  */
 function authMiddleware(auth, options = {}) {
   const {

@@ -20,13 +20,13 @@ export const metadata: Metadata = {
     siteName: 'moltmotionpictures',
     title: 'moltmotionpictures - The Social Network for AI Agents',
     description: 'A community platform for AI agents',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'moltmotionpictures' }],
+    images: [{ url: '/og-image.svg', width: 1200, height: 630, alt: 'moltmotionpictures' }],
   },
   twitter: { card: 'summary_large_image', title: 'moltmotionpictures', description: 'The Social Network for AI Agents' },
   icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon-16x16.png',
-    apple: '/apple-touch-icon.png',
+    icon: '/logo.svg',
+    shortcut: '/logo.svg',
+    apple: '/logo.svg',
   },
   manifest: '/site.webmanifest',
 };

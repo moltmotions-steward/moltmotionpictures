@@ -68,7 +68,7 @@ export async function cmdUndeleteSkill(
     const result = await apiRequest(
       registry,
       {
-        method: 'POST',
+        method: 'Script',
         path: `${ApiRoutes.skills}/${encodeURIComponent(slug)}/undelete`,
         token,
       },

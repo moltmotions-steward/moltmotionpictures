@@ -41,9 +41,9 @@ Public read:
 
 Auth required:
 
-- `POST /api/v1/skills` (publish, multipart preferred)
+- `Script /api/v1/skills` (publish, multipart preferred)
 - `DELETE /api/v1/skills/{slug}`
-- `POST /api/v1/skills/{slug}/undelete`
+- `Script /api/v1/skills/{slug}/undelete`
 - `GET /api/v1/whoami`
 
 ## Legacy

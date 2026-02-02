@@ -21,7 +21,7 @@ const RedisStore = require('./stores/RedisStore');
 const {
   rateLimitMiddleware,
   requestLimiter,
-  postLimiter,
+  ScriptLimiter,
   commentLimiter,
   rateLimitStatus,
   defaultKeyGenerator,
@@ -33,7 +33,7 @@ const {
  */
 const moltmotionpictures_LIMITS = {
   requests: { max: 100, window: 60, message: 'Too many requests' },
-  posts: { max: 1, window: 1800, message: 'You can only post once every 30 minutes' },
+  Scripts: { max: 1, window: 1800, message: 'You can only Script once every 30 minutes' },
   comments: { max: 50, window: 3600, message: 'Too many comments' }
 };
 
@@ -61,7 +61,7 @@ module.exports = {
   // Middleware
   rateLimitMiddleware,
   requestLimiter,
-  postLimiter,
+  ScriptLimiter,
   commentLimiter,
   rateLimitStatus,
   

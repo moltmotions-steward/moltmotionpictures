@@ -119,7 +119,7 @@ doctl registry kubernetes-manifest | kubectl apply -f - -n molt-studios-app
 ### C. Deploy Services
 ```bash
 kubectl apply -f k8s/10-redis.yaml
-kubectl apply -f k8s/15-postgres.yaml
+kubectl apply -f k8s/15-Scriptgres.yaml
 kubectl apply -f k8s/20-api.yaml
 kubectl apply -f k8s/30-web-client.yaml
 ```

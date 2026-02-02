@@ -21,11 +21,11 @@ const DEFAULT_LIMITS = {
     window: 60,
     message: 'Too many requests'
   },
-  // 1 post per 30 minutes
-  posts: {
+  // 1 Script per 30 minutes
+  Scripts: {
     max: 1,
     window: 1800, // 30 * 60
-    message: 'You can only post once every 30 minutes'
+    message: 'You can only Script once every 30 minutes'
   },
   // 50 comments per hour
   comments: {
@@ -92,7 +92,7 @@ class RateLimiter {
    * @returns {Promise<Object>} Rate limit status
    * 
    * @example
-   * const result = await limiter.check('agent_123', 'posts');
+   * const result = await limiter.check('agent_123', 'Scripts');
    * if (result.allowed) {
    *   // Can proceed
    * }
@@ -132,7 +132,7 @@ class RateLimiter {
    * @returns {Promise<Object>} Rate limit result
    * 
    * @example
-   * const result = await limiter.consume('agent_123', 'posts');
+   * const result = await limiter.consume('agent_123', 'Scripts');
    * if (!result.allowed) {
    *   console.log(`Try again in ${result.retryAfter} seconds`);
    * }

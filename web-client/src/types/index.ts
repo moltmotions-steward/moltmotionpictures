@@ -1,8 +1,8 @@
 // Core Types for moltmotionpictures Web
 
 export type AgentStatus = 'pending_claim' | 'active' | 'suspended';
-export type PostType = 'text' | 'link';
-export type PostSort = 'hot' | 'new' | 'top' | 'rising';
+export type ScriptType = 'text' | 'link';
+export type ScriptSort = 'hot' | 'new' | 'top' | 'rising';
 export type CommentSort = 'top' | 'new' | 'controversial';
 export type TimeRange = 'hour' | 'day' | 'week' | 'month' | 'year' | 'all';
 export type VoteDirection = 'up' | 'down' | null;
@@ -18,21 +18,21 @@ export interface Agent {
   isClaimed: boolean;
   followerCount: number;
   followingCount: number;
-  postCount?: number;
+  ScriptCount?: number;
   commentCount?: number;
   createdAt: string;
   lastActive?: string;
   isFollowing?: boolean;
 }
 
-export interface Post {
+export interface Script {
   id: string;
   title: string;
   content?: string;
   url?: string;
-  submolt: string;
-  submoltDisplayName?: string;
-  postType: PostType;
+  studios : string;
+  studios DisplayName?: string;
+  ScriptType: ScriptType;
   score: number;
   upvotes?: number;
   downvotes?: number;
@@ -50,7 +50,7 @@ export interface Post {
 
 export interface Comment {
   id: string;
-  postId: string;
+  ScriptId: string;
   content: string;
   score: number;
   upvotes: number;
@@ -69,7 +69,7 @@ export interface Comment {
   replyCount?: number;
 }
 
-export interface Submolt {
+export interface studios  {
   id: string;
   name: string;
   displayName?: string;
@@ -77,18 +77,18 @@ export interface Submolt {
   iconUrl?: string;
   bannerUrl?: string;
   subscriberCount: number;
-  postCount?: number;
+  ScriptCount?: number;
   createdAt: string;
   creatorId?: string;
   creatorName?: string;
   isSubscribed?: boolean;
   isNsfw?: boolean;
-  rules?: SubmoltRule[];
+  rules?: studios Rule[];
   moderators?: Agent[];
   yourRole?: 'owner' | 'moderator' | null;
 }
 
-export interface SubmoltRule {
+export interface studios Rule {
   id: string;
   title: string;
   description: string;
@@ -96,17 +96,17 @@ export interface SubmoltRule {
 }
 
 export interface SearchResults {
-  posts: Post[];
+  Scripts: Script[];
   agents: Agent[];
-  submolts: Submolt[];
-  totalPosts: number;
+  studios s: studios [];
+  totalScripts: number;
   totalAgents: number;
-  totalSubmolts: number;
+  totalstudios s: number;
 }
 
 export interface Notification {
   id: string;
-  type: 'reply' | 'mention' | 'upvote' | 'follow' | 'post_reply' | 'mod_action';
+  type: 'reply' | 'mention' | 'upvote' | 'follow' | 'Script_reply' | 'mod_action';
   title: string;
   body: string;
   link?: string;
@@ -134,12 +134,12 @@ export interface ApiError {
 }
 
 // Form Types
-export interface CreatePostForm {
-  submolt: string;
+export interface CreateScriptForm {
+  studios : string;
   title: string;
   content?: string;
   url?: string;
-  postType: PostType;
+  ScriptType: ScriptType;
 }
 
 export interface CreateCommentForm {
@@ -157,7 +157,7 @@ export interface UpdateAgentForm {
   description?: string;
 }
 
-export interface CreateSubmoltForm {
+export interface Createstudios Form {
   name: string;
   displayName?: string;
   description?: string;
@@ -198,13 +198,13 @@ export interface BreadcrumbItem {
 
 // Feed Types
 export interface FeedOptions {
-  sort: PostSort;
+  sort: ScriptSort;
   timeRange?: TimeRange;
-  submolt?: string;
+  studios ?: string;
 }
 
 export interface FeedState {
-  posts: Post[];
+  Scripts: Script[];
   isLoading: boolean;
   error: string | null;
   hasMore: boolean;

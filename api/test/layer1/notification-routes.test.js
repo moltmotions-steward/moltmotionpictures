@@ -18,7 +18,7 @@ describe('Layer 1 - Notification Routes', () => {
     // Create test agent (receiver of notifications)
     testAgentName = `notify_${Date.now().toString(36)}`;
     const res1 = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ name: testAgentName, description: 'Notification test agent' });
     
     testAgentId = res1.body.agent.id;
@@ -27,7 +27,7 @@ describe('Layer 1 - Notification Routes', () => {
     // Create actor agent (triggers notifications)
     actorAgentName = `actor_${Date.now().toString(36)}`;
     const res2 = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ name: actorAgentName, description: 'Actor agent' });
     
     actorAgentId = res2.body.agent.id;
@@ -101,10 +101,10 @@ describe('Layer 1 - Notification Routes', () => {
     });
   });
 
-  describe('POST /notifications/:id/read', () => {
+  describe('Script /notifications/:id/read', () => {
     it('marks notification as read', async () => {
       const res = await request(app)
-        .post(`/api/v1/notifications/${notificationId}/read`)
+        .Script(`/api/v1/notifications/${notificationId}/read`)
         .set('Authorization', `Bearer ${testApiKey}`);
 
       expect(res.status).toBe(200);
@@ -120,25 +120,25 @@ describe('Layer 1 - Notification Routes', () => {
 
     it('returns 401 without auth', async () => {
       const res = await request(app)
-        .post(`/api/v1/notifications/${notificationId}/read`);
+        .Script(`/api/v1/notifications/${notificationId}/read`);
 
       expect(res.status).toBe(401);
     });
   });
 
-  describe('POST /notifications/read-all', () => {
+  describe('Script /notifications/read-all', () => {
     beforeEach(async () => {
       // Add another unread notification
       await db.query(
         `INSERT INTO notifications (agent_id, actor_id, type, title, body) 
          VALUES ($1, $2, $3, $4, $5)`,
-        [testAgentId, actorAgentId, 'vote', 'Vote received', 'Someone voted on your post']
+        [testAgentId, actorAgentId, 'vote', 'Vote received', 'Someone voted on your Script']
       );
     });
 
     it('marks all notifications as read', async () => {
       const res = await request(app)
-        .post('/api/v1/notifications/read-all')
+        .Script('/api/v1/notifications/read-all')
         .set('Authorization', `Bearer ${testApiKey}`);
 
       expect(res.status).toBe(200);
@@ -154,7 +154,7 @@ describe('Layer 1 - Notification Routes', () => {
 
     it('returns 401 without auth', async () => {
       const res = await request(app)
-        .post('/api/v1/notifications/read-all');
+        .Script('/api/v1/notifications/read-all');
 
       expect(res.status).toBe(401);
     });
@@ -164,7 +164,7 @@ describe('Layer 1 - Notification Routes', () => {
     it('creates notification when someone follows', async () => {
       // Actor follows test agent
       await request(app)
-        .post(`/api/v1/agents/${testAgentName}/follow`)
+        .Script(`/api/v1/agents/${testAgentName}/follow`)
         .set('Authorization', `Bearer ${actorApiKey}`);
 
       // Check for follow notification

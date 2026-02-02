@@ -23,10 +23,10 @@ describe('Layer 1 - Internal Routes', () => {
     await teardown();
   });
 
-  describe('POST /internal/cron/voting-tick', () => {
+  describe('Script /internal/cron/voting-tick', () => {
     it('rejects requests without authorization', async () => {
       const res = await request(app)
-        .post('/api/v1/internal/cron/voting-tick');
+        .Script('/api/v1/internal/cron/voting-tick');
 
       expect(res.status).toBe(401);
       expect(res.body.error).toBeDefined();
@@ -34,7 +34,7 @@ describe('Layer 1 - Internal Routes', () => {
 
     it('rejects requests with invalid secret', async () => {
       const res = await request(app)
-        .post('/api/v1/internal/cron/voting-tick')
+        .Script('/api/v1/internal/cron/voting-tick')
         .set('X-Cron-Secret', 'wrong-secret');
 
       expect(res.status).toBe(401);
@@ -43,7 +43,7 @@ describe('Layer 1 - Internal Routes', () => {
 
     it('executes cron tick with valid secret', async () => {
       const res = await request(app)
-        .post('/api/v1/internal/cron/voting-tick')
+        .Script('/api/v1/internal/cron/voting-tick')
         .set('X-Cron-Secret', CRON_SECRET);
 
       // Should succeed even with no work to do

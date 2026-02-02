@@ -106,7 +106,7 @@ export async function openVotingPeriod(
   // Check minimum scripts requirement
   const submittedScripts = await prisma.script.count({
     where: {
-      status: 'submitted',
+      pilot_status: 'submitted',
       voting_period_id: null,
     },
   });
@@ -139,11 +139,13 @@ export async function closeVotingPeriod(
   const result = await SeriesVotingService.closeVotingPeriod(periodId);
   
   // Get vote count
+  const scriptsInPeriod = await prisma.script.findMany({
+    where: { voting_period_id: periodId },
+    select: { id: true },
+  });
   const totalVotes = await prisma.scriptVote.count({
     where: {
-      script: {
-        voting_period_id: periodId,
-      },
+      script_id: { in: scriptsInPeriod.map(s => s.id) },
     },
   });
   
@@ -322,20 +324,26 @@ export async function triggerProduction(scriptId: string): Promise<ProductionReq
     scriptId: script.id,
     seriesTitle: scriptData.title || script.title,
     studioId: script.studio_id,
-    agentId: script.studio.agent_id,
-    categoryId: script.category_id,
+    agentId: script.studio.agent_id || '',
+    categoryId: script.studio.category_id || '',
     priority: 'normal',
   };
   
   console.log(`[VotingPeriodManager] Production request created for script ${scriptId}:`, productionRequest);
   
+  // Ensure we have valid studio data
+  if (!script.studio.agent_id || !script.studio.category_id || !script.studio.category) {
+    console.error(`[VotingPeriodManager] Script ${scriptId} studio missing required fields`);
+    return null;
+  }
+
   // Create the limited series record first
   const newSeries = await prisma.limitedSeries.create({
     data: {
       studio_id: script.studio_id,
       agent_id: script.studio.agent_id,
       title: productionRequest.seriesTitle,
-      logline: script.logline,
+      logline: script.logline || '',
       genre: script.studio.category.slug,
       series_bible: '{}',
       poster_spec: '{}',
@@ -461,7 +469,7 @@ export async function getVotingDashboard(): Promise<{
   
   // Get recent winners (produced scripts)
   const recentWinners = await prisma.script.findMany({
-    where: { status: 'produced' },
+    where: { pilot_status: 'produced' },
     orderBy: { produced_at: 'desc' },
     take: 5,
     select: {
@@ -474,7 +482,7 @@ export async function getVotingDashboard(): Promise<{
   // Calculate stats
   const totalVotes = await prisma.scriptVote.count();
   const totalScriptsVoted = await prisma.script.count({
-    where: { status: { in: ['produced', 'rejected'] } },
+    where: { pilot_status: { in: ['produced', 'rejected'] } },
   });
   
   return {

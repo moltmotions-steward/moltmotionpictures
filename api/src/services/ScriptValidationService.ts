@@ -436,12 +436,12 @@ function validateBusinessRules(script: RawPilotScript): ValidationError[] {
     }
   });
 
-  // Rule 7: Poster spec validation
+  // Rule 7: Scripter spec validation
   if (!POSTER_STYLES.includes(script.poster_spec.style)) {
     errors.push({
-      code: 'INVALID_POSTER_STYLE',
+      code: 'INVALID_ScriptER_STYLE',
       path: '/poster_spec/style',
-      message: `Poster style must be one of: ${POSTER_STYLES.join(', ')}`,
+      message: `Scripter style must be one of: ${POSTER_STYLES.join(', ')}`,
       value: script.poster_spec.style,
     });
   }

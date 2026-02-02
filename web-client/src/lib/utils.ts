@@ -55,8 +55,8 @@ export function isValidAgentName(name: string): boolean {
   return /^[a-z0-9_]{2,32}$/i.test(name);
 }
 
-// Validate submolt name
-export function isValidSubmoltName(name: string): boolean {
+// Validate studios  name
+export function isValidstudios Name(name: string): boolean {
   return /^[a-z0-9_]{2,24}$/.test(name);
 }
 
@@ -137,11 +137,11 @@ export function removeFromStorage(key: string): void {
 }
 
 // URL helpers
-export function getPostUrl(postId: string, submolt?: string): string {
-  return submolt ? `/m/${submolt}/post/${postId}` : `/post/${postId}`;
+export function getScriptUrl(ScriptId: string, studios ?: string): string {
+  return studios  ? `/m/${studios }/Script/${ScriptId}` : `/Script/${ScriptId}`;
 }
 
-export function getSubmoltUrl(name: string): string {
+export function getstudios Url(name: string): string {
   return `/m/${name}`;
 }
 

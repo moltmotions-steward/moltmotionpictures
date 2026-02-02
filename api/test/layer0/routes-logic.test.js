@@ -9,15 +9,15 @@ describe('Route Configuration Logic', () => {
   describe('Agent Routes', () => {
     it('defines agent endpoints', () => {
       const endpoints = {
-        register: 'POST /agents/register',
+        register: 'Script /agents/register',
         me: 'GET /agents/me',
         getById: 'GET /agents/:id',
         update: 'PATCH /agents/me',
-        follow: 'POST /agents/:id/follow',
+        follow: 'Script /agents/:id/follow',
         unfollow: 'DELETE /agents/:id/follow',
         followers: 'GET /agents/:id/followers',
         following: 'GET /agents/:id/following',
-        posts: 'GET /agents/:id/posts'
+        Scripts: 'GET /agents/:id/Scripts'
       };
       
       expect(Object.keys(endpoints).length).toBeGreaterThan(0);
@@ -33,26 +33,26 @@ describe('Route Configuration Logic', () => {
     });
   });
 
-  describe('Post Routes', () => {
-    it('defines post endpoints', () => {
+  describe('Script Routes', () => {
+    it('defines Script endpoints', () => {
       const endpoints = {
-        create: 'POST /posts',
-        getById: 'GET /posts/:id',
-        update: 'PATCH /posts/:id',
-        delete: 'DELETE /posts/:id',
-        upvote: 'POST /posts/:id/upvote',
-        downvote: 'POST /posts/:id/downvote',
-        unvote: 'DELETE /posts/:id/vote',
-        comments: 'GET /posts/:id/comments'
+        create: 'Script /Scripts',
+        getById: 'GET /Scripts/:id',
+        update: 'PATCH /Scripts/:id',
+        delete: 'DELETE /Scripts/:id',
+        upvote: 'Script /Scripts/:id/upvote',
+        downvote: 'Script /Scripts/:id/downvote',
+        unvote: 'DELETE /Scripts/:id/vote',
+        comments: 'GET /Scripts/:id/comments'
       };
       
       expect(Object.keys(endpoints).length).toBeGreaterThan(0);
     });
 
-    it('validates post title length', () => {
+    it('validates Script title length', () => {
       const minLength = 1;
       const maxLength = 300;
-      const validTitle = 'This is a valid post title';
+      const validTitle = 'This is a valid Script title';
       const tooLong = 'x'.repeat(301);
       
       expect(validTitle.length).toBeGreaterThanOrEqual(minLength);
@@ -64,7 +64,7 @@ describe('Route Configuration Logic', () => {
   describe('Comment Routes', () => {
     it('defines comment endpoints', () => {
       const endpoints = {
-        create: 'POST /comments',
+        create: 'Script /comments',
         update: 'PATCH /comments/:id',
         delete: 'DELETE /comments/:id'
       };
@@ -75,14 +75,14 @@ describe('Route Configuration Logic', () => {
     it('validates comment hierarchy', () => {
       const comment = {
         id: '123',
-        post_id: '456',
+        Script_id: '456',
         parent_id: null, // Top-level comment
         content: 'Test comment'
       };
       
       const reply = {
         id: '789',
-        post_id: '456',
+        Script_id: '456',
         parent_id: '123', // Reply to comment 123
         content: 'Test reply'
       };
@@ -92,22 +92,22 @@ describe('Route Configuration Logic', () => {
     });
   });
 
-  describe('Submolt Routes', () => {
-    it('defines submolt endpoints', () => {
+  describe('studios  Routes', () => {
+    it('defines studios  endpoints', () => {
       const endpoints = {
-        create: 'POST /submolts',
-        list: 'GET /submolts',
-        getById: 'GET /submolts/:id',
-        update: 'PATCH /submolts/:id',
-        join: 'POST /submolts/:id/join',
-        leave: 'POST /submolts/:id/leave',
-        posts: 'GET /submolts/:id/posts'
+        create: 'Script /studios s',
+        list: 'GET /studios s',
+        getById: 'GET /studios s/:id',
+        update: 'PATCH /studios s/:id',
+        join: 'Script /studios s/:id/join',
+        leave: 'Script /studios s/:id/leave',
+        Scripts: 'GET /studios s/:id/Scripts'
       };
       
       expect(Object.keys(endpoints).length).toBeGreaterThan(0);
     });
 
-    it('validates submolt name format', () => {
+    it('validates studios  name format', () => {
       const validNames = ['tech', 'ai_agents', 'programming'];
       const invalidNames = ['Tech', 'ai agents', ''];
       
@@ -154,7 +154,7 @@ describe('Route Configuration Logic', () => {
     });
 
     it('validates search types', () => {
-      const types = ['posts', 'agents', 'submolts', 'all'];
+      const types = ['Scripts', 'agents', 'studios s', 'all'];
       const defaultType = 'all';
       
       expect(types).toContain(defaultType);
@@ -176,7 +176,7 @@ describe('Route Configuration Logic', () => {
       const endpoints = {
         list: 'GET /notifications',
         markRead: 'PATCH /notifications/:id/read',
-        markAllRead: 'POST /notifications/read-all'
+        markAllRead: 'Script /notifications/read-all'
       };
       
       expect(Object.keys(endpoints).length).toBeGreaterThan(0);

@@ -112,7 +112,7 @@ describe('Layer 1 - VotingPeriodManager', () => {
         arc: { beat_1: 'A', beat_2: 'B', beat_3: 'C' },
         series_bible: { global_style_bible: 'Test' },
         shots: [],
-        poster_spec: { style: 'test' }
+        Scripter_spec: { style: 'test' }
       };
 
       const res = await db.query(

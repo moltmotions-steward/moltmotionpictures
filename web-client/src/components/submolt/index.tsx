@@ -2,25 +2,25 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { cn, formatScore, getInitials, getSubmoltUrl } from '@/lib/utils';
+import { cn, formatScore, getInitials, getstudios Url } from '@/lib/utils';
 import { useSubscriptionStore } from '@/store';
 import { useAuth } from '@/hooks';
 import { Card, Avatar, AvatarImage, AvatarFallback, Button, Skeleton, Badge } from '@/components/ui';
 import { Hash, Users, Plus, Check } from 'lucide-react';
 import { api } from '@/lib/api';
-import type { Submolt } from '@/types';
+import type { studios  } from '@/types';
 
-interface SubmoltCardProps {
-  submolt: Submolt;
+interface studios CardProps {
+  studios : studios ;
   variant?: 'default' | 'compact';
 }
 
-export function SubmoltCard({ submolt, variant = 'default' }: SubmoltCardProps) {
+export function studios Card({ studios , variant = 'default' }: studios CardProps) {
   const { isAuthenticated } = useAuth();
   const { isSubscribed, addSubscription, removeSubscription } = useSubscriptionStore();
   const [subscribing, setSubscribing] = React.useState(false);
   
-  const subscribed = submolt.isSubscribed || isSubscribed(submolt.name);
+  const subscribed = studios .isSubscribed || isSubscribed(studios .name);
   
   const handleSubscribe = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -30,11 +30,11 @@ export function SubmoltCard({ submolt, variant = 'default' }: SubmoltCardProps) 
     setSubscribing(true);
     try {
       if (subscribed) {
-        await api.unsubscribeSubmolt(submolt.name);
-        removeSubscription(submolt.name);
+        await api.unsubscribestudios (studios .name);
+        removeSubscription(studios .name);
       } else {
-        await api.subscribeSubmolt(submolt.name);
-        addSubscription(submolt.name);
+        await api.subscribestudios (studios .name);
+        addSubscription(studios .name);
       }
     } catch (err) {
       console.error('Subscribe failed:', err);
@@ -45,14 +45,14 @@ export function SubmoltCard({ submolt, variant = 'default' }: SubmoltCardProps) 
   
   if (variant === 'compact') {
     return (
-      <Link href={getSubmoltUrl(submolt.name)} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted transition-colors">
+      <Link href={getstudios Url(studios .name)} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted transition-colors">
         <Avatar className="h-8 w-8">
-          <AvatarImage src={submolt.iconUrl} />
+          <AvatarImage src={studios .iconUrl} />
           <AvatarFallback><Hash className="h-4 w-4" /></AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm truncate">{submolt.displayName || submolt.name}</p>
-          <p className="text-xs text-muted-foreground">{formatScore(submolt.subscriberCount)} members</p>
+          <p className="font-medium text-sm truncate">{studios .displayName || studios .name}</p>
+          <p className="text-xs text-muted-foreground">{formatScore(studios .subscriberCount)} members</p>
         </div>
         {isAuthenticated && (
           <Button size="sm" variant={subscribed ? 'secondary' : 'default'} onClick={handleSubscribe} disabled={subscribing} className="h-7 px-2">
@@ -65,25 +65,25 @@ export function SubmoltCard({ submolt, variant = 'default' }: SubmoltCardProps) 
   
   return (
     <Card className="p-4 hover:border-muted-foreground/20 transition-colors">
-      <Link href={getSubmoltUrl(submolt.name)} className="block">
+      <Link href={getstudios Url(studios .name)} className="block">
         <div className="flex items-start gap-4">
           <Avatar className="h-12 w-12">
-            <AvatarImage src={submolt.iconUrl} />
+            <AvatarImage src={studios .iconUrl} />
             <AvatarFallback><Hash className="h-6 w-6" /></AvatarFallback>
           </Avatar>
           
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold truncate">{submolt.displayName || submolt.name}</h3>
-              {submolt.isNsfw && <Badge variant="destructive" className="text-xs">NSFW</Badge>}
+              <h3 className="font-semibold truncate">{studios .displayName || studios .name}</h3>
+              {studios .isNsfw && <Badge variant="destructive" className="text-xs">NSFW</Badge>}
             </div>
-            <p className="text-sm text-muted-foreground">m/{submolt.name}</p>
-            {submolt.description && (
-              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{submolt.description}</p>
+            <p className="text-sm text-muted-foreground">m/{studios .name}</p>
+            {studios .description && (
+              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{studios .description}</p>
             )}
             <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
               <Users className="h-3 w-3" />
-              {formatScore(submolt.subscriberCount)} members
+              {formatScore(studios .subscriberCount)} members
             </div>
           </div>
           
@@ -98,38 +98,38 @@ export function SubmoltCard({ submolt, variant = 'default' }: SubmoltCardProps) 
   );
 }
 
-// Submolt List
-export function SubmoltList({ submolts, isLoading, variant = 'default' }: { submolts: Submolt[]; isLoading?: boolean; variant?: 'default' | 'compact' }) {
+// studios  List
+export function studios List({ studios s, isLoading, variant = 'default' }: { studios s: studios []; isLoading?: boolean; variant?: 'default' | 'compact' }) {
   if (isLoading) {
     return (
       <div className={cn('space-y-4', variant === 'compact' && 'space-y-1')}>
         {Array.from({ length: 5 }).map((_, i) => (
-          <SubmoltCardSkeleton key={i} variant={variant} />
+          <studios CardSkeleton key={i} variant={variant} />
         ))}
       </div>
     );
   }
   
-  if (submolts.length === 0) {
+  if (studios s.length === 0) {
     return (
       <div className="text-center py-8">
         <Hash className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-        <p className="text-muted-foreground">No submolts found</p>
+        <p className="text-muted-foreground">No studios s found</p>
       </div>
     );
   }
   
   return (
     <div className={cn('space-y-4', variant === 'compact' && 'space-y-1')}>
-      {submolts.map(submolt => (
-        <SubmoltCard key={submolt.id} submolt={submolt} variant={variant} />
+      {studios s.map(studios  => (
+        <studios Card key={studios .id} studios ={studios } variant={variant} />
       ))}
     </div>
   );
 }
 
-// Submolt Card Skeleton
-export function SubmoltCardSkeleton({ variant = 'default' }: { variant?: 'default' | 'compact' }) {
+// studios  Card Skeleton
+export function studios CardSkeleton({ variant = 'default' }: { variant?: 'default' | 'compact' }) {
   if (variant === 'compact') {
     return (
       <div className="flex items-center gap-3 p-2">
@@ -159,36 +159,36 @@ export function SubmoltCardSkeleton({ variant = 'default' }: { variant?: 'defaul
   );
 }
 
-// Sidebar Submolt Widget
-export function SidebarSubmolts({ submolts, title = 'Communities' }: { submolts: Submolt[]; title?: string }) {
+// Sidebar studios  Widget
+export function Sidebarstudios s({ studios s, title = 'Communities' }: { studios s: studios []; title?: string }) {
   return (
     <Card>
       <div className="p-4 border-b">
         <h3 className="font-semibold text-sm">{title}</h3>
       </div>
       <div className="p-2">
-        <SubmoltList submolts={submolts} variant="compact" />
+        <studios List studios s={studios s} variant="compact" />
       </div>
       <div className="p-2 border-t">
-        <Link href="/submolts">
-          <Button variant="ghost" className="w-full text-sm">View all submolts</Button>
+        <Link href="/studios s">
+          <Button variant="ghost" className="w-full text-sm">View all studios s</Button>
         </Link>
       </div>
     </Card>
   );
 }
 
-// Create Submolt Button
-export function CreateSubmoltButton() {
+// Create studios  Button
+export function Createstudios Button() {
   const { isAuthenticated } = useAuth();
   
   if (!isAuthenticated) return null;
   
   return (
-    <Link href="/submolts/create">
+    <Link href="/studios s/create">
       <Button className="w-full gap-2">
         <Plus className="h-4 w-4" />
-        Create Submolt
+        Create studios 
       </Button>
     </Link>
   );

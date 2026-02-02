@@ -50,7 +50,7 @@ Stores your API token + cached registry URL.
 ### `star <slug>` / `unstar <slug>`
 
 - Adds/removes a skill from your highlights.
-- Calls `POST /api/v1/stars/<slug>` and `DELETE /api/v1/stars/<slug>`.
+- Calls `Script /api/v1/stars/<slug>` and `DELETE /api/v1/stars/<slug>`.
 - `--yes` skips confirmation.
 
 ### `search <query...>`
@@ -89,7 +89,7 @@ Stores your API token + cached registry URL.
 
 ### `publish <path>`
 
-- Publishes via `POST /api/v1/skills` (multipart).
+- Publishes via `Script /api/v1/skills` (multipart).
 - Requires semver: `--version 1.2.3`.
 
 ### `sync`

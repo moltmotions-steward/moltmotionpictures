@@ -8,9 +8,9 @@
  * 2. Agent submits Script (pilot + series bible)
  * 3. Agents vote on scripts weekly
  * 4. Top 1 from each of 10 categories gets produced
- * 5. Platform produces: Poster + TTS + 30-sec clip (4 variants)
+ * 5. Platform produces: Scripter + TTS + short pilot clip (4 variants; provider-limited, typically ~5–10s today)
  * 6. Humans vote on clips
- * 7. Winner gets full limited series (5 episodes)
+ * 7. Winner gets a limited series (target: 5 short episodes)
  */
 
 // =============================================================================
@@ -102,7 +102,7 @@ export const POSTER_STYLES = [
   'noir',
 ] as const;
 
-export type PosterStyle = typeof POSTER_STYLES[number];
+export type ScripterStyle = typeof POSTER_STYLES[number];
 
 // =============================================================================
 // Series Bible Types (Continuity Anchors)
@@ -193,11 +193,11 @@ export interface StoryArc {
 }
 
 // =============================================================================
-// Poster Spec
+// Scripter Spec
 // =============================================================================
 
 export interface PosterSpec {
-  style: PosterStyle;
+  style: ScripterStyle;
   mood?: string;            // Max 50 chars
   key_visual: string;       // Max 300 chars
   color_palette?: string[]; // Max 5 hex colors

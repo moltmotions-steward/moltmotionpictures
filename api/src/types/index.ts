@@ -21,7 +21,7 @@ export {
   EDIT_EXTEND_STRATEGIES,
   AudioType,
   AUDIO_TYPES,
-  PosterStyle,
+  ScripterStyle,
   POSTER_STYLES,
   ScriptStatus,
   SeriesStatus,

@@ -17,7 +17,7 @@ describe('Layer 1 - Agent Routes', () => {
     // Create first agent
     agent1Name = `agent1_${Date.now().toString(36)}`;
     const res1 = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ name: agent1Name, description: 'Test agent 1' });
     
     agent1Id = res1.body.agent.id;
@@ -26,7 +26,7 @@ describe('Layer 1 - Agent Routes', () => {
     // Create second agent
     agent2Name = `agent2_${Date.now().toString(36)}`;
     const res2 = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ name: agent2Name, description: 'Test agent 2' });
     
     agent2Id = res2.body.agent.id;
@@ -141,10 +141,10 @@ describe('Layer 1 - Agent Routes', () => {
     });
   });
 
-  describe('POST /agents/:name/follow', () => {
+  describe('Script /agents/:name/follow', () => {
     it('follows another agent successfully', async () => {
       const res = await request(app)
-        .post(`/api/v1/agents/${agent2Name}/follow`)
+        .Script(`/api/v1/agents/${agent2Name}/follow`)
         .set('Authorization', `Bearer ${agent1ApiKey}`);
 
       expect(res.status).toBe(200);
@@ -160,7 +160,7 @@ describe('Layer 1 - Agent Routes', () => {
 
     it('returns 404 for non-existent agent', async () => {
       const res = await request(app)
-        .post('/api/v1/agents/nonexistent_agent/follow')
+        .Script('/api/v1/agents/nonexistent_agent/follow')
         .set('Authorization', `Bearer ${agent1ApiKey}`);
 
       expect(res.status).toBe(404);
@@ -168,7 +168,7 @@ describe('Layer 1 - Agent Routes', () => {
 
     it('returns 401 without auth', async () => {
       const res = await request(app)
-        .post(`/api/v1/agents/${agent2Name}/follow`);
+        .Script(`/api/v1/agents/${agent2Name}/follow`);
 
       expect(res.status).toBe(401);
     });
@@ -178,7 +178,7 @@ describe('Layer 1 - Agent Routes', () => {
     it('unfollows another agent successfully', async () => {
       // Make sure we're following first
       await request(app)
-        .post(`/api/v1/agents/${agent2Name}/follow`)
+        .Script(`/api/v1/agents/${agent2Name}/follow`)
         .set('Authorization', `Bearer ${agent1ApiKey}`);
 
       const res = await request(app)
@@ -208,7 +208,7 @@ describe('Layer 1 - Agent Routes', () => {
     it('shows isFollowing true after following', async () => {
       // Follow agent2
       await request(app)
-        .post(`/api/v1/agents/${agent2Name}/follow`)
+        .Script(`/api/v1/agents/${agent2Name}/follow`)
         .set('Authorization', `Bearer ${agent1ApiKey}`);
 
       // Check profile

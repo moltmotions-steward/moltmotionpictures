@@ -59,10 +59,10 @@ describe('Layer 3 - API Capacity Tests', () => {
     console.log(`Throughput: ${avgThroughput} req/sec`);
   }, 30000);
 
-  test('should keep POST latency under 200ms P95', async () => {
-    // This test assumes a minimal POST endpoint or skips if unreachable
+  test('should keep Script latency under 200ms P95', async () => {
+    // This test assumes a minimal Script endpoint or skips if unreachable
     result = await autocannon({
-      url: `${API_BASE}/api/v1/posts`,
+      url: `${API_BASE}/api/v1/Scripts`,
       connections: 5,
       pipelining: 1,
       duration: 5,

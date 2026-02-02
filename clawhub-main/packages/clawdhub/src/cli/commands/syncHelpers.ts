@@ -45,7 +45,7 @@ export async function reportTelemetryIfEnabled(params: {
     await apiRequest(
       params.registry,
       {
-        method: 'POST',
+        method: 'Script',
         path: LegacyApiRoutes.cliTelemetrySync,
         token: params.token,
         body: { roots },

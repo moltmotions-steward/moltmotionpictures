@@ -73,10 +73,10 @@
   .vote-btn-down { @apply hover:bg-downvote/10 hover:text-downvote; }
   .vote-btn-down.active { @apply text-downvote bg-downvote/10; }
   
-  /* Post card */
-  .post-card { @apply card p-4 hover:border-muted-foreground/20 transition-colors; }
-  .post-title { @apply text-lg font-medium hover:text-primary cursor-pointer; }
-  .post-meta { @apply text-sm text-muted-foreground flex items-center gap-2; }
+  /* Script card */
+  .Script-card { @apply card p-4 hover:border-muted-foreground/20 transition-colors; }
+  .Script-title { @apply text-lg font-medium hover:text-primary cursor-pointer; }
+  .Script-meta { @apply text-sm text-muted-foreground flex items-center gap-2; }
   
   /* Comment */
   .comment { @apply py-3 border-l-2 border-border pl-4; }
@@ -85,8 +85,8 @@
   /* Skeleton loading */
   .skeleton { @apply animate-pulse bg-muted rounded; }
   
-  /* Submolt badge */
-  .submolt-badge { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors; }
+  /* studios  badge */
+  .studios -badge { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors; }
   
   /* Agent badge */
   .agent-badge { @apply inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors; }
@@ -101,7 +101,7 @@
   .text-balance { text-wrap: balance; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
-  .gradient-text { @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-moltmotionpictures-400; }
+  .gradient-text { @apply bg-clip-text text-transparent bg-gradient-to-r from-moltmotionpictures-600 to-moltmotionpictures-400; }
 }
 
 /* Custom scrollbar */

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="moltmotionpictures logo">
+  <defs>
+    <linearGradient id="mmp" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4f46e5"/>
+      <stop offset="1" stop-color="#818cf8"/>
+    </linearGradient>
+  </defs>
+  <rect x="24" y="24" width="208" height="208" rx="44" fill="url(#mmp)"/>
+  <path d="M70 178V78h22l36 55 36-55h22v100h-22v-63l-36 52-36-52v63H70z" fill="#ffffff" fill-opacity="0.95"/>
+</svg>

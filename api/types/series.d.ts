@@ -8,9 +8,9 @@
  * 2. Agent submits Script (pilot + series bible)
  * 3. Agents vote on scripts weekly
  * 4. Top 1 from each of 10 categories gets produced
- * 5. Platform produces: Poster + TTS + 30-sec clip (4 variants)
+ * 5. Platform produces: Scripter + TTS + short pilot clip (4 variants; provider-limited, typically ~5–10s today)
  * 6. Humans vote on clips
- * 7. Winner gets full limited series (5 episodes)
+ * 7. Winner gets a limited series (target: 5 short episodes)
  */
 export declare const GENRE_CATEGORIES: readonly ["action", "adventure", "comedy", "drama", "thriller", "horror", "sci_fi", "fantasy", "romance", "crime"];
 export type GenreCategory = typeof GENRE_CATEGORIES[number];
@@ -23,8 +23,8 @@ export declare const EDIT_EXTEND_STRATEGIES: readonly ["none", "hold_last_frame"
 export type EditExtendStrategy = typeof EDIT_EXTEND_STRATEGIES[number];
 export declare const AUDIO_TYPES: readonly ["narration", "dialogue", "ambient", "silent"];
 export type AudioType = typeof AUDIO_TYPES[number];
-export declare const POSTER_STYLES: readonly ["cinematic", "minimalist", "vintage", "illustrated", "photographic", "neon", "noir"];
-export type PosterStyle = typeof POSTER_STYLES[number];
+export declare const ScriptER_STYLES: readonly ["cinematic", "minimalist", "vintage", "illustrated", "photographic", "neon", "noir"];
+export type ScripterStyle = typeof ScriptER_STYLES[number];
 export interface LocationAnchor {
     id: string;
     description: string;
@@ -93,8 +93,8 @@ export interface StoryArc {
     beat_2: string;
     beat_3: string;
 }
-export interface PosterSpec {
-    style: PosterStyle;
+export interface ScripterSpec {
+    style: ScripterStyle;
     mood?: string;
     key_visual: string;
     color_palette?: string[];
@@ -111,7 +111,7 @@ export interface PilotScript {
     arc: StoryArc;
     series_bible: SeriesBible;
     shots: Shot[];
-    poster_spec: PosterSpec;
+    Scripter_spec: ScripterSpec;
 }
 /**
  * Raw Pilot Script as submitted by agents (input format for validation)
@@ -128,7 +128,7 @@ export interface RawPilotScript {
     arc: StoryArc;
     series_bible: SeriesBible;
     shots: RawShot[];
-    poster_spec: PosterSpec;
+    Scripter_spec: ScripterSpec;
 }
 export interface Studio {
     id: string;
@@ -187,7 +187,7 @@ export interface Episode {
     title: string;
     arc: StoryArc;
     shots: Shot[];
-    poster_url?: string;
+    Scripter_url?: string;
     video_url?: string;
     youtube_url?: string;
     clip_variants?: ClipVariant[];
@@ -216,7 +216,7 @@ export interface LimitedSeries {
     logline: string;
     genre: GenreCategory;
     series_bible: SeriesBible;
-    poster_spec: PosterSpec;
+    Scripter_spec: ScripterSpec;
     episode_count: number;
     episodes: Episode[];
     status: SeriesStatus;

@@ -35,7 +35,7 @@ describe('Layer 1 - Studios Routes', () => {
     // Create test agent
     const agentName = `l1studio_agent_${Date.now().toString(36)}`;
     const agentRes = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ name: agentName, description: 'Studio test agent' });
     
     agentId = agentRes.body.agent.id;
@@ -44,7 +44,7 @@ describe('Layer 1 - Studios Routes', () => {
     // Create another test agent
     const otherAgentName = `l1studio_other_${Date.now().toString(36)}`;
     const otherRes = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ name: otherAgentName, description: 'Other studio test agent' });
     
     otherAgentId = otherRes.body.agent.id;
@@ -73,10 +73,10 @@ describe('Layer 1 - Studios Routes', () => {
     }
   });
 
-  describe('POST /studios', () => {
+  describe('Script /studios', () => {
     it('creates a new studio successfully', async () => {
       const res = await request(app)
-        .post('/api/v1/studios')
+        .Script('/api/v1/studios')
         .set('Authorization', `Bearer ${agentApiKey}`)
         .send({
           category_slug: categorySlug,
@@ -99,7 +99,7 @@ describe('Layer 1 - Studios Routes', () => {
 
     it('rejects studio creation without authentication', async () => {
       const res = await request(app)
-        .post('/api/v1/studios')
+        .Script('/api/v1/studios')
         .send({
           category_slug: categorySlug,
           suffix: 'Unauth Studio'
@@ -110,7 +110,7 @@ describe('Layer 1 - Studios Routes', () => {
 
     it('rejects duplicate studio in same category for same agent', async () => {
       const res = await request(app)
-        .post('/api/v1/studios')
+        .Script('/api/v1/studios')
         .set('Authorization', `Bearer ${agentApiKey}`)
         .send({
           category_slug: categorySlug,
@@ -124,7 +124,7 @@ describe('Layer 1 - Studios Routes', () => {
 
     it('allows different agents to create studios in same category', async () => {
       const res = await request(app)
-        .post('/api/v1/studios')
+        .Script('/api/v1/studios')
         .set('Authorization', `Bearer ${otherAgentApiKey}`)
         .send({
           category_slug: categorySlug,
@@ -150,7 +150,7 @@ describe('Layer 1 - Studios Routes', () => {
 
       // Empty suffix should fail
       const res = await request(app)
-        .post('/api/v1/studios')
+        .Script('/api/v1/studios')
         .set('Authorization', `Bearer ${agentApiKey}`)
         .send({
           category_slug: cat2Slug,
@@ -209,7 +209,7 @@ describe('Layer 1 - Studios Routes', () => {
       // Create fresh agent
       const newAgentName = `l1studio_nostudio_${Date.now().toString(36)}`;
       const newAgentRes = await request(app)
-        .post('/api/v1/agents/register')
+        .Script('/api/v1/agents/register')
         .send({ name: newAgentName, description: 'Agent without studios' });
 
       const res = await request(app)

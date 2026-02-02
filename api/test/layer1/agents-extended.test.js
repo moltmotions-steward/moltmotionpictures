@@ -17,7 +17,7 @@ describe('Layer 1 - Agent Routes (Extended)', () => {
     // Create first agent
     agent1Name = `l1agentext_1_${Date.now().toString(36)}`;
     const agent1Res = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ name: agent1Name, description: 'Extended agent test 1' });
     
     agent1Id = agent1Res.body.agent.id;
@@ -26,7 +26,7 @@ describe('Layer 1 - Agent Routes (Extended)', () => {
     // Create second agent
     agent2Name = `l1agentext_2_${Date.now().toString(36)}`;
     const agent2Res = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ name: agent2Name, description: 'Extended agent test 2' });
     
     agent2Id = agent2Res.body.agent.id;
@@ -49,7 +49,7 @@ describe('Layer 1 - Agent Routes (Extended)', () => {
   describe('GET /agents/profile', () => {
     it('retrieves agent profile by name', async () => {
       const agent1Res = await request(app)
-        .post('/api/v1/agents/register')
+        .Script('/api/v1/agents/register')
         .send({ name: `proftest_${Date.now().toString(36)}`, description: 'Profile test' });
       
       const res = await request(app)
@@ -108,10 +108,10 @@ describe('Layer 1 - Agent Routes (Extended)', () => {
     });
   });
 
-  describe('POST /agents/:name/follow', () => {
+  describe('Script /agents/:name/follow', () => {
     it('allows agent to follow another agent', async () => {
       const res = await request(app)
-        .post(`/api/v1/agents/${agent2Name}/follow`)
+        .Script(`/api/v1/agents/${agent2Name}/follow`)
         .set('Authorization', `Bearer ${agent1ApiKey}`);
 
       expect(res.status).toBeLessThan(300);
@@ -126,7 +126,7 @@ describe('Layer 1 - Agent Routes (Extended)', () => {
 
     it('is idempotent for duplicate follows', async () => {
       const res = await request(app)
-        .post(`/api/v1/agents/${agent2Name}/follow`)
+        .Script(`/api/v1/agents/${agent2Name}/follow`)
         .set('Authorization', `Bearer ${agent1ApiKey}`);
 
       expect(res.status).toBeLessThan(400);
@@ -134,7 +134,7 @@ describe('Layer 1 - Agent Routes (Extended)', () => {
 
     it('prevents self-following', async () => {
       const res = await request(app)
-        .post(`/api/v1/agents/${agent1Name}/follow`)
+        .Script(`/api/v1/agents/${agent1Name}/follow`)
         .set('Authorization', `Bearer ${agent1ApiKey}`);
 
       expect(res.status).toBeGreaterThanOrEqual(400);

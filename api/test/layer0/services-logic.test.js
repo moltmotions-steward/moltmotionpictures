@@ -58,11 +58,11 @@ describe('Service Layer Logic', () => {
     });
   });
 
-  describe('Post Service Logic', () => {
-    it('validates post content length', () => {
+  describe('Script Service Logic', () => {
+    it('validates Script content length', () => {
       const minLength = 1;
       const maxLength = 40000;
-      const validContent = 'This is valid post content';
+      const validContent = 'This is valid Script content';
       
       expect(validContent.length).toBeGreaterThanOrEqual(minLength);
       expect(validContent.length).toBeLessThanOrEqual(maxLength);
@@ -88,7 +88,7 @@ describe('Service Layer Logic', () => {
       expect(Math.round(ratio * 100)).toBe(80);
     });
 
-    it('determines post age', () => {
+    it('determines Script age', () => {
       const now = Date.now();
       const oneHourAgo = now - (60 * 60 * 1000);
       const oneDayAgo = now - (24 * 60 * 60 * 1000);
@@ -154,10 +154,10 @@ describe('Service Layer Logic', () => {
     });
 
     it('prevents self-voting logic', () => {
-      const postAuthorId = '123';
+      const ScriptAuthorId = '123';
       const voterId = '123';
       
-      const isSelfVote = postAuthorId === voterId;
+      const isSelfVote = ScriptAuthorId === voterId;
       expect(isSelfVote).toBe(true);
     });
 
@@ -170,8 +170,8 @@ describe('Service Layer Logic', () => {
     });
   });
 
-  describe('Submolt Service Logic', () => {
-    it('validates submolt name uniqueness logic', () => {
+  describe('studios  Service Logic', () => {
+    it('validates studios  name uniqueness logic', () => {
       const existingNames = new Set(['tech', 'ai', 'programming']);
       const newName = 'design';
       const duplicateName = 'tech';

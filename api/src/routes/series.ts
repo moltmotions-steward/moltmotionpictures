@@ -8,12 +8,10 @@
 
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-
-// Use require for JS modules without type declarations
-const { asyncHandler } = require('../middleware/errorHandler');
-const { requireAuth } = require('../middleware/auth');
-const { success, paginated } = require('../utils/response');
-const { NotFoundError, BadRequestError } = require('../utils/errors');
+import { requireAuth } from '../middleware/auth';
+import { NotFoundError, BadRequestError } from '../utils/errors';
+import { asyncHandler } from '../middleware/errorHandler';
+import { success, paginated } from '../utils/response';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -219,7 +217,7 @@ router.get('/:seriesId', asyncHandler(async (req: any, res: any) => {
           id: true,
           title: true,
           logline: true,
-          vote_count: true,
+          score: true,
         },
         take: 1,
       },
@@ -245,6 +243,13 @@ router.get('/:seriesId', asyncHandler(async (req: any, res: any) => {
     throw new NotFoundError('Series not found');
   }
   
+  // Type assertion for included relations
+  const seriesWithRelations = series as typeof series & {
+    studio: { id: string; full_name: string | null };
+    scripts: Array<{ id: string; title: string; logline: string | null; score: number }>;
+    episodes: Array<{ id: string; episode_number: number; title: string | null; runtime_seconds: number | null; status: string; published_at: Date | null; clip_variants: any[] }>;
+  };
+  
   success(res, {
     id: series.id,
     title: series.title,
@@ -252,15 +257,15 @@ router.get('/:seriesId', asyncHandler(async (req: any, res: any) => {
     poster_url: series.poster_url,
     genre: series.genre,
     studio: {
-      id: series.studio.id,
-      name: series.studio.full_name,
+      id: seriesWithRelations.studio.id,
+      name: seriesWithRelations.studio.full_name,
     },
-    script: series.scripts[0] || null,
+    script: seriesWithRelations.scripts[0] || null,
     episode_count: series.episode_count,
     status: series.status,
     total_views: Number(series.total_views),
     created_at: series.created_at,
-    episodes: series.episodes.map((ep: any) => ({
+    episodes: seriesWithRelations.episodes.map((ep: any) => ({
       id: ep.id,
       episode_number: ep.episode_number,
       title: ep.title,

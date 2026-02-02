@@ -80,6 +80,13 @@ export class EpisodeProductionService {
   private spaces: SpacesClient | null;
   private readonly isConfigured: boolean;
 
+  private normalizeLumaClipSeconds(requestedSeconds?: number): 5 | 10 {
+    if (requestedSeconds === 10) return 10;
+    if (requestedSeconds === 5) return 5;
+    if (typeof requestedSeconds !== 'number' || !Number.isFinite(requestedSeconds)) return 10;
+    return requestedSeconds <= 5 ? 5 : 10;
+  }
+
   constructor(gradient?: GradientClient, spaces?: SpacesClient) {
     // Gracefully handle missing API keys
     try {
@@ -119,7 +126,7 @@ export class EpisodeProductionService {
       include: {
         studio: true,
         scripts: {
-          where: { status: 'selected' },
+          where: { pilot_status: 'selected' },
           take: 1,
         },
       },
@@ -226,6 +233,9 @@ export class EpisodeProductionService {
     // Generate 4 variants with different stylistic approaches
     const variants = this.generatePromptVariants(basePrompt, scriptData);
 
+    const requestedClipSeconds = scriptData?.shots?.[0]?.gen_clip_seconds;
+    const clipSeconds = this.normalizeLumaClipSeconds(requestedClipSeconds);
+
     for (let i = 0; i < VARIANT_COUNT; i++) {
       try {
         const prompt = variants[i] || basePrompt;
@@ -235,7 +245,7 @@ export class EpisodeProductionService {
         // Call Luma Dream Machine via Gradient
         const generation = await this.gradient!.generateShot(prompt, {
           aspectRatio: '16:9',
-          duration: 30, // 30-second clips for pilot
+          duration: clipSeconds, // Provider-limited (Luma typically 5–10s)
         });
 
         // Create clip variant record with generation ID

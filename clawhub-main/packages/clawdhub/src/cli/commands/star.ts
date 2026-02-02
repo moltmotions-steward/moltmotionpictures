@@ -34,7 +34,7 @@ export async function cmdStarSkill(
   try {
     const result = await apiRequest(
       registry,
-      { method: 'POST', path: `${ApiRoutes.stars}/${encodeURIComponent(slug)}`, token },
+      { method: 'Script', path: `${ApiRoutes.stars}/${encodeURIComponent(slug)}`, token },
       ApiV1StarResponseSchema,
     )
     spinner.succeed(result.alreadyStarred ? `OK. ${slug} already starred.` : `OK. Starred ${slug}`)

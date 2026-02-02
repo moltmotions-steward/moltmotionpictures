@@ -66,7 +66,7 @@ describe('Layer 1 - Scripts Routes', () => {
         audio: { type: 'music', description: 'Dramatic finale' }
       }
     ],
-    poster_spec: {
+    Scripter_spec: {
       style: 'cinematic',
       key_visual: 'Hero silhouetted against city skyline',
       mood: 'intense',
@@ -90,7 +90,7 @@ describe('Layer 1 - Scripts Routes', () => {
     // Create test agent
     agentName = `l1script_agent_${Date.now().toString(36)}`;
     const agentRes = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ name: agentName, description: 'Script test agent' });
     
     agentId = agentRes.body.agent.id;
@@ -99,7 +99,7 @@ describe('Layer 1 - Scripts Routes', () => {
     // Create another test agent
     const otherAgentName = `l1script_other_${Date.now().toString(36)}`;
     const otherRes = await request(app)
-      .post('/api/v1/agents/register')
+      .Script('/api/v1/agents/register')
       .send({ name: otherAgentName, description: 'Other script test agent' });
     
     otherAgentId = otherRes.body.agent.id;
@@ -139,10 +139,10 @@ describe('Layer 1 - Scripts Routes', () => {
     }
   });
 
-  describe('POST /scripts', () => {
+  describe('Script /scripts', () => {
     it('creates a new script successfully', async () => {
       const res = await request(app)
-        .post('/api/v1/scripts')
+        .Script('/api/v1/scripts')
         .set('Authorization', `Bearer ${agentApiKey}`)
         .send({
           studio_id: studioId,
@@ -164,7 +164,7 @@ describe('Layer 1 - Scripts Routes', () => {
 
     it('rejects script creation without authentication', async () => {
       const res = await request(app)
-        .post('/api/v1/scripts')
+        .Script('/api/v1/scripts')
         .send({
           studio_id: studioId,
           title: 'Unauthenticated Script',
@@ -177,7 +177,7 @@ describe('Layer 1 - Scripts Routes', () => {
 
     it('rejects script creation by non-studio-owner', async () => {
       const res = await request(app)
-        .post('/api/v1/scripts')
+        .Script('/api/v1/scripts')
         .set('Authorization', `Bearer ${otherAgentApiKey}`)
         .send({
           studio_id: studioId,
@@ -191,7 +191,7 @@ describe('Layer 1 - Scripts Routes', () => {
 
     it('validates script_data format', async () => {
       const res = await request(app)
-        .post('/api/v1/scripts')
+        .Script('/api/v1/scripts')
         .set('Authorization', `Bearer ${agentApiKey}`)
         .send({
           studio_id: studioId,
@@ -209,7 +209,7 @@ describe('Layer 1 - Scripts Routes', () => {
 
     it('requires script_data', async () => {
       const res = await request(app)
-        .post('/api/v1/scripts')
+        .Script('/api/v1/scripts')
         .set('Authorization', `Bearer ${agentApiKey}`)
         .send({
           studio_id: studioId,
@@ -319,13 +319,13 @@ describe('Layer 1 - Scripts Routes', () => {
     });
   });
 
-  describe('POST /scripts/:id/submit', () => {
+  describe('Script /scripts/:id/submit', () => {
     it('submits a draft script for voting', async () => {
       // Reset the studio's last_script_at to bypass rate limiting for test
       await db.query('UPDATE studios SET last_script_at = NULL WHERE id = $1', [studioId]);
 
       const res = await request(app)
-        .post(`/api/v1/scripts/${scriptId}/submit`)
+        .Script(`/api/v1/scripts/${scriptId}/submit`)
         .set('Authorization', `Bearer ${agentApiKey}`);
 
       expect(res.status).toBe(200);
@@ -336,7 +336,7 @@ describe('Layer 1 - Scripts Routes', () => {
 
     it('rejects submission of already-submitted script', async () => {
       const res = await request(app)
-        .post(`/api/v1/scripts/${scriptId}/submit`)
+        .Script(`/api/v1/scripts/${scriptId}/submit`)
         .set('Authorization', `Bearer ${agentApiKey}`);
 
       expect(res.status).toBeGreaterThanOrEqual(400);
@@ -345,7 +345,7 @@ describe('Layer 1 - Scripts Routes', () => {
     it('rejects submission by non-owner', async () => {
       // Create a new draft script for this test
       const createRes = await request(app)
-        .post('/api/v1/scripts')
+        .Script('/api/v1/scripts')
         .set('Authorization', `Bearer ${agentApiKey}`)
         .send({
           studio_id: studioId,
@@ -357,7 +357,7 @@ describe('Layer 1 - Scripts Routes', () => {
       const newScriptId = createRes.body.script.id;
 
       const res = await request(app)
-        .post(`/api/v1/scripts/${newScriptId}/submit`)
+        .Script(`/api/v1/scripts/${newScriptId}/submit`)
         .set('Authorization', `Bearer ${otherAgentApiKey}`);
 
       expect(res.status).toBe(403);
@@ -380,7 +380,7 @@ describe('Layer 1 - Scripts Routes', () => {
     it('soft-deletes a draft script', async () => {
       // Create a new draft script
       const createRes = await request(app)
-        .post('/api/v1/scripts')
+        .Script('/api/v1/scripts')
         .set('Authorization', `Bearer ${agentApiKey}`)
         .send({
           studio_id: studioId,
@@ -406,7 +406,7 @@ describe('Layer 1 - Scripts Routes', () => {
     it('rejects delete by non-owner', async () => {
       // Create a new draft script
       const createRes = await request(app)
-        .post('/api/v1/scripts')
+        .Script('/api/v1/scripts')
         .set('Authorization', `Bearer ${agentApiKey}`)
         .send({
           studio_id: studioId,

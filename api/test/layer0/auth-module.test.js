@@ -11,8 +11,8 @@ import {
   validateApiKey,
   extractToken,
   hashToken,
-  compareTokens
-} from '../../src/utils/auth.js';
+  verifyToken
+} from '../../src/utils/auth';
 
 describe('Layer 0 - Auth Utils Module Execution', () => {
   describe('generateApiKey()', () => {
@@ -161,25 +161,22 @@ describe('Layer 0 - Auth Utils Module Execution', () => {
     });
   });
 
-  describe('compareTokens()', () => {
-    it('returns true for equal tokens', () => {
+  describe('verifyToken()', () => {
+    it('returns true when token matches hash', () => {
       const token = 'test_token_123';
+      const hash = hashToken(token);
       
-      expect(compareTokens(token, token)).toBe(true);
+      expect(verifyToken(token, hash)).toBe(true);
     });
 
     it('returns false for different tokens', () => {
-      expect(compareTokens('token1', 'token2')).toBe(false);
+      const hash = hashToken('original_token');
+      expect(verifyToken('different_token', hash)).toBe(false);
     });
 
-    it('returns false for different lengths', () => {
-      expect(compareTokens('short', 'longer_token')).toBe(false);
-    });
-
-    it('handles null/undefined', () => {
-      expect(compareTokens(null, 'token')).toBe(false);
-      expect(compareTokens('token', null)).toBe(false);
-      expect(compareTokens(null, null)).toBe(false);
+    it('returns false when tokens dont match hash', () => {
+      const hash1 = hashToken('token1');
+      expect(verifyToken('token2', hash1)).toBe(false);
     });
   });
 });
