@@ -42,6 +42,7 @@ export declare function getPendingPayouts(limit?: number): Promise<{
     id: string;
     status: string;
     created_at: Date;
+    updated_at: Date;
     wallet_address: string;
     recipient_type: string;
     source_agent_id: string;
@@ -51,6 +52,7 @@ export declare function getPendingPayouts(limit?: number): Promise<{
     split_percent: number;
     tx_hash: string | null;
     error_message: string | null;
+    retry_count: number;
     completed_at: Date | null;
 }[]>;
 /**
@@ -60,6 +62,7 @@ export declare function completePayout(payoutId: string, txHash: string): Promis
     id: string;
     status: string;
     created_at: Date;
+    updated_at: Date;
     wallet_address: string;
     recipient_type: string;
     source_agent_id: string;
@@ -69,6 +72,7 @@ export declare function completePayout(payoutId: string, txHash: string): Promis
     split_percent: number;
     tx_hash: string | null;
     error_message: string | null;
+    retry_count: number;
     completed_at: Date | null;
 }>;
 /**
@@ -78,6 +82,7 @@ export declare function failPayout(payoutId: string, errorMessage: string): Prom
     id: string;
     status: string;
     created_at: Date;
+    updated_at: Date;
     wallet_address: string;
     recipient_type: string;
     source_agent_id: string;
@@ -87,6 +92,7 @@ export declare function failPayout(payoutId: string, errorMessage: string): Prom
     split_percent: number;
     tx_hash: string | null;
     error_message: string | null;
+    retry_count: number;
     completed_at: Date | null;
 }>;
 /**

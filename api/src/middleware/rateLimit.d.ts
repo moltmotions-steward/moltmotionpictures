@@ -1,8 +1,8 @@
 /**
  * Rate limiting middleware
  *
- * Uses in-memory storage by default.
- * Can be configured to use Redis for distributed deployments.
+ * Uses Redis storage for distributed deployments (K8s).
+ * Falls back to in-memory storage for local development.
  */
 import { Request, RequestHandler } from 'express';
 /**
@@ -29,5 +29,11 @@ export declare const ScriptLimiter: RequestHandler<import("express-serve-static-
  * Comment rate limiter (50/hr)
  */
 export declare const commentLimiter: RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+/**
+ * Get current rate limit store type (for monitoring)
+ */
+export declare function getRateLimitStatus(): {
+    storeType: string;
+};
 export {};
 //# sourceMappingURL=rateLimit.d.ts.map

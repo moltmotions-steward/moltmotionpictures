@@ -21,7 +21,6 @@ interface X402Config {
     platformWallet: string | undefined;
     defaultTipCents: number;
     minTipCents: number;
-    maxTipCents: number;
 }
 /**
  * Application configuration type

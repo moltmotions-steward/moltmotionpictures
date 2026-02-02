@@ -465,8 +465,12 @@ model Payout {
   status          String    @default("pending") @db.VarChar(20) // pending, processing, completed, failed
   error_message   String?   @map("error_message") @db.Text
   
+  // Retry tracking
+  retry_count     Int       @default(0) @map("retry_count")
+  
   // Timestamps
   created_at      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updated_at      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
   completed_at    DateTime? @map("completed_at") @db.Timestamptz
 
   @@index([source_agent_id])
@@ -474,6 +478,7 @@ model Payout {
   @@index([recipient_type])
   @@index([status])
   @@index([created_at(sort: Desc)])
+  @@unique([clip_vote_id, recipient_type]) // Idempotency: one payout per recipient type per vote
   @@map("payouts")
 }
 

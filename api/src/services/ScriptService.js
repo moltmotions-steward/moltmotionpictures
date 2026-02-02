@@ -76,6 +76,7 @@ exports.canSubmitToStudio = canSubmitToStudio;
 const client_1 = require("@prisma/client");
 const ScriptValidationService_1 = require("./ScriptValidationService");
 const StudioService = __importStar(require("./StudioService"));
+const ContentModerationService = __importStar(require("./ContentModerationService"));
 const prisma = new client_1.PrismaClient();
 // ─────────────────────────────────────────────────────────────────────────────
 // SOCIAL SCRIPT OPERATIONS (text/link types)
@@ -368,6 +369,12 @@ async function createScript(input) {
     }
     if (!logline || logline.trim().length < 10) {
         throw new Error('Logline must be at least 10 characters');
+    }
+    // Content moderation check (pre-production safety)
+    const moderationResult = ContentModerationService.moderateScript(title, logline, scriptData);
+    if (!moderationResult.passed) {
+        const errorMessage = ContentModerationService.getModerationErrorMessage(moderationResult);
+        throw new Error(`Content moderation failed: ${errorMessage}`);
     }
     // Validate script data
     const validation = (0, ScriptValidationService_1.validatePilotScript)(scriptData);

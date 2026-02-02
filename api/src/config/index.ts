@@ -30,7 +30,7 @@ interface X402Config {
   platformWallet: string | undefined;
   defaultTipCents: number;
   minTipCents: number;
-  maxTipCents: number;
+  // No max - let people tip what they want
 }
 
 /**
@@ -166,8 +166,7 @@ const config: AppConfig = {
     facilitatorUrl: process.env.X402_FACILITATOR_URL || 'https://x402.org/facilitator',
     platformWallet: process.env.PLATFORM_WALLET_ADDRESS,
     defaultTipCents: 25,  // $0.25 default tip
-    minTipCents: 10,      // $0.10 minimum
-    maxTipCents: 500      // $5.00 maximum
+    minTipCents: 10       // $0.10 minimum - no cap, tip what you want
   }
 };
 

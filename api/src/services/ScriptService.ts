@@ -19,6 +19,7 @@ import { PrismaClient, Script, Studio, Category, Prisma } from '@prisma/client';
 import { validatePilotScript, ValidationResult } from './ScriptValidationService';
 import { RawPilotScript, ScriptStatus } from '../types/series';
 import * as StudioService from './StudioService';
+import * as ContentModerationService from './ContentModerationService';
 
 const prisma = new PrismaClient();
 
@@ -432,6 +433,13 @@ export async function createScript(input: CreateScriptInput): Promise<ScriptWith
 
   if (!logline || logline.trim().length < 10) {
     throw new Error('Logline must be at least 10 characters');
+  }
+
+  // Content moderation check (pre-production safety)
+  const moderationResult = ContentModerationService.moderateScript(title, logline, scriptData);
+  if (!moderationResult.passed) {
+    const errorMessage = ContentModerationService.getModerationErrorMessage(moderationResult);
+    throw new Error(`Content moderation failed: ${errorMessage}`);
   }
 
   // Validate script data
