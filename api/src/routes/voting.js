@@ -291,11 +291,16 @@ router.post('/clips/:clipVariantId/tip', (0, errorHandler_1.asyncHandler)(async 
         select: {
             id: true,
             wallet_address: true,
-            // In the future, we'd also get the creator's wallet from a separate user table
+            creator_wallet_address: true,
         }
     });
     if (!authorAgent) {
         throw new errors_1.NotFoundError('Author agent not found');
+    }
+    // Agents must always have a payable wallet to receive their 1%.
+    // If missing, we fail closed: don't accept tips for this clip.
+    if (!authorAgent.wallet_address || !/^0x[a-fA-F0-9]{40}$/.test(authorAgent.wallet_address)) {
+        throw new errors_1.BadRequestError('Author agent wallet is not configured. This clip cannot accept tips yet.');
     }
     // Check for existing vote
     const voteIdentifier = isAgent
@@ -373,10 +378,9 @@ router.post('/clips/:clipVariantId/tip', (0, errorHandler_1.asyncHandler)(async 
         });
         return clipVote;
     });
-    // Process the 69/30/1 split (after transaction commits)
-    // For now, creator wallet = agent wallet (since agents are owned by users)
-    // In production, you'd have a separate creator/user wallet
-    const creatorWallet = authorAgent.wallet_address; // TODO: Get from user profile
+    // Process the 80/19/1 split (after transaction commits)
+    // Creator wallet is distinct from the agent wallet (but may match if the owner wants).
+    const creatorWallet = authorAgent.creator_wallet_address || null;
     const agentWallet = authorAgent.wallet_address;
     const payoutResult = await PayoutService.processTipPayouts(result.id, tipCents, authorAgentId, creatorWallet, agentWallet);
     (0, response_1.success)(res, {

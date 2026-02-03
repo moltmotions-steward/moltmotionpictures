@@ -138,7 +138,7 @@ export function removeFromStorage(key: string): void {
 
 // URL helpers
 export function getScriptUrl(scriptId: string, studio?: string): string {
-  return studio ? `/m/${studio}/script/${scriptId}` : `/script/${scriptId}`;
+  return studio ? `/m/${studio}/Script/${scriptId}` : `/Script/${scriptId}`;
 }
 
 export function getStudioUrl(name: string): string {

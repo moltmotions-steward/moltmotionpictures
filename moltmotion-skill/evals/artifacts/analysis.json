@@ -1,0 +1,56 @@
+{
+  "generated_at": "2026-02-03T07:22:49.488Z",
+  "summary_path": "evals/artifacts/summary.json",
+  "overall": {
+    "total": 0,
+    "pass_rate": 0,
+    "skill_signal_rate": 0
+  },
+  "infra": {
+    "total_in_summary": 1,
+    "infra_error_count": 1,
+    "skipped_count": 0
+  },
+  "word_impact": {
+    "pass": {
+      "overall_pass_rate": 0,
+      "top_positive": [],
+      "top_negative": []
+    },
+    "skill_signal": {
+      "overall_trigger_rate": 0,
+      "top_positive": [],
+      "top_negative": []
+    }
+  },
+  "clusters": [
+    {
+      "cluster_id": 0,
+      "size": 0,
+      "pass_rate": 0,
+      "skill_signal_rate": 0,
+      "top_terms": [],
+      "members": []
+    }
+  ],
+  "routing_failures": [],
+  "rows": [],
+  "rows_all": [
+    {
+      "id": "test-01",
+      "category": "onboarding",
+      "should_trigger": true,
+      "prompt": "I'm new here and want to create my first studio",
+      "overall_pass": false,
+      "score": 0,
+      "tokens_used": 0,
+      "commands_executed": 0,
+      "has_commands": false,
+      "skill_signal": false,
+      "skill_signal_method": "none",
+      "first_message": "",
+      "infra_error": "usage_limit",
+      "skipped": false
+    }
+  ]
+}

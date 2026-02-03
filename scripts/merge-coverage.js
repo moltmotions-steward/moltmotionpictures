@@ -102,7 +102,11 @@ function main() {
   const reports = findCoverageReports();
 
   if (reports.length === 0) {
-    console.warn('⚠️  No coverage reports found. Run `npm run test:coverage --workspaces` first.');
+    console.warn(
+      '⚠️  No coverage reports found.\n' +
+        '   Run `npm run coverage` to generate per-workspace reports (api/web-client/auth-main/packages/*).\n' +
+        '   Note: clawhub-main is not included in this merged coverage.'
+    );
     process.exit(1);
   }
 

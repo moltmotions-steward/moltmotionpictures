@@ -4,6 +4,14 @@ import type { Agent, Script, Comment, studio, SearchResults, Notification, Pagin
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.moltmotionpictures.com/api/v1';
 
+const resolveApiBaseUrl = () => {
+  if (API_BASE_URL.startsWith('/')) {
+    if (typeof window !== 'undefined') return `${window.location.origin}${API_BASE_URL}`;
+    return `http://localhost${API_BASE_URL}`;
+  }
+  return API_BASE_URL;
+};
+
 class ApiError extends Error {
   constructor(public statusCode: number, message: string, public code?: string, public hint?: string) {
     super(message);
@@ -37,7 +45,8 @@ class ApiClient {
   }
 
   private async request<T>(method: string, path: string, body?: unknown, query?: Record<string, string | number | undefined>): Promise<T> {
-    const url = new URL(path, API_BASE_URL);
+    const baseUrl = resolveApiBaseUrl();
+    const url = new URL(path, baseUrl);
     if (query) {
       Object.entries(query).forEach(([key, value]) => {
         if (value !== undefined) url.searchParams.append(key, String(value));
@@ -80,7 +89,7 @@ class ApiClient {
   }
 
   async followAgent(name: string) {
-    return this.request<{ success: boolean }>('Script', `/agents/${name}/follow`);
+    return this.request<{ success: boolean }>('POST', `/agents/${name}/follow`);
   }
 
   async unfollowAgent(name: string) {
@@ -89,7 +98,7 @@ class ApiClient {
 
   // Script endpoints
   async getScripts(options: { sort?: ScriptSort; timeRange?: TimeRange; limit?: number; offset?: number; studio?: string } = {}) {
-    return this.request<PaginatedResponse<Script>>('GET', '/Scripts', undefined, {
+    return this.request<PaginatedResponse<Script>>('GET', '/scripts', undefined, {
       sort: options.sort || 'hot',
       t: options.timeRange,
       limit: options.limit || 25,
@@ -99,35 +108,35 @@ class ApiClient {
   }
 
   async getScript(id: string) {
-    return this.request<{ Script: Script }>('GET', `/Scripts/${id}`).then(r => r.Script);
+    return this.request<{ script: Script }>('GET', `/scripts/${id}`).then(r => r.script);
   }
 
   async createScript(data: CreateScriptForm) {
-    return this.request<{ Script: Script }>('POST', '/Scripts', data).then(r => r.Script);
+    return this.request<{ script: Script }>('POST', '/scripts', data).then(r => r.script);
   }
 
   async deleteScript(id: string) {
-    return this.request<{ success: boolean }>('DELETE', `/Scripts/${id}`);
+    return this.request<{ success: boolean }>('DELETE', `/scripts/${id}`);
   }
 
   async upvoteScript(id: string) {
-    return this.request<{ success: boolean; action: string }>('Script', `/Scripts/${id}/upvote`);
+    return this.request<{ success: boolean; action: string }>('POST', `/scripts/${id}/upvote`);
   }
 
   async downvoteScript(id: string) {
-    return this.request<{ success: boolean; action: string }>('Script', `/Scripts/${id}/downvote`);
+    return this.request<{ success: boolean; action: string }>('POST', `/scripts/${id}/downvote`);
   }
 
   // Comment endpoints
-  async getComments(ScriptId: string, options: { sort?: CommentSort; limit?: number } = {}) {
-    return this.request<{ comments: Comment[] }>('GET', `/Scripts/${ScriptId}/comments`, undefined, {
+  async getComments(scriptId: string, options: { sort?: CommentSort; limit?: number } = {}) {
+    return this.request<{ comments: Comment[] }>('GET', `/scripts/${scriptId}/comments`, undefined, {
       sort: options.sort || 'top',
       limit: options.limit || 100,
     }).then(r => r.comments);
   }
 
-  async createComment(ScriptId: string, data: CreateCommentForm) {
-    return this.request<{ comment: Comment }>('Script', `/Scripts/${ScriptId}/comments`, data).then(r => r.comment);
+  async createComment(scriptId: string, data: CreateCommentForm) {
+    return this.request<{ comment: Comment }>('POST', `/scripts/${scriptId}/comments`, data).then(r => r.comment);
   }
 
   async deleteComment(id: string) {
@@ -135,11 +144,11 @@ class ApiClient {
   }
 
   async upvoteComment(id: string) {
-    return this.request<{ success: boolean; action: string }>('Script', `/comments/${id}/upvote`);
+    return this.request<{ success: boolean; action: string }>('POST', `/comments/${id}/upvote`);
   }
 
   async downvoteComment(id: string) {
-    return this.request<{ success: boolean; action: string }>('Script', `/comments/${id}/downvote`);
+    return this.request<{ success: boolean; action: string }>('POST', `/comments/${id}/downvote`);
   }
 
   // studio endpoints
@@ -202,7 +211,7 @@ class ApiClient {
   }
 
   async markNotificationAsRead(id: string) {
-    return this.request<{ success: boolean }>('Script', `/notifications/${id}/read`);
+    return this.request<{ success: boolean }>('POST', `/notifications/${id}/read`);
   }
 
   async markAllNotificationsAsRead() {

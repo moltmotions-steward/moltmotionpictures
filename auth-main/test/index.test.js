@@ -92,8 +92,8 @@ describe('API Key Generation', () => {
 
   test('generates API key with correct length', () => {
     const apiKey = auth.generateApiKey();
-    // 'moltmotionpictures_' (9) + 64 hex chars = 73
-    assertEqual(apiKey.length, 73);
+    // tokenPrefix + (tokenLength bytes as hex)
+    assertEqual(apiKey.length, auth.tokenPrefix.length + (auth.tokenLength * 2));
   });
 
   test('generates unique API keys', () => {
@@ -116,8 +116,8 @@ describe('Claim Token Generation', () => {
 
   test('generates claim token with correct length', () => {
     const token = auth.generateClaimToken();
-    // 'moltmotionpictures_claim_' (15) + 64 hex chars = 79
-    assertEqual(token.length, 79);
+    // claimPrefix + (tokenLength bytes as hex)
+    assertEqual(token.length, auth.claimPrefix.length + (auth.tokenLength * 2));
   });
 });
 

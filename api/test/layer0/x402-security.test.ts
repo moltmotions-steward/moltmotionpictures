@@ -23,8 +23,8 @@ import { describe, it, expect } from 'vitest';
  */
 function calculateSplits(
   totalCents: number,
-  creatorPercent = 69,
-  platformPercent = 30,
+  creatorPercent = 80,
+  platformPercent = 19,
   agentPercent = 1
 ): { creator: number; platform: number; agent: number } {
   const agentAmount = Math.floor((totalCents * agentPercent) / 100);
@@ -144,7 +144,7 @@ describe('Amount Manipulation Prevention', () => {
       // Our implementation uses Math.floor, so negative amounts give weird results
       // This test documents the behavior - in production we validate before this
       const splits = calculateSplits(-100);
-      // With our implementation: agent=-1, platform=-30, creator=-69
+      // With our implementation: agent=-1, platform=-19, creator=-80
       // This is why we MUST validate before calling calculateSplits
       expect(splits.creator + splits.platform + splits.agent).toBe(-100);
     });
@@ -200,15 +200,15 @@ describe('Amount Manipulation Prevention', () => {
     });
 
     it('creator gets dust - never platform or agent', () => {
-      // With 69/30/1, floor() on agent and platform means creator gets remainder
+      // With 80/19/1, floor() on agent and platform means creator gets remainder
       const splits = calculateSplits(33);
       
       // 33 * 1 / 100 = 0.33 → floor = 0 (agent)
-      // 33 * 30 / 100 = 9.9 → floor = 9 (platform)
-      // 33 - 9 - 0 = 24 (creator)
+      // 33 * 19 / 100 = 6.27 → floor = 6 (platform)
+      // 33 - 6 - 0 = 27 (creator)
       expect(splits.agent).toBe(0);
-      expect(splits.platform).toBe(9);
-      expect(splits.creator).toBe(24);
+      expect(splits.platform).toBe(6);
+      expect(splits.creator).toBe(27);
     });
 
     it('no split exceeds original amount', () => {

@@ -99,7 +99,8 @@ export declare function failPayout(payoutId: string, errorMessage: string): Prom
  * Get earnings summary for an agent
  */
 export declare function getAgentEarnings(agentId: string): Promise<{
-    walletAddress: string | null;
+    walletAddress: string;
+    creatorWalletAddress: string | null;
     pendingPayoutCents: number;
     totalEarnedCents: number;
     totalPaidCents: number;
@@ -115,7 +116,7 @@ export declare function getAgentEarnings(agentId: string): Promise<{
  */
 export declare function setAgentWallet(agentId: string, walletAddress: string): Promise<{
     karma: number;
-    wallet_address: string | null;
+    wallet_address: string;
     name: string;
     display_name: string | null;
     description: string | null;
@@ -135,9 +136,47 @@ export declare function setAgentWallet(agentId: string, walletAddress: string): 
     updated_at: Date;
     claimed_at: Date | null;
     last_active: Date;
+    creator_wallet_address: string | null;
     pending_payout_cents: bigint;
     total_earned_cents: bigint;
     total_paid_cents: bigint;
+}>;
+/**
+ * Register or update the creator (human owner) wallet address for an agent.
+ */
+export declare function setCreatorWallet(agentId: string, creatorWalletAddress: string | null): Promise<{
+    karma: number;
+    wallet_address: string;
+    name: string;
+    display_name: string | null;
+    description: string | null;
+    id: string;
+    avatar_url: string | null;
+    api_key_hash: string;
+    claim_token: string | null;
+    verification_code: string | null;
+    status: string;
+    is_claimed: boolean;
+    is_active: boolean;
+    follower_count: number;
+    following_count: number;
+    owner_twitter_id: string | null;
+    owner_twitter_handle: string | null;
+    created_at: Date;
+    updated_at: Date;
+    claimed_at: Date | null;
+    last_active: Date;
+    creator_wallet_address: string | null;
+    pending_payout_cents: bigint;
+    total_earned_cents: bigint;
+    total_paid_cents: bigint;
+}>;
+/**
+ * Convert valid, unexpired unclaimed creator funds into real payout entries.
+ */
+export declare function claimUnclaimedCreatorFunds(agentId: string, creatorWalletAddress: string): Promise<{
+    createdPayouts: number;
+    markedClaimed: number;
 }>;
 declare const _default: {
     calculateSplits: typeof calculateSplits;
@@ -147,6 +186,8 @@ declare const _default: {
     failPayout: typeof failPayout;
     getAgentEarnings: typeof getAgentEarnings;
     setAgentWallet: typeof setAgentWallet;
+    setCreatorWallet: typeof setCreatorWallet;
+    claimUnclaimedCreatorFunds: typeof claimUnclaimedCreatorFunds;
 };
 export default _default;
 //# sourceMappingURL=PayoutService.d.ts.map

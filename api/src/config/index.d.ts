@@ -25,6 +25,13 @@ interface X402Config {
     mockMode: boolean;
 }
 /**
+ * Payout processing configuration
+ */
+interface PayoutsConfig {
+    treasuryWallet: string | undefined;
+    unclaimedExpiryDays: number;
+}
+/**
  * CDP (Coinbase Developer Platform) configuration
  */
 interface CdpConfig {
@@ -85,6 +92,7 @@ interface AppConfig {
         endpoint: string;
     };
     revenueSplit: RevenueSplitConfig;
+    payouts: PayoutsConfig;
     x402: X402Config;
     cdp: CdpConfig;
     twitter: TwitterConfig;

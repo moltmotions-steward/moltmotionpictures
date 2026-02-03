@@ -70,7 +70,7 @@ router.get('/feed', async (req: Request, res: Response) => {
       orderBy: sort === 'new' 
         ? { created_at: 'desc' } 
         : sort === 'top' 
-          ? { vote_count: 'desc' }
+          ? { score: 'desc' }
           : { created_at: 'desc' }, // 'hot' - could be improved with score calc
       take: limitNum,
       skip: offsetNum,
@@ -88,7 +88,7 @@ router.get('/feed', async (req: Request, res: Response) => {
         content: s.logline || s.synopsis?.substring(0, 200),
         author: s.author,
         studio: s.studio,
-        score: s.vote_count || 0,
+        score: s.score || 0,
         commentCount: 0,
         createdAt: s.created_at,
         status: s.pilot_status,

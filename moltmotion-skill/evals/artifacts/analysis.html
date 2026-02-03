@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MoltMotion Eval Dashboard</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --card: #101a33;
+      --text: #e8edf7;
+      --muted: #9fb0d0;
+      --grid: rgba(255,255,255,0.08);
+      --pos: #4ade80;
+      --neg: #fb7185;
+      --barbg: rgba(255,255,255,0.06);
+    }
+    body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background: var(--bg); color: var(--text); }
+    header { padding: 18px 20px; border-bottom: 1px solid var(--grid); }
+    header h1 { margin: 0 0 6px 0; font-size: 18px; }
+    header .muted { font-size: 13px; }
+    main { padding: 18px 20px; display: grid; grid-template-columns: 1fr; gap: 14px; max-width: 1180px; margin: 0 auto; }
+    .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    @media (max-width: 900px) { .row { grid-template-columns: 1fr; } }
+    .card { background: var(--card); border: 1px solid var(--grid); border-radius: 12px; padding: 14px 14px; }
+    .card h2 { margin: 0 0 8px 0; font-size: 14px; }
+    .muted { color: var(--muted); }
+    .kpi { font-size: 26px; margin-top: 2px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 12px; }
+
+    .barchart { display: grid; gap: 8px; margin-top: 10px; }
+    .barrow { display: grid; grid-template-columns: 160px 1fr 240px; gap: 10px; align-items: center; }
+    @media (max-width: 900px) { .barrow { grid-template-columns: 1fr; } }
+    .barlabel { font-size: 12px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .barwrap { background: var(--barbg); border: 1px solid var(--grid); border-radius: 8px; height: 10px; overflow: hidden; }
+    .bar { height: 100%; }
+    .bar.pos { background: var(--pos); }
+    .bar.neg { background: var(--neg); }
+    .barvalue { font-size: 12px; color: var(--muted); }
+
+    .tablewrap { overflow-x: auto; margin-top: 10px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid var(--grid); padding: 8px 8px; text-align: left; vertical-align: top; font-size: 12px; }
+    th { color: var(--muted); font-weight: 600; }
+    ul { margin: 10px 0 0 18px; padding: 0; }
+    li { margin: 6px 0; font-size: 12px; }
+
+    .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--grid); background: rgba(255,255,255,0.03); font-size: 12px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>MoltMotion Eval Dashboard</h1>
+    <div class="muted">
+      Generated: 2026-02-03T07:22:49.488Z &nbsp;•&nbsp;
+      Summary: <span class="mono">evals/artifacts/summary.json</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="row">
+      <section class="card">
+        <div class="pill">Critical-only pass rate</div>
+        <div class="kpi">0%</div>
+        <div class="muted">Matches overall_pass in summary results.</div>
+      </section>
+      <section class="card">
+        <div class="pill">Skill signal rate</div>
+        <div class="kpi">0%</div>
+        <div class="muted">Heuristic signal from JSONL (not perfect).</div>
+      </section>
+      <section class="card">
+        <div class="pill">Total tests</div>
+        <div class="kpi">0</div>
+        <div class="muted">From analysis rows.</div>
+      </section>
+    </div>
+
+    
+    <section class="card">
+      <h2>Terms correlated with PASS (positive)</h2>
+      <div class="muted">Correlation ≠ causation. Use for ablation ideas.</div>
+      <div class="barchart"><div class="muted">No data</div></div>
+    </section>
+  
+
+    
+    <section class="card">
+      <h2>Terms correlated with PASS (negative)</h2>
+      <div class="muted">These terms show up more in FAILs.</div>
+      <div class="barchart"><div class="muted">No data</div></div>
+    </section>
+  
+
+    
+    <section class="card">
+      <h2>Terms correlated with Skill signal (positive)</h2>
+      <div class="muted">Which words tend to get the model to take the MoltMotion route.</div>
+      <div class="barchart"><div class="muted">No data</div></div>
+    </section>
+  
+
+    
+    <section class="card">
+      <h2>Terms correlated with Skill signal (negative)</h2>
+      <div class="muted">Words that correlate with not routing into the skill.</div>
+      <div class="barchart"><div class="muted">No data</div></div>
+    </section>
+  
+
+    
+    <section class="card">
+      <h2>Clusters</h2>
+      <div class="muted">TF‑IDF + k‑means. Use this to spot groups of prompts that fail together.</div>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Cluster</th>
+              <th>n</th>
+              <th>Pass</th>
+              <th>Skill signal</th>
+              <th>Top terms</th>
+              <th>Members</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+        <tr>
+          <td>0</td>
+          <td>0</td>
+          <td>0%</td>
+          <td>0%</td>
+          <td class="mono"></td>
+          <td class="mono"></td>
+        </tr>
+      
+          </tbody>
+        </table>
+      </div>
+    </section>
+  
+
+    
+    <section class="card">
+      <h2>Likely routing failures</h2>
+      <div class="muted">Heuristic: no commands + no skill signal. These often indicate the model treated the prompt as generic (not Molt Motion onboarding).</div>
+      <ul>
+        <li class="muted">None detected.</li>
+      </ul>
+    </section>
+  
+
+    <section class="card">
+      <h2>How to use this</h2>
+      <div class="muted">
+        Pick one failing cluster → create 3 A/B variants that change exactly one phrase → rerun just those tests.
+        The goal is to find stable “anchor phrases” that force correct routing without making negatives trigger.
+      </div>
+    </section>
+  </main>
+</body>
+</html>

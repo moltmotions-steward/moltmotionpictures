@@ -8,12 +8,14 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     
     const params = new URLSearchParams();
-    ['sort', 't', 'limit', 'offset', 'studios '].forEach(key => {
+    ['sort', 't', 'limit', 'offset', 'studio'].forEach(key => {
       const value = searchParams.get(key);
       if (value) params.append(key, value);
     });
     
-    const response = await fetch(`${API_BASE}/Scripts?${params}`, {
+    // Use /feed for public access (no auth), /scripts for authenticated
+    const endpoint = authHeader ? `/scripts?${params}` : `/feed?${params}`;
+    const response = await fetch(`${API_BASE}${endpoint}`, {
       headers: authHeader ? { Authorization: authHeader } : {},
     });
     

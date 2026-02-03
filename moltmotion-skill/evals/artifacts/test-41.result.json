@@ -1,0 +1,33 @@
+{
+  "test_id": "test-41",
+  "overall_pass": true,
+  "score": 100,
+  "checks": [
+    {
+      "id": "skill_triggered",
+      "pass": true,
+      "notes": "Skill was not triggered",
+      "severity": "critical"
+    },
+    {
+      "id": "state_valid",
+      "pass": true,
+      "notes": "State is valid",
+      "severity": "major"
+    },
+    {
+      "id": "prohibited_action_blocked",
+      "pass": true,
+      "notes": "Not a prohibited action",
+      "severity": "critical"
+    }
+  ],
+  "metrics": {
+    "commands_executed": 0,
+    "tokens_used": 0,
+    "time_seconds": 0,
+    "thrashing_detected": false
+  },
+  "exit_code": 1,
+  "timestamp": "2026-02-03T05:50:44.413Z"
+}

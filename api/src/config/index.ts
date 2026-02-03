@@ -5,6 +5,60 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+function isTruthyEnv(value: string | undefined): boolean {
+  if (!value) return false;
+  return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
+}
+
+function composeManagedPostgresUrlFromDoEnv(): string | undefined {
+  const user = process.env.DO_PG_USER;
+  const password = process.env.DO_PG_PASSWORD;
+  const host = process.env.DO_PG_HOST;
+  const port = process.env.DO_PG_PORT;
+  const dbName = process.env.DO_PG_DB_NAME;
+
+  if (!user || !password || !host || !port || !dbName) return undefined;
+
+  const auth = `${encodeURIComponent(user)}:${encodeURIComponent(password)}`;
+  const db = encodeURIComponent(dbName);
+  const base = `postgresql://${auth}@${host}:${port}/${db}`;
+
+  // DigitalOcean Managed Postgres requires TLS.
+  // Prisma/pg will respect sslmode=require embedded in the connection string.
+  const params = new URLSearchParams();
+  params.set('sslmode', 'require');
+  return `${base}?${params.toString()}`;
+}
+
+function composeManagedRedisUrlFromDoEnv(): string | undefined {
+  const user = process.env.DO_REDIS_USER;
+  const password = process.env.DO_REDIS_PASSWORD;
+  const host = process.env.DO_REDIS_HOST;
+  const port = process.env.DO_REDIS_PORT;
+
+  if (!password || !host || !port) return undefined;
+
+  // DO Managed Redis uses TLS. ioredis supports this via rediss://
+  const username = user ?? 'default';
+  const auth = `${encodeURIComponent(username)}:${encodeURIComponent(password)}`;
+  return `rediss://${auth}@${host}:${port}`;
+}
+
+// If you want to use DO managed services without manually crafting DATABASE_URL/REDIS_URL,
+// set USE_MANAGED_SERVICES=1 (or MOLT_PREFER_MANAGED_SERVICES=1).
+const preferManagedServices =
+  isTruthyEnv(process.env.USE_MANAGED_SERVICES) ||
+  isTruthyEnv(process.env.MOLT_PREFER_MANAGED_SERVICES);
+
+const managedDatabaseUrl = composeManagedPostgresUrlFromDoEnv();
+const managedRedisUrl = composeManagedRedisUrlFromDoEnv();
+
+// Populate process.env early so Prisma (and other modules) can read it.
+if (preferManagedServices) {
+  if (managedDatabaseUrl) process.env.DATABASE_URL ||= managedDatabaseUrl;
+  if (managedRedisUrl) process.env.REDIS_URL ||= managedRedisUrl;
+}
+
 /**
  * Rate limit configuration
  */
@@ -33,6 +87,14 @@ interface X402Config {
   minTipCents: number;
   mockMode: boolean;
   // No max - let people tip what they want
+}
+
+/**
+ * Payout processing configuration
+ */
+interface PayoutsConfig {
+  treasuryWallet: string | undefined;
+  unclaimedExpiryDays: number;
 }
 
 /**
@@ -116,6 +178,9 @@ interface AppConfig {
   // Revenue split for tips (69/30/1)
   revenueSplit: RevenueSplitConfig;
 
+  // Payout processing settings
+  payouts: PayoutsConfig;
+
   // x402 payment configuration
   x402: X402Config;
 
@@ -135,7 +200,7 @@ const config: AppConfig = {
   // Database
   database: {
     url: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: (process.env.NODE_ENV === 'production' || preferManagedServices) ? { rejectUnauthorized: false } : false
   },
   
   // Redis (optional)
@@ -183,12 +248,18 @@ const config: AppConfig = {
     endpoint: process.env.DO_GRADIENT_ENDPOINT || 'https://inference.do-ai.run'
   },
 
-  // Revenue split for tips: 69% creator, 30% platform, 1% agent
-  // The agent that wrote the script gets its own cut
+  // Revenue split for tips: 80% creator, 19% platform, 1% agent
+  // The agent that wrote the winning content gets its own cut
   revenueSplit: {
-    creatorPercent: 69,   // Human creator/user who owns the agent
-    platformPercent: 30,  // Platform fee
+    creatorPercent: 80,   // Human creator/user who owns the agent
+    platformPercent: 19,  // Platform fee
     agentPercent: 1       // The AI agent that authored the winning content
+  },
+
+  payouts: {
+    // Where expired/unclaimed funds end up (defaults to the platform wallet)
+    treasuryWallet: process.env.TREASURY_WALLET_ADDRESS || process.env.PLATFORM_WALLET_ADDRESS,
+    unclaimedExpiryDays: parseInt(process.env.UNCLAIMED_EXPIRY_DAYS || '30', 10)
   },
 
   // x402 payment configuration (Base USDC)
@@ -220,7 +291,21 @@ function validateConfig(): void {
   const required: string[] = [];
   
   if (config.isProduction) {
-    required.push('DATABASE_URL', 'JWT_SECRET');
+    // Allow either DATABASE_URL directly, or managed Postgres env vars when opting into managed.
+    const hasDatabaseUrl = Boolean(config.database.url);
+    const hasManagedPgVars = Boolean(
+      process.env.DO_PG_USER &&
+        process.env.DO_PG_PASSWORD &&
+        process.env.DO_PG_HOST &&
+        process.env.DO_PG_PORT &&
+        process.env.DO_PG_DB_NAME
+    );
+
+    if (!hasDatabaseUrl && !(preferManagedServices && hasManagedPgVars)) {
+      required.push('DATABASE_URL');
+    }
+
+    required.push('JWT_SECRET');
     
     // x402 payments require CDP + wallet in production
     if (!process.env.X402_MOCK_MODE) {

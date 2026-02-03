@@ -40,7 +40,7 @@ describe('Gradient Types', () => {
       for (const [id, model] of Object.entries(GRADIENT_MODELS)) {
         expect(model.id).toBe(id);
         expect(model.name).toBeTruthy();
-        expect(['llm', 'image', 'video', 'vision']).toContain(model.type);
+        expect(['llm', 'image', 'video', 'vision', 'audio']).toContain(model.type);
       }
     });
   });

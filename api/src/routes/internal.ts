@@ -10,6 +10,7 @@ import { runCronTick, getVotingDashboard } from '../services/VotingPeriodManager
 import * as PaymentMetrics from '../services/PaymentMetrics.js';
 import * as RefundService from '../services/RefundService.js';
 import { processPayouts } from '../services/PayoutProcessor.js';
+import { sweepExpiredUnclaimedFunds } from '../services/UnclaimedFundProcessor.js';
 
 const router = Router();
 
@@ -248,6 +249,36 @@ router.post('/cron/refunds', validateCronSecret, async (req: Request, res: Respo
     });
   } catch (error) {
     console.error('[Internal] Refund cron failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      duration_ms: Date.now() - startTime
+    });
+  }
+});
+
+/**
+ * POST /internal/cron/unclaimed-funds
+ *
+ * Sweeps expired unclaimed funds to the platform treasury.
+ */
+router.post('/cron/unclaimed-funds', validateCronSecret, async (req: Request, res: Response) => {
+  const startTime = Date.now();
+
+  try {
+    console.log('[Internal] Unclaimed funds sweep cron triggered');
+
+    const stats = await sweepExpiredUnclaimedFunds();
+
+    res.json({
+      success: true,
+      message: 'Unclaimed funds sweep completed',
+      stats,
+      duration_ms: Date.now() - startTime,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('[Internal] Unclaimed funds sweep cron failed:', error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

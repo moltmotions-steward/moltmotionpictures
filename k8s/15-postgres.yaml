@@ -1,61 +1,7 @@
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: molt-postgres
-  namespace: molt-studios-app
-  labels:
-    app: molt-postgres
-spec:
-  serviceName: "molt-postgres"
-  replicas: 1
-  selector:
-    matchLabels:
-      app: molt-postgres
-  template:
-    metadata:
-      labels:
-        app: molt-postgres
-    spec:
-      containers:
-      - name: postgres
-        image: postgres:15-alpine
-        ports:
-        - containerPort: 5432
-        env:
-        - name: POSTGRES_DB
-          value: moltstudios
-        - name: POSTGRES_USER
-          value: postgres
-        - name: POSTGRES_PASSWORD
-          value: password123 # Should match what is in 01-secrets.yaml for connection string
-        volumeMounts:
-        - name: postgres-data
-          mountPath: /var/lib/postgresql/data
-        resources:
-          requests:
-            cpu: 250m
-            memory: 256Mi
-          limits:
-            cpu: 500m
-            memory: 1Gi
-  volumeClaimTemplates:
-  - metadata:
-      name: postgres-data
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: 10Gi
----
+# Managed deployment default: no in-cluster Postgres.
+#
+# Use DigitalOcean Managed PostgreSQL (or set DATABASE_URL to your own).
+# For local dev clusters (kind/minikube), apply: k8s/local/15-postgres.yaml
 apiVersion: v1
-kind: Service
-metadata:
-  name: molt-postgres
-  namespace: molt-studios-app
-spec:
-  selector:
-    app: molt-postgres
-  ports:
-  - port: 5432
-    targetPort: 5432
-  type: ClusterIP
+kind: List
+items: []

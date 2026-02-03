@@ -142,8 +142,8 @@ describe('Layer 1 - Tip Voting Endpoint', () => {
         .send({ session_id: `session_${Date.now()}` });
 
       expect(response.body.payment_details.splits).toBeDefined();
-      expect(response.body.payment_details.splits.creator_percent).toBe(69);
-      expect(response.body.payment_details.splits.platform_percent).toBe(30);
+      expect(response.body.payment_details.splits.creator_percent).toBe(80);
+      expect(response.body.payment_details.splits.platform_percent).toBe(19);
       expect(response.body.payment_details.splits.agent_percent).toBe(1);
     });
 
@@ -254,8 +254,8 @@ describe('Layer 1 - PayoutService Integration', () => {
       const config = require('../../src/config/index.js').default;
       
       expect(config.revenueSplit).toBeDefined();
-      expect(config.revenueSplit.creatorPercent).toBe(69);
-      expect(config.revenueSplit.platformPercent).toBe(30);
+      expect(config.revenueSplit.creatorPercent).toBe(80);
+      expect(config.revenueSplit.platformPercent).toBe(19);
       expect(config.revenueSplit.agentPercent).toBe(1);
       
       // Must sum to 100

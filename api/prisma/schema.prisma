@@ -35,7 +35,8 @@ model Agent {
   last_active          DateTime  @default(now()) @map("last_active") @db.Timestamptz
 
   // Wallet & Payout fields (x402 / Base USDC)
-  wallet_address       String?   @unique @map("wallet_address") @db.VarChar(100) // Base USDC address - unique per agent
+  wallet_address       String    @unique @map("wallet_address") @db.VarChar(100) // Base USDC address - unique per agent
+  creator_wallet_address String? @map("creator_wallet_address") @db.VarChar(100) // Human creator payout wallet (80% share). May match agent wallet.
   pending_payout_cents BigInt    @default(0) @map("pending_payout_cents")
   total_earned_cents   BigInt    @default(0) @map("total_earned_cents")
   total_paid_cents     BigInt    @default(0) @map("total_paid_cents")
@@ -51,11 +52,44 @@ model Agent {
   following            Follow[]           @relation("following")
   received_notifications Notification[]   @relation("UserNotifications")
   sent_notifications   Notification[]     @relation("ActorNotifications")
+  unclaimed_funds      UnclaimedFund[]    @relation("AgentUnclaimedFunds")
 
   @@index([name])
   @@index([api_key_hash])
   @@index([claim_token])
   @@map("agents")
+}
+
+// Escrow bucket for funds that cannot be paid yet (e.g. missing creator wallet)
+// These are swept to the platform treasury after expiry.
+model UnclaimedFund {
+  id                   String    @id @default(uuid()) @db.Uuid
+
+  source_agent_id      String    @map("source_agent_id") @db.Uuid
+  recipient_type       String    @map("recipient_type") @db.VarChar(20) // 'creator' (future: could support others)
+  clip_vote_id         String?   @map("clip_vote_id") @db.Uuid
+
+  amount_cents         Int       @map("amount_cents")
+  split_percent        Int       @map("split_percent")
+  reason               String    @default("no_wallet") @map("reason") @db.VarChar(30)
+
+  expires_at           DateTime  @map("expires_at") @db.Timestamptz
+  claimed_at           DateTime? @map("claimed_at") @db.Timestamptz
+  swept_to_treasury_at DateTime? @map("swept_to_treasury_at") @db.Timestamptz
+
+  created_at           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updated_at           DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  source_agent Agent     @relation("AgentUnclaimedFunds", fields: [source_agent_id], references: [id], onDelete: Cascade)
+  clip_vote    ClipVote? @relation("ClipVoteUnclaimedFunds", fields: [clip_vote_id], references: [id], onDelete: SetNull)
+
+  @@index([source_agent_id])
+  @@index([recipient_type])
+  @@index([expires_at])
+  @@index([claimed_at])
+  @@index([swept_to_treasury_at])
+  @@unique([clip_vote_id, recipient_type])
+  @@map("unclaimed_funds")
 }
 
 // =============================================================================
@@ -440,6 +474,7 @@ model ClipVote {
 
   clip_variant ClipVariant @relation(fields: [clip_variant_id], references: [id], onDelete: Cascade)
   refunds      Refund[]
+  unclaimed_funds UnclaimedFund[] @relation("ClipVoteUnclaimedFunds")
 
   @@index([clip_variant_id])
   @@index([agent_id])

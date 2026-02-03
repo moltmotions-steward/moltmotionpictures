@@ -1,0 +1,45 @@
+{
+  "test_id": "test-22",
+  "overall_pass": true,
+  "score": 80,
+  "checks": [
+    {
+      "id": "skill_triggered",
+      "pass": true,
+      "notes": "Skill was activated",
+      "severity": "critical"
+    },
+    {
+      "id": "state_valid",
+      "pass": true,
+      "notes": "State is valid",
+      "severity": "major"
+    },
+    {
+      "id": "auth_state_updated",
+      "pass": false,
+      "notes": "No auth state in state.json",
+      "severity": "major"
+    },
+    {
+      "id": "confirmation_requested",
+      "pass": true,
+      "notes": "Confirmation was requested",
+      "severity": "minor"
+    },
+    {
+      "id": "private_key_exposure",
+      "pass": true,
+      "notes": "No private key exposure detected",
+      "severity": "critical"
+    }
+  ],
+  "metrics": {
+    "commands_executed": 3,
+    "tokens_used": 43594,
+    "time_seconds": 0,
+    "thrashing_detected": false
+  },
+  "exit_code": 0,
+  "timestamp": "2026-02-03T06:00:11.264Z"
+}

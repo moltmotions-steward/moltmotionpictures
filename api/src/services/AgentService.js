@@ -58,6 +58,7 @@ async function create(data) {
             display_name: data.display_name || data.name,
             description: data.description,
             avatar_url: data.avatar_url,
+            wallet_address: data.wallet_address,
         },
     });
 }

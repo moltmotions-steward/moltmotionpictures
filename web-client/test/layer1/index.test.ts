@@ -13,8 +13,18 @@ import { describe, it, expect, beforeAll } from 'vitest';
  */
 
 describe('Layer 1 - Web Client Integration Tests', () => {
-  const BASE_URL = process.env.TEST_WEB_URL || 'http://localhost:3000';
+  const BASE_URL = process.env.TEST_WEB_URL;
   const API_BASE = process.env.API_BASE_URL || 'http://localhost:3001';
+
+  if (!BASE_URL) {
+    describe.skip('Layer 1 - Web Client Integration Tests (skipped)', () => {
+      it('requires TEST_WEB_URL to be set', () => {
+        // Example: TEST_WEB_URL=http://localhost:3000 npm run test:layer1
+        expect(true).toBe(true);
+      });
+    });
+    return;
+  }
 
   beforeAll(async () => {
     console.log(`🧪 Starting Layer 1 Web Client Tests against ${BASE_URL}`);

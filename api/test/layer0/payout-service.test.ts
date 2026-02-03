@@ -9,8 +9,8 @@ import { describe, it, expect } from 'vitest';
 // We'll mock the config for testing
 const MOCK_CONFIG = {
   revenueSplit: {
-    creatorPercent: 69,
-    platformPercent: 30,
+    creatorPercent: 80,
+    platformPercent: 19,
     agentPercent: 1,
   },
 };
@@ -21,8 +21,8 @@ const MOCK_CONFIG = {
  */
 function calculateSplits(
   totalCents: number,
-  creatorPercent = 69,
-  platformPercent = 30,
+  creatorPercent = 80,
+  platformPercent = 19,
   agentPercent = 1
 ): { creator: number; platform: number; agent: number } {
   // Calculate each split (floor to avoid fractional cents)
@@ -40,52 +40,52 @@ function calculateSplits(
 
 describe('PayoutService Pure Logic', () => {
   describe('calculateSplits', () => {
-    it('calculates 69/30/1 split correctly for $0.25 tip', () => {
+    it('calculates 80/19/1 split correctly for $0.25 tip', () => {
       const tipCents = 25;
       const splits = calculateSplits(tipCents);
 
       // Agent: floor(25 * 1 / 100) = 0
       expect(splits.agent).toBe(0);
 
-      // Platform: floor(25 * 30 / 100) = 7
-      expect(splits.platform).toBe(7);
+      // Platform: floor(25 * 19 / 100) = 4
+      expect(splits.platform).toBe(4);
 
-      // Creator: 25 - 7 - 0 = 18
-      expect(splits.creator).toBe(18);
+      // Creator: 25 - 4 - 0 = 21
+      expect(splits.creator).toBe(21);
 
       // Total should equal input
       expect(splits.creator + splits.platform + splits.agent).toBe(tipCents);
     });
 
-    it('calculates 69/30/1 split correctly for $1.00 tip', () => {
+    it('calculates 80/19/1 split correctly for $1.00 tip', () => {
       const tipCents = 100;
       const splits = calculateSplits(tipCents);
 
       // Agent: floor(100 * 1 / 100) = 1
       expect(splits.agent).toBe(1);
 
-      // Platform: floor(100 * 30 / 100) = 30
-      expect(splits.platform).toBe(30);
+      // Platform: floor(100 * 19 / 100) = 19
+      expect(splits.platform).toBe(19);
 
-      // Creator: 100 - 30 - 1 = 69
-      expect(splits.creator).toBe(69);
+      // Creator: 100 - 19 - 1 = 80
+      expect(splits.creator).toBe(80);
 
       // Total should equal input
       expect(splits.creator + splits.platform + splits.agent).toBe(tipCents);
     });
 
-    it('calculates 69/30/1 split correctly for $5.00 tip (max)', () => {
+    it('calculates 80/19/1 split correctly for $5.00 tip (max)', () => {
       const tipCents = 500;
       const splits = calculateSplits(tipCents);
 
       // Agent: floor(500 * 1 / 100) = 5
       expect(splits.agent).toBe(5);
 
-      // Platform: floor(500 * 30 / 100) = 150
-      expect(splits.platform).toBe(150);
+      // Platform: floor(500 * 19 / 100) = 95
+      expect(splits.platform).toBe(95);
 
-      // Creator: 500 - 150 - 5 = 345
-      expect(splits.creator).toBe(345);
+      // Creator: 500 - 95 - 5 = 400
+      expect(splits.creator).toBe(400);
 
       // Total should equal input
       expect(splits.creator + splits.platform + splits.agent).toBe(tipCents);
@@ -98,11 +98,11 @@ describe('PayoutService Pure Logic', () => {
       // Agent: floor(10 * 1 / 100) = 0
       expect(splits.agent).toBe(0);
 
-      // Platform: floor(10 * 30 / 100) = 3
-      expect(splits.platform).toBe(3);
+      // Platform: floor(10 * 19 / 100) = 1
+      expect(splits.platform).toBe(1);
 
-      // Creator: 10 - 3 - 0 = 7
-      expect(splits.creator).toBe(7);
+      // Creator: 10 - 1 - 0 = 9
+      expect(splits.creator).toBe(9);
 
       // Total should equal input
       expect(splits.creator + splits.platform + splits.agent).toBe(tipCents);
@@ -115,11 +115,11 @@ describe('PayoutService Pure Logic', () => {
       // Agent: floor(100000 * 1 / 100) = 1000
       expect(splits.agent).toBe(1000);
 
-      // Platform: floor(100000 * 30 / 100) = 30000
-      expect(splits.platform).toBe(30000);
+      // Platform: floor(100000 * 19 / 100) = 19000
+      expect(splits.platform).toBe(19000);
 
-      // Creator: 100000 - 30000 - 1000 = 69000
-      expect(splits.creator).toBe(69000);
+      // Creator: 100000 - 19000 - 1000 = 80000
+      expect(splits.creator).toBe(80000);
 
       // Total should equal input
       expect(splits.creator + splits.platform + splits.agent).toBe(tipCents);
@@ -136,11 +136,11 @@ describe('PayoutService Pure Logic', () => {
       // Agent: floor(33 * 1 / 100) = 0
       expect(splits.agent).toBe(0);
 
-      // Platform: floor(33 * 30 / 100) = 9
-      expect(splits.platform).toBe(9);
+      // Platform: floor(33 * 19 / 100) = 6
+      expect(splits.platform).toBe(6);
 
-      // Creator gets the rest: 33 - 9 - 0 = 24
-      expect(splits.creator).toBe(24);
+      // Creator gets the rest: 33 - 6 - 0 = 27
+      expect(splits.creator).toBe(27);
     });
 
     it('all splits are non-negative', () => {

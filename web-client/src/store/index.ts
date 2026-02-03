@@ -116,9 +116,12 @@ export const useFeedStore = create<FeedStore>((set, get) => ({
     set({ isLoading: true });
     try {
       const offset = reset ? 0 : get().offset;
+      const { apiKey } = useAuthStore.getState();
       const response = studio 
         ? await api.getStudioFeed(studio, { sort, limit: 25, offset })
-        : await api.getScripts({ sort, timeRange, limit: 25, offset });
+        : apiKey
+          ? await api.getScripts({ sort, timeRange, limit: 25, offset })
+          : await api.getFeed({ sort, limit: 25, offset });
       
       set({
         Scripts: reset ? response.data : [...get().Scripts, ...response.data],

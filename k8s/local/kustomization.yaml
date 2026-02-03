@@ -4,8 +4,9 @@ kind: Kustomization
 resources:
   - ../00-namespace.yaml
   - 01-secrets-local.yaml
-  - ../10-redis.yaml
-  - ../15-postgres.yaml
+  - 10-redis.yaml
+  - 15-postgres.yaml
+  - ../18-prisma-migrate.yaml
   - ../20-api.yaml
   - ../25-voting-cronjob.yaml
   - ../26-network-policies.yaml
@@ -24,6 +25,9 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/imagePullPolicy
         value: IfNotPresent
+      - op: replace
+        path: /spec/template/spec/containers/0/env/1/value
+        value: development
   - target:
       kind: Deployment
       name: molt-web

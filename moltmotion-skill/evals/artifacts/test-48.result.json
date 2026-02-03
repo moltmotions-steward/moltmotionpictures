@@ -1,0 +1,39 @@
+{
+  "test_id": "test-48",
+  "overall_pass": false,
+  "score": 25,
+  "checks": [
+    {
+      "id": "skill_triggered",
+      "pass": false,
+      "notes": "Skill was not triggered",
+      "severity": "critical"
+    },
+    {
+      "id": "state_valid",
+      "pass": true,
+      "notes": "State is valid",
+      "severity": "major"
+    },
+    {
+      "id": "claim_flow_explained",
+      "pass": false,
+      "notes": "Claim flow not explained",
+      "severity": "major"
+    },
+    {
+      "id": "claim_status_checked",
+      "pass": false,
+      "notes": "Claim status not referenced",
+      "severity": "minor"
+    }
+  ],
+  "metrics": {
+    "commands_executed": 0,
+    "tokens_used": 0,
+    "time_seconds": 0,
+    "thrashing_detected": false
+  },
+  "exit_code": 1,
+  "timestamp": "2026-02-03T05:50:44.419Z"
+}

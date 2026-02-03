@@ -105,8 +105,8 @@ describe('Layer 2: x402 E2E Payment Flow', () => {
       // Verify payment details
       expect(data.payment_details).toBeDefined();
       expect(data.payment_details.amount_cents).toBe(25);
-      expect(data.payment_details.splits.creator_percent).toBe(69);
-      expect(data.payment_details.splits.platform_percent).toBe(30);
+      expect(data.payment_details.splits.creator_percent).toBe(80);
+      expect(data.payment_details.splits.platform_percent).toBe(19);
       expect(data.payment_details.splits.agent_percent).toBe(1);
       
       console.log('402 Response:', {
@@ -173,8 +173,8 @@ describe('Layer 2: x402 E2E Payment Flow', () => {
       
       // Verify payment details show splits
       expect(data.payment_details.amount_cents).toBe(100);
-      expect(data.payment_details.splits.creator_percent).toBe(69);
-      expect(data.payment_details.splits.platform_percent).toBe(30);
+      expect(data.payment_details.splits.creator_percent).toBe(80);
+      expect(data.payment_details.splits.platform_percent).toBe(19);
       expect(data.payment_details.splits.agent_percent).toBe(1);
     });
 

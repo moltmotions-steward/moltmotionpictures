@@ -94,6 +94,14 @@ spec:
   policyTypes:
   - Egress
   egress:
+  # Allow egress to molt-api (the job calls internal endpoints)
+  - to:
+    - podSelector:
+        matchLabels:
+          app: molt-api
+    ports:
+    - port: 3001
+      protocol: TCP
   # Allow DNS
   - to:
     - namespaceSelector:
@@ -102,14 +110,6 @@ spec:
     ports:
     - port: 53
       protocol: UDP
-  # Allow PostgreSQL
-  - to:
-    - podSelector:
-        matchLabels:
-          app: molt-postgres
-    ports:
-    - port: 5432
-      protocol: TCP
   # Allow external HTTPS (CDP API, blockchain RPC)
   - to:
     - ipBlock:

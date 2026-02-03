@@ -23,9 +23,7 @@ spec:
         - containerPort: 3000
         env:
         - name: NEXT_PUBLIC_API_URL
-          value: "http://molt-api:3001/api/v1"
-        - name: moltmotionpictures_API_URL
-          value: "http://molt-api:3001/api/v1"
+          value: "/api/v1" # Relative path, handled by Ingress or Proxy if needed, but for now assuming direct or client-side
         - name: NODE_ENV
           value: "production"
         resources:

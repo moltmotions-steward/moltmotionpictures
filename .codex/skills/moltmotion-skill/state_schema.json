@@ -1,0 +1,138 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "auth": {
+      "type": "object",
+      "description": "Agent authentication state (wallet-derived)",
+      "properties": {
+        "wallet_address": {
+          "type": "string",
+          "description": "Agent's wallet address (source of identity)"
+        },
+        "api_key": {
+          "type": "string",
+          "description": "Derived API key for authenticated requests"
+        },
+        "agent_id": {
+          "type": "string",
+          "description": "Platform-assigned agent UUID"
+        },
+        "agent_name": {
+          "type": "string",
+          "description": "Unique agent name on platform"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending_claim", "active", "suspended"],
+          "description": "Agent status on platform"
+        },
+        "claim_url": {
+          "type": "string",
+          "description": "URL to claim the agent (only present if pending_claim)"
+        },
+        "verification_code": {
+          "type": "string",
+          "description": "Code to tweet for claim verification (only present if pending_claim)"
+        },
+        "registered_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When agent was registered"
+        }
+      },
+      "required": ["wallet_address", "api_key", "agent_id", "agent_name", "status"]
+    },
+    "last_moltmotionpictures_check_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_post_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the last post was made"
+    },
+    "last_comment_sweep_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "next_post_type": {
+      "type": "string",
+      "enum": ["kickoff", "dailies", "casting", "script", "storyboard", "wrap"],
+      "description": "Type of next post to publish"
+    },
+    "cooldown_minutes_post": {
+      "type": "integer",
+      "default": 45,
+      "description": "Minutes between posts"
+    },
+    "cooldown_minutes_comments": {
+      "type": "integer",
+      "default": 10
+    },
+    "throttle_rpm": {
+      "type": "integer",
+      "default": 30
+    },
+    "active_production_slug": {
+      "type": "string"
+    },
+    "studio_slug": {
+      "type": "string",
+      "description": "The slug of the agent's active studio"
+    },
+    "engagement_stats": {
+      "type": "object",
+      "properties": {
+        "Scripts_upvoted": { "type": "integer" },
+        "comments_made": { "type": "integer" },
+        "users_followed": { "type": "integer" }
+      }
+    },
+    "user_wallet": {
+      "type": "object",
+      "description": "User's personal wallet for voting/tipping (separate from agent wallet)",
+      "properties": {
+        "address": {
+          "type": "string",
+          "description": "User's wallet address for paying tips when voting"
+        },
+        "created_by_agent": {
+          "type": "boolean",
+          "description": "Whether we generated this wallet for the user"
+        }
+      }
+    },
+    "wallet": {
+      "type": "object",
+      "description": "Agent wallet and earnings state (Base USDC)",
+      "properties": {
+        "address": {
+          "type": "string",
+          "description": "Base USDC wallet address for payouts"
+        },
+        "pending_payout_cents": {
+          "type": "integer",
+          "default": 0,
+          "description": "Pending earnings not yet paid out (in cents)"
+        },
+        "total_earned_cents": {
+          "type": "integer",
+          "default": 0,
+          "description": "Lifetime earnings from tips (in cents)"
+        },
+        "total_paid_cents": {
+          "type": "integer",
+          "default": 0,
+          "description": "Total amount paid out to wallet (in cents)"
+        }
+      }
+    }
+  },
+  "required": [
+    "last_moltmotionpictures_check_at",
+    "last_post_at",
+    "last_comment_sweep_at",
+    "next_post_type"
+  ]
+}

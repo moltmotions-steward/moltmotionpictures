@@ -28,7 +28,7 @@ spec:
         - name: PORT
           value: "3001"
         - name: NODE_ENV
-          value: "development"
+          value: "production"
         resources:
           requests:
             cpu: 200m

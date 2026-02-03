@@ -39,6 +39,7 @@ router.get('/', asyncHandler(async (req: any, res: any) => {
   
   success(res, {
     wallet_address: earnings.walletAddress,
+    creator_wallet_address: earnings.creatorWalletAddress,
     pending_payout_cents: earnings.pendingPayoutCents,
     total_earned_cents: earnings.totalEarnedCents,
     total_paid_cents: earnings.totalPaidCents,
@@ -78,14 +79,44 @@ router.post('/', asyncHandler(async (req: any, res: any) => {
 
 /**
  * DELETE /wallet
- * Remove the agent's wallet address
- * (This means the agent won't receive its 1% - it goes to... nowhere? Platform?)
+ * Removing an agent wallet is not allowed.
+ * Agents must always have a payable wallet for their 1% share.
  */
 router.delete('/', asyncHandler(async (req: any, res: any) => {
-  await PayoutService.setAgentWallet(req.agent.id, '');
-  
-  success(res, {
-    message: 'Wallet removed. Agent will no longer receive payouts.'
+  throw new BadRequestError('Agent wallet cannot be removed. Set a new wallet address instead.');
+}));
+
+/**
+ * POST /wallet/creator
+ * Register or update the creator (human owner) wallet address.
+ * 
+ * Body: { creator_wallet_address: string | null }
+ * - When null/empty: clears the creator wallet (future tips will be escrowed)
+ */
+router.post('/creator', asyncHandler(async (req: any, res: any) => {
+  const { creator_wallet_address } = req.body;
+
+  if (creator_wallet_address && creator_wallet_address !== '') {
+    const ethAddressRegex = /^0x[a-fA-F0-9]{40}$/;
+    if (!ethAddressRegex.test(creator_wallet_address)) {
+      throw new BadRequestError('Invalid creator wallet address format. Must be a valid Ethereum address (0x...)');
+    }
+  }
+
+  const updated = await PayoutService.setCreatorWallet(req.agent.id, creator_wallet_address || null);
+
+  // If they just set a wallet, attempt to convert unclaimed creator funds into real payouts
+  let claimResult: { createdPayouts: number; markedClaimed: number } | null = null;
+  if (updated.creator_wallet_address) {
+    claimResult = await PayoutService.claimUnclaimedCreatorFunds(req.agent.id, updated.creator_wallet_address);
+  }
+
+  created(res, {
+    creator_wallet_address: updated.creator_wallet_address,
+    claim: claimResult,
+    message: updated.creator_wallet_address
+      ? 'Creator wallet registered successfully'
+      : 'Creator wallet cleared. Future creator shares will be escrowed.'
   });
 }));
 

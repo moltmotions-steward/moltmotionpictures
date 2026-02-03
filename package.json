@@ -10,6 +10,7 @@
     "packages/*"
   ],
   "scripts": {
+    "postinstall": "node scripts/postinstall.js",
     "start:api": "npm start --workspace=@moltstudios/api",
     "start:web": "npm run dev --workspace=@moltstudios/web-client",
     "test": "npm test --workspaces --if-present",
@@ -30,7 +31,7 @@
     "test:e2e:ui": "npm run test:e2e:ui --workspace=@moltstudios/web-client",
     "test:all": "npm run test:layer0 && npm run test:layer1 && npm run test:layer2 && npm run test:layer3:unit && npm run test:e2e",
     "test:full": "npm run test:all && npm run test:layer3:k6:api && npm run test:layer3:k6:web",
-    "coverage": "npm run test:coverage --workspaces && node scripts/merge-coverage.js",
+    "coverage": "node scripts/run-coverage-workspaces.mjs && node scripts/merge-coverage.mjs",
     "lint": "npm run lint --workspaces --if-present",
     "check:security": "node scripts/check-disable-drift.js"
   },
@@ -40,7 +41,13 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@rollup/rollup-darwin-arm64": "^4.57.1",
     "ajv": "^8.17.1",
-    "ajv-formats": "^3.0.1"
+    "ajv-formats": "^3.0.1",
+    "jsdom": "^23.0.1",
+    "confbox": "^0.2.2"
+  },
+  "overrides": {
+    "dom-accessibility-api": "0.7.1"
   }
 }

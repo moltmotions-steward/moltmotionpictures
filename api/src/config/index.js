@@ -8,6 +8,47 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
+function isTruthyEnv(value) {
+    if (!value)
+        return false;
+    return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
+}
+function composeManagedPostgresUrlFromDoEnv() {
+    const user = process.env.DO_PG_USER;
+    const password = process.env.DO_PG_PASSWORD;
+    const host = process.env.DO_PG_HOST;
+    const port = process.env.DO_PG_PORT;
+    const dbName = process.env.DO_PG_DB_NAME;
+    if (!user || !password || !host || !port || !dbName)
+        return undefined;
+    const auth = `${encodeURIComponent(user)}:${encodeURIComponent(password)}`;
+    const db = encodeURIComponent(dbName);
+    const base = `postgresql://${auth}@${host}:${port}/${db}`;
+    const params = new URLSearchParams();
+    params.set('sslmode', 'require');
+    return `${base}?${params.toString()}`;
+}
+function composeManagedRedisUrlFromDoEnv() {
+    const user = process.env.DO_REDIS_USER;
+    const password = process.env.DO_REDIS_PASSWORD;
+    const host = process.env.DO_REDIS_HOST;
+    const port = process.env.DO_REDIS_PORT;
+    if (!password || !host || !port)
+        return undefined;
+    const username = user ?? 'default';
+    const auth = `${encodeURIComponent(username)}:${encodeURIComponent(password)}`;
+    return `rediss://${auth}@${host}:${port}`;
+}
+const preferManagedServices = isTruthyEnv(process.env.USE_MANAGED_SERVICES) ||
+    isTruthyEnv(process.env.MOLT_PREFER_MANAGED_SERVICES);
+const managedDatabaseUrl = composeManagedPostgresUrlFromDoEnv();
+const managedRedisUrl = composeManagedRedisUrlFromDoEnv();
+if (preferManagedServices) {
+    if (managedDatabaseUrl)
+        process.env.DATABASE_URL ||= managedDatabaseUrl;
+    if (managedRedisUrl)
+        process.env.REDIS_URL ||= managedRedisUrl;
+}
 const config = {
     // Server
     port: parseInt(process.env.PORT || '3000', 10),
@@ -16,7 +57,7 @@ const config = {
     // Database
     database: {
         url: process.env.DATABASE_URL,
-        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+        ssl: (process.env.NODE_ENV === 'production' || preferManagedServices) ? { rejectUnauthorized: false } : false
     },
     // Redis (optional)
     redis: {
@@ -56,12 +97,17 @@ const config = {
         apiKey: process.env.DO_GRADIENT_API_KEY,
         endpoint: process.env.DO_GRADIENT_ENDPOINT || 'https://inference.do-ai.run'
     },
-    // Revenue split for tips: 69% creator, 30% platform, 1% agent
-    // The agent that wrote the script gets its own cut
+    // Revenue split for tips: 80% creator, 19% platform, 1% agent
+    // The agent that wrote the winning content gets its own cut
     revenueSplit: {
-        creatorPercent: 69, // Human creator/user who owns the agent
-        platformPercent: 30, // Platform fee
+        creatorPercent: 80, // Human creator/user who owns the agent
+        platformPercent: 19, // Platform fee
         agentPercent: 1 // The AI agent that authored the winning content
+    },
+    payouts: {
+        // Where expired/unclaimed funds end up (defaults to the platform wallet)
+        treasuryWallet: process.env.TREASURY_WALLET_ADDRESS || process.env.PLATFORM_WALLET_ADDRESS,
+        unclaimedExpiryDays: parseInt(process.env.UNCLAIMED_EXPIRY_DAYS || '30', 10)
     },
     // x402 payment configuration (Base USDC)
     x402: {
@@ -88,7 +134,16 @@ const config = {
 function validateConfig() {
     const required = [];
     if (config.isProduction) {
-        required.push('DATABASE_URL', 'JWT_SECRET');
+        const hasDatabaseUrl = Boolean(config.database.url);
+        const hasManagedPgVars = Boolean(process.env.DO_PG_USER &&
+            process.env.DO_PG_PASSWORD &&
+            process.env.DO_PG_HOST &&
+            process.env.DO_PG_PORT &&
+            process.env.DO_PG_DB_NAME);
+        if (!hasDatabaseUrl && !(preferManagedServices && hasManagedPgVars)) {
+            required.push('DATABASE_URL');
+        }
+        required.push('JWT_SECRET');
         // x402 payments require CDP + wallet in production
         if (!process.env.X402_MOCK_MODE) {
             required.push('CDP_API_KEY_NAME', 'CDP_API_KEY_SECRET', 'PLATFORM_WALLET_ADDRESS');

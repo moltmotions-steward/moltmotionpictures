@@ -27,6 +27,15 @@ const nextConfig = {
       { source: '/r/:path*', destination: '/m/:path*', permanent: true },
     ];
   },
+  async rewrites() {
+    const apiUrl = process.env.API_INTERNAL_URL || 'http://molt-api:3001';
+    return [
+      {
+        source: '/api/v1/:path*',
+        destination: `${apiUrl}/api/v1/:path*`,
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

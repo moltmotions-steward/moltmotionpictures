@@ -8,11 +8,12 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 
+import config from './config';
+
 import routes from './routes';
 import internalRoutes from './routes/internal';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler';
 import { requestLimiter } from './middleware/rateLimit';
-import config from './config';
 
 const app = express();
 

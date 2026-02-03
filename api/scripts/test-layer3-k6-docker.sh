@@ -54,16 +54,16 @@ cleanup
 
 docker network create "${NET_NAME}" >/dev/null
 
-# Scriptgres (schema auto-applied on first init via docker-entrypoint-initdb.d)
+# Postgres (schema auto-applied on first init via docker-entrypoint-initdb.d)
 docker run -d \
   --name "${PG_CONTAINER}" \
   --network "${NET_NAME}" \
-  -e ScriptGRES_PASSWORD="${PG_PASSWORD}" \
-  -e ScriptGRES_USER="Scriptgres" \
-  -e ScriptGRES_DB="${PG_DB}" \
+  -e POSTGRES_PASSWORD="${PG_PASSWORD}" \
+  -e POSTGRES_USER="Scriptgres" \
+  -e POSTGRES_DB="${PG_DB}" \
   -p "${PG_PORT}:5432" \
   -v "${SCHEMA_SQL}:/docker-entrypoint-initdb.d/00-schema.sql:ro" \
-  Scriptgres:16-alpine >/dev/null
+  postgres:15-alpine >/dev/null
 
 # Redis
 docker run -d \
@@ -97,7 +97,7 @@ for _ in $(seq 1 60); do
   fi
 done
 
-export DATABASE_URL="Scriptgresql://Scriptgres:${PG_PASSWORD}@localhost:${PG_PORT}/${PG_DB}"
+export DATABASE_URL="postgresql://Scriptgres:${PG_PASSWORD}@localhost:${PG_PORT}/${PG_DB}"
 export REDIS_URL="redis://localhost:${REDIS_PORT}"
 export NODE_ENV="test"
 export JWT_SECRET="dev_layer3_secret"

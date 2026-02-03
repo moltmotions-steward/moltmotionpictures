@@ -10,10 +10,12 @@ exports.completePayout = completePayout;
 exports.failPayout = failPayout;
 exports.getAgentEarnings = getAgentEarnings;
 exports.setAgentWallet = setAgentWallet;
+exports.setCreatorWallet = setCreatorWallet;
+exports.claimUnclaimedCreatorFunds = claimUnclaimedCreatorFunds;
 /**
  * PayoutService - Handles revenue splits for clip voting tips
  *
- * Split: 69% Creator / 30% Platform / 1% Agent
+ * Split: 80% Creator / 19% Platform / 1% Agent
  *
  * The agent that wrote the winning script gets 1% - because why not?
  * The agent did the work. The human just voted.
@@ -64,11 +66,22 @@ async function processTipPayouts(clipVoteId, tipAmountCents, sourceAgentId, crea
             error: 'Platform wallet not configured'
         };
     }
+    // Agents must always have a payable wallet
+    if (!agentWalletAddress || agentWalletAddress.trim() === '') {
+        return {
+            success: false,
+            clipVoteId,
+            totalTipCents: tipAmountCents,
+            splits: [],
+            payoutIds: [],
+            error: 'Agent wallet not configured'
+        };
+    }
     try {
         // Use a transaction to create all payouts atomically
         const result = await prisma.$transaction(async (tx) => {
             const createdPayouts = [];
-            // 1. Creator payout (69%)
+            // 1. Creator payout (80%)
             if (creatorWalletAddress && splits.creator > 0) {
                 const creatorPayout = await tx.payout.create({
                     data: {
@@ -90,7 +103,21 @@ async function processTipPayouts(clipVoteId, tipAmountCents, sourceAgentId, crea
                     splitPercent: index_js_1.default.revenueSplit.creatorPercent
                 });
             }
-            // 2. Platform payout (30%)
+            else if (splits.creator > 0) {
+                // No creator wallet yet: escrow into UnclaimedFund for later claim/sweep
+                await tx.unclaimedFund.create({
+                    data: {
+                        source_agent_id: sourceAgentId,
+                        recipient_type: 'creator',
+                        clip_vote_id: clipVoteId,
+                        amount_cents: splits.creator,
+                        split_percent: index_js_1.default.revenueSplit.creatorPercent,
+                        reason: 'no_wallet',
+                        expires_at: new Date(Date.now() + index_js_1.default.payouts.unclaimedExpiryDays * 24 * 60 * 60 * 1000)
+                    }
+                });
+            }
+            // 2. Platform payout (19%)
             if (splits.platform > 0) {
                 const platformPayout = await tx.payout.create({
                     data: {
@@ -113,7 +140,7 @@ async function processTipPayouts(clipVoteId, tipAmountCents, sourceAgentId, crea
                 });
             }
             // 3. Agent payout (1%) - The AI gets paid!
-            if (agentWalletAddress && splits.agent > 0) {
+            if (splits.agent > 0) {
                 const agentPayout = await tx.payout.create({
                     data: {
                         recipient_type: 'agent',
@@ -134,13 +161,12 @@ async function processTipPayouts(clipVoteId, tipAmountCents, sourceAgentId, crea
                     splitPercent: index_js_1.default.revenueSplit.agentPercent
                 });
             }
-            // Update agent's earnings counters
-            const totalAgentEarnings = splits.creator + splits.agent; // Creator + agent share both go to "agent's" account
+            // Update agent's earnings counters (agent's own 1% only)
             await tx.agent.update({
                 where: { id: sourceAgentId },
                 data: {
-                    pending_payout_cents: { increment: totalAgentEarnings },
-                    total_earned_cents: { increment: totalAgentEarnings }
+                    pending_payout_cents: { increment: splits.agent },
+                    total_earned_cents: { increment: splits.agent }
                 }
             });
             return createdPayouts;
@@ -208,6 +234,7 @@ async function getAgentEarnings(agentId) {
         where: { id: agentId },
         select: {
             wallet_address: true,
+            creator_wallet_address: true,
             pending_payout_cents: true,
             total_earned_cents: true,
             total_paid_cents: true
@@ -230,6 +257,7 @@ async function getAgentEarnings(agentId) {
     });
     return {
         walletAddress: agent.wallet_address,
+        creatorWalletAddress: agent.creator_wallet_address,
         pendingPayoutCents: Number(agent.pending_payout_cents),
         totalEarnedCents: Number(agent.total_earned_cents),
         totalPaidCents: Number(agent.total_paid_cents),
@@ -245,9 +273,62 @@ async function getAgentEarnings(agentId) {
  * Register or update an agent's wallet address
  */
 async function setAgentWallet(agentId, walletAddress) {
+    if (!walletAddress || walletAddress.trim() === '') {
+        throw new Error('wallet_address is required');
+    }
     return prisma.agent.update({
         where: { id: agentId },
         data: { wallet_address: walletAddress }
+    });
+}
+/**
+ * Register or update the creator (human owner) wallet address for an agent.
+ */
+async function setCreatorWallet(agentId, creatorWalletAddress) {
+    return prisma.agent.update({
+        where: { id: agentId },
+        data: { creator_wallet_address: creatorWalletAddress }
+    });
+}
+/**
+ * Convert valid, unexpired unclaimed creator funds into real payout entries.
+ */
+async function claimUnclaimedCreatorFunds(agentId, creatorWalletAddress) {
+    const now = new Date();
+    return prisma.$transaction(async (tx) => {
+        const funds = await tx.unclaimedFund.findMany({
+            where: {
+                source_agent_id: agentId,
+                recipient_type: 'creator',
+                claimed_at: null,
+                swept_to_treasury_at: null,
+                expires_at: { gt: now },
+                clip_vote_id: { not: null }
+            },
+            orderBy: { created_at: 'asc' },
+            take: 500
+        });
+        if (funds.length === 0) {
+            return { createdPayouts: 0, markedClaimed: 0 };
+        }
+        const createResult = await tx.payout.createMany({
+            data: funds.map(f => ({
+                recipient_type: 'creator',
+                wallet_address: creatorWalletAddress,
+                source_agent_id: f.source_agent_id,
+                recipient_agent_id: f.source_agent_id,
+                clip_vote_id: f.clip_vote_id,
+                amount_cents: f.amount_cents,
+                split_percent: f.split_percent,
+                status: 'pending'
+            })),
+            skipDuplicates: true
+        });
+        const updateResult = await tx.unclaimedFund.updateMany({
+            where: { id: { in: funds.map(f => f.id) } },
+            data: { claimed_at: now }
+        });
+        return { createdPayouts: createResult.count, markedClaimed: updateResult.count };
     });
 }
 exports.default = {
@@ -257,6 +338,8 @@ exports.default = {
     completePayout,
     failPayout,
     getAgentEarnings,
-    setAgentWallet
+    setAgentWallet,
+    setCreatorWallet,
+    claimUnclaimedCreatorFunds
 };
 //# sourceMappingURL=PayoutService.js.map

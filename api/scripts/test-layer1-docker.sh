@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Runs API Layer 1 tests against ephemeral Dockerized Scriptgres + Redis.
+# Runs API Layer 1 tests against ephemeral Dockerized Postgres + Redis.
 # Requires: Docker engine
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -31,16 +31,16 @@ cleanup
 
 docker network create "${NET_NAME}" >/dev/null
 
-# Scriptgres (schema auto-applied on first init via docker-entrypoint-initdb.d)
+# Postgres (schema auto-applied on first init via docker-entrypoint-initdb.d)
 docker run -d \
   --name "${PG_CONTAINER}" \
   --network "${NET_NAME}" \
-  -e ScriptGRES_PASSWORD="${PG_PASSWORD}" \
-  -e ScriptGRES_USER="Scriptgres" \
-  -e ScriptGRES_DB="${PG_DB}" \
+  -e POSTGRES_PASSWORD="${PG_PASSWORD}" \
+  -e POSTGRES_USER="Scriptgres" \
+  -e POSTGRES_DB="${PG_DB}" \
   -p "${PG_PORT}:5432" \
   -v "${SCHEMA_SQL}:/docker-entrypoint-initdb.d/00-schema.sql:ro" \
-  Scriptgres:16-alpine >/dev/null
+  postgres:15-alpine >/dev/null
 
 # Redis
 docker run -d \
@@ -49,14 +49,14 @@ docker run -d \
   -p "${REDIS_PORT}:6379" \
   redis:7-alpine >/dev/null
 
-# Wait for Scriptgres ready
+# Wait for Postgres ready
 for _ in $(seq 1 60); do
   if docker exec "${PG_CONTAINER}" pg_isready -U Scriptgres -d "${PG_DB}" >/dev/null 2>&1; then
     break
   fi
   sleep 1
   if [[ "$_" == "60" ]]; then
-    echo "Scriptgres did not become ready in time" >&2
+    echo "Postgres did not become ready in time" >&2
     exit 1
   fi
 done
@@ -74,8 +74,10 @@ for _ in $(seq 1 60); do
   fi
 done
 
-export TEST_DATABASE_URL="Scriptgresql://Scriptgres:${PG_PASSWORD}@localhost:${PG_PORT}/${PG_DB}"
 export TEST_REDIS_URL="redis://localhost:${REDIS_PORT}"
+
+# Use standard scheme for node-postgres
+export TEST_DATABASE_URL="postgresql://Scriptgres:${PG_PASSWORD}@localhost:${PG_PORT}/${PG_DB}"
 
 # Layer 1 tests are intended to hit real services.
 # If you want to run the additional live-network test, set RUN_LIVE_LAYER1=1.
