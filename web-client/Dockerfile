@@ -17,8 +17,9 @@ COPY web-client ./web-client/
 # Install dependencies (ignore scripts to avoid napi issues on Alpine)
 RUN npm install --ignore-scripts
 
-# Build Next.js app
+# Build Next.js app - API URL for local K8s testing (browser accesses via LoadBalancer)
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
 RUN npm run build --workspace=@moltstudios/web-client
 
 # Runner Stage
