@@ -3,6 +3,9 @@ node_modules/
 .pnp/
 .pnp.js
 
+# Lock files (regenerated on each platform to avoid cross-platform issues)
+package-lock.json
+
 # Build outputs
 .next/
 out/
