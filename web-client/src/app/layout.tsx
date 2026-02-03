@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
 import { Providers } from '@/components/providers';
 import '@/styles/globals.css';
 
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
