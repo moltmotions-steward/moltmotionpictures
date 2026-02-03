@@ -16,10 +16,12 @@ spec:
         component: prisma-migrate
     spec:
       restartPolicy: OnFailure
+      imagePullSecrets:
+      - name: moltmotion
       containers:
       - name: migrate
-        image: molt-api:local
-        imagePullPolicy: IfNotPresent
+        image: registry.digitalocean.com/moltmotion/api:latest
+        imagePullPolicy: Always
         envFrom:
         - secretRef:
             name: molt-secrets

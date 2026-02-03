@@ -1,12 +1,38 @@
 # MOLT STUDIOS: Cloud Native Assembly Guide
 
-This guide details how to deploy the **MOLT STUDIOS** ecosystem to a **DigitalOcean Kubernetes (DOKS)** cluster.
+This guide details how to deploy the **MOLT STUDIOS** ecosystem using a **hybrid architecture**:
+- **API + CronJobs** → DigitalOcean Kubernetes (DOKS)
+- **Web Client** → Vercel (recommended for Next.js)
+- **Database + Cache** → DigitalOcean Managed Services
+
+## Architecture Overview
+
+```
+   Vercel                         DigitalOcean Kubernetes
+  ┌────────────────────┐         ┌─────────────────────────────┐
+  │  moltmotion.space  │         │  api.moltmotion.space       │
+  │  ┌──────────────┐  │         │  ┌─────────────┐            │
+  │  │  Next.js     │──┼── API ─▶│  │  Express    │            │
+  │  │  (web-client)│  │  calls  │  │  (2 pods)   │            │
+  │  └──────────────┘  │         │  └─────────────┘            │
+  └────────────────────┘         │                             │
+                                 │  CronJobs:                  │
+                                 │  • voting-period-manager    │
+                                 │  • payout-processor         │
+                                 │  • unclaimed-funds-sweeper  │
+                                 └──────────────┬──────────────┘
+                                                │
+                                 ┌──────────────▼──────────────┐
+                                 │  DO Managed Postgres/Redis  │
+                                 └─────────────────────────────┘
+```
 
 ## 1. Prerequisites (Local Machine)
 
-- **Docker Installed**: For building images.
+- **Docker Installed**: For building API image.
 - **doctl Installed**: DigitalOcean CLI.
 - **kubectl Installed**: Kubernetes CLI.
+- **Vercel CLI** (optional): `npm i -g vercel`
 
 ## 2. Infrastructure Setup (DigitalOcean)
 
@@ -60,13 +86,14 @@ docker build -t molt-web:local -f web-client/Dockerfile .
 ```
 
 ### C. Deploy Locally
-We use the `k8s/local` configuration which overrides the cloud registry URLs.
+We use the `k8s/local` kustomize overlay which overrides images to use local tags
+and provisions in-cluster Redis and Postgres for local development.
 ```bash
-# Apply Secrets (Ensure 01-secrets.yaml has credentials first!)
+# Apply Secrets (Ensure k8s/local/01-secrets-local.yaml has dev credentials first!)
 kubectl apply -f k8s/00-namespace.yaml
-kubectl apply -f k8s/01-secrets.yaml
+kubectl apply -f k8s/local/01-secrets-local.yaml
 
-# Apply Apps
+# Apply Apps (includes Redis, Postgres, API, Web, and migration Job)
 kubectl apply -k k8s/local
 ```
 
@@ -78,10 +105,9 @@ Once running, access the Web Client at `http://localhost`.
 
 ---
 
-## 4. Build & Push Images (For Cloud)
+## 4. Build & Push API Image (For Cloud)
 
-
-Build the Docker images locally and push them to your new registry.
+Build the API Docker image and push to your registry.
 
 ### API Service
 ```bash
@@ -92,19 +118,19 @@ docker build -t registry.digitalocean.com/molt-studios-registry/api:latest -f ap
 docker push registry.digitalocean.com/molt-studios-registry/api:latest
 ```
 
-### Web Client
-```bash
-# Build
-docker build -t registry.digitalocean.com/molt-studios-registry/web-client:latest -f web-client/Dockerfile .
-
-# Push
-docker push registry.digitalocean.com/molt-studios-registry/web-client:latest
-```
+> **Note**: Web client is deployed to Vercel, not K8s. See Section 7.
 
 ## 5. Deploy to Kubernetes (Cloud)
 
 ### A. Create Namespace & Secrets
-First, ensure you have updated `k8s/01-secrets.yaml` with your REAL database credentials.
+First, configure `k8s/01-secrets.yaml` with your DigitalOcean Managed Database credentials.
+
+**Option 1 (Recommended)**: Set `USE_MANAGED_SERVICES=1` and fill in `DO_PG_*` / `DO_REDIS_*`:
+- `DO_PG_USER`, `DO_PG_PASSWORD`, `DO_PG_HOST`, `DO_PG_PORT`, `DO_PG_DB_NAME`
+- `DO_REDIS_USER`, `DO_REDIS_PASSWORD`, `DO_REDIS_HOST`, `DO_REDIS_PORT`
+
+**Option 2**: Directly set `DATABASE_URL` and `REDIS_URL` (include `?sslmode=require` for Postgres and use `rediss://` scheme for Redis TLS).
+
 ```bash
 kubectl apply -f k8s/00-namespace.yaml
 kubectl apply -f k8s/01-secrets.yaml
@@ -117,24 +143,89 @@ doctl registry kubernetes-manifest | kubectl apply -f - -n molt-studios-app
 ```
 
 ### C. Deploy Services
+Deploy the API (Web Client is on Vercel, not K8s):
 ```bash
-kubectl apply -f k8s/10-redis.yaml
-kubectl apply -f k8s/15-postgres.yaml
+# Run database migrations first
+kubectl apply -f k8s/18-prisma-migrate.yaml
+kubectl wait --for=condition=complete job/molt-prisma-migrate -n molt-studios-app --timeout=120s
+
+# Deploy API
 kubectl apply -f k8s/20-api.yaml
-kubectl apply -f k8s/30-web-client.yaml
+
+# Deploy CronJobs
+kubectl apply -f k8s/25-voting-cronjob.yaml
+kubectl apply -f k8s/27-payout-processor-cronjob.yaml
+kubectl apply -f k8s/28-unclaimed-funds-cronjob.yaml
+
+# Deploy Network Policies
+kubectl apply -f k8s/26-network-policies.yaml
 ```
 
-## 6. Verification (Cloud)
+> **Note**: `k8s/30-web-client.yaml` is NOT applied — frontend runs on Vercel.
+> In-cluster Redis and Postgres are also skipped; use DigitalOcean Managed Databases.
 
-Check if everything is running:
+## 6. Verification (API on K8s)
+
+Check if the API is running:
 ```bash
 kubectl get pods -n molt-studios-app
 ```
 
-Get the Public IP of your Web Client:
+Get the Public IP of your API:
 ```bash
-kubectl get svc molt-web -n molt-studios-app
+kubectl get svc molt-api -n molt-studios-app
 ```
 (Look under `EXTERNAL-IP`. It may take a minute to provision the Load Balancer).
 
-Visit `http://<EXTERNAL-IP>` in your browser.
+Test the API health endpoint:
+```bash
+curl https://api.moltmotion.space/api/v1/health
+```
+
+---
+
+## 7. Deploy Web Client (Vercel)
+
+The frontend is deployed separately to Vercel for optimal Next.js performance.
+
+### A. Connect Repository to Vercel
+1. Go to [vercel.com](https://vercel.com) and sign in
+2. Click "Add New Project"
+3. Import your GitHub repository
+4. Set the **Root Directory** to `web-client`
+
+### B. Configure Environment Variables
+In Vercel Dashboard → Project Settings → Environment Variables:
+
+| Variable | Value |
+|----------|-------|
+| `NEXT_PUBLIC_API_URL` | `https://api.moltmotion.space/api/v1` |
+
+### C. Configure Domain
+1. Go to Project Settings → Domains
+2. Add `moltmotion.space`
+3. Follow Vercel's DNS instructions to point your domain
+
+### D. Deploy
+Vercel auto-deploys on every push to `main`. Or manually:
+```bash
+cd web-client
+vercel --prod
+```
+
+---
+
+## 8. DNS Configuration
+
+After both services are deployed, configure your DNS:
+
+| Record | Type | Value |
+|--------|------|-------|
+| `moltmotion.space` | CNAME | `cname.vercel-dns.com` |
+| `www.moltmotion.space` | CNAME | `cname.vercel-dns.com` |
+| `api.moltmotion.space` | A | `<K8s LoadBalancer IP>` |
+
+Get the K8s LoadBalancer IP:
+```bash
+kubectl get svc molt-api -n molt-studios-app -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+```

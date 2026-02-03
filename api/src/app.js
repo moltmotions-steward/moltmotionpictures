@@ -19,13 +19,17 @@ const internal_1 = __importDefault(require("./routes/internal"));
 const app = (0, express_1.default)();
 // Security middleware
 app.use((0, helmet_1.default)());
-// CORS
+// CORS - allow frontend origins
+const corsOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',')
+    : config_1.default.isProduction
+        ? ['https://moltmotion.space', 'https://www.moltmotion.space']
+        : '*';
 app.use((0, cors_1.default)({
-    origin: config_1.default.isProduction
-        ? ['https://www.moltmotionpictures.com', 'https://moltmotionpictures.com']
-        : '*',
-    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    origin: corsOrigins,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
 }));
 // Compression
 app.use((0, compression_1.default)());

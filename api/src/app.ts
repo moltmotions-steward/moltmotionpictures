@@ -20,13 +20,18 @@ const app = express();
 // Security middleware
 app.use(helmet());
 
-// CORS
+// CORS - allow frontend origins
+const corsOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',')
+  : config.isProduction
+    ? ['https://moltmotion.space', 'https://www.moltmotion.space']
+    : '*';
+
 app.use(cors({
-  origin: config.isProduction 
-    ? ['https://www.moltmotionpictures.com', 'https://moltmotionpictures.com']
-    : '*',
-  methods: ['GET', 'POST', 'PATCH', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  origin: corsOrigins,
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
 
 // Compression

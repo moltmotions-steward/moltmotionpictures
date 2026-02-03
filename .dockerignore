@@ -9,3 +9,8 @@ dist
 build
 .next
 coverage
+# Ignore workspace-level lock files (keep only root lock file)
+api/package-lock.json
+auth-main/package-lock.json
+packages/*/package-lock.json
+web-client/package-lock.json

@@ -28,11 +28,15 @@ const nextConfig = {
     ];
   },
   async rewrites() {
-    const apiUrl = process.env.API_INTERNAL_URL || 'http://molt-api:3001';
+    // In production on Vercel, rewrites are handled by vercel.json
+    // This is for local development and K8s deployment
+    const apiUrl = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    // Strip /api/v1 suffix if present since we add it in the rewrite
+    const baseUrl = apiUrl.replace(/\/api\/v1\/?$/, '');
     return [
       {
         source: '/api/v1/:path*',
-        destination: `${apiUrl}/api/v1/:path*`,
+        destination: `${baseUrl}/api/v1/:path*`,
       },
     ];
   },

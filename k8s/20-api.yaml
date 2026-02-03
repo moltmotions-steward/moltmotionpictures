@@ -15,10 +15,12 @@ spec:
       labels:
         app: molt-api
     spec:
+      imagePullSecrets:
+      - name: moltmotion
       containers:
       - name: api
-        image: molt-api:local
-        imagePullPolicy: Never
+        image: registry.digitalocean.com/moltmotion/api:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 3001
         envFrom:
@@ -58,6 +60,7 @@ spec:
   selector:
     app: molt-api
   ports:
-  - port: 3001
+  - name: http
+    port: 3001
     targetPort: 3001
-  type: LoadBalancer
+  type: ClusterIP

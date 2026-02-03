@@ -38,6 +38,16 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/imagePullPolicy
         value: IfNotPresent
+  - target:
+      kind: Job
+      name: molt-prisma-migrate
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: molt-api:local
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: IfNotPresent
 
 # Note: We rely on the user having built these images locally
 # docker build -t molt-api:local -f api/Dockerfile .

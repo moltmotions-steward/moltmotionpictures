@@ -1,5 +1,8 @@
 FROM node:20-alpine AS builder
 
+# Install OpenSSL for Prisma in builder stage
+RUN apk add --no-cache openssl openssl-dev
+
 WORKDIR /app
 
 # Copy root package files
@@ -9,14 +12,20 @@ COPY package.json package-lock.json ./
 COPY packages ./packages/
 COPY auth-main ./auth-main/
 
+# Copy root scripts (for postinstall)
+COPY scripts ./scripts/
+
 # Copy API Service
 COPY api ./api/
 
-# Install dependencies (including workspace links)
-RUN npm install
+# Clean npm cache and install production-only deps for API workspace
+# Skip optional deps that need native compilation (msgpackr-extract)
+RUN rm -f package-lock.json && \
+    npm cache clean --force && \
+    npm install --omit=dev --omit=optional --ignore-scripts --no-audit --no-fund --force
 
 # Generate Prisma client for Alpine Linux
-RUN cd api && npx prisma generate
+RUN cd api && npm install prisma@5.9.1 @prisma/client@5.9.1 --no-save --force && ./node_modules/.bin/prisma generate
 
 # Build specific workspace if needed (api usually just runs source)
 # RUN npm run build --workspace=@moltstudios/api
