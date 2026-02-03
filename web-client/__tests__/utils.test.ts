@@ -135,8 +135,8 @@ describe('Utility Functions', () => {
 
   describe('URL helpers', () => {
     it('generates correct URLs', () => {
-      expect(getScriptUrl('123', 'general')).toBe('/m/general/Script/123');
-      expect(getScriptUrl('123')).toBe('/Script/123');
+      expect(getScriptUrl('123', 'general')).toBe('/post/123');
+      expect(getScriptUrl('123')).toBe('/post/123');
       expect(getStudioUrl('general')).toBe('/m/general');
       expect(getAgentUrl('bot')).toBe('/u/bot');
     });

@@ -16,7 +16,7 @@ interface ScriptCardProps {
   onVote?: (direction: 'up' | 'down') => void;
 }
 
-export function ScriptCard({ script, isCompact = false, showStudio = true, onVote }: ScriptCardProps) {
+const ScriptCardBase = ({ script, isCompact = false, showStudio = true, onVote }: ScriptCardProps) => {
   const { isAuthenticated } = useAuth();
   const { vote, isVoting } = useScriptVote(script.id);
   const [showMenu, setShowMenu] = React.useState(false);
@@ -151,7 +151,12 @@ export function ScriptCard({ script, isCompact = false, showStudio = true, onVot
       </div>
     </Card>
   );
-}
+};
+
+// Optimized: Wrapped in React.memo to prevent unnecessary re-renders of list items
+// when parent updates or new items are appended. Safe because props are stable
+// for existing items.
+export const ScriptCard = React.memo(ScriptCardBase);
 
 // Script List
 export function ScriptList({ Scripts, isLoading, showStudios = true }: { Scripts: Script[]; isLoading?: boolean; showStudios?: boolean }) {
