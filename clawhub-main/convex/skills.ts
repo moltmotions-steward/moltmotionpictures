@@ -492,69 +492,10 @@ export const report = mutation({
   },
 })
 
-// TODO: Delete listPublicPage once all clients have migrated to listPublicPageV2
-export const listPublicPage = query({
-  args: {
-    cursor: v.optional(v.string()),
-    limit: v.optional(v.number()),
-    sort: v.optional(
-      v.union(
-        v.literal('updated'),
-        v.literal('downloads'),
-        v.literal('stars'),
-        v.literal('installsCurrent'),
-        v.literal('installsAllTime'),
-        v.literal('trending'),
-      ),
-    ),
-  },
-  handler: async (ctx, args) => {
-    const sort = args.sort ?? 'updated'
-    const limit = clampInt(args.limit ?? 24, 1, MAX_PUBLIC_LIST_LIMIT)
-
-    if (sort === 'updated') {
-      const { page, isDone, continueCursor } = await ctx.db
-        .query('skills')
-        .withIndex('by_updated', (q) => q)
-        .order('desc')
-        .paginate({ cursor: args.cursor ?? null, numItems: limit })
-
-      const skills = page.filter((skill) => !skill.softDeletedAt)
-      const items = await buildPublicSkillEntries(ctx, skills)
-
-      return { items, nextCursor: isDone ? null : continueCursor }
-    }
-
-    if (sort === 'trending') {
-      const entries = await getTrendingEntries(ctx, limit)
-      const skills: Doc<'skills'>[] = []
-
-      for (const entry of entries) {
-        const skill = await ctx.db.get(entry.skillId)
-        if (!skill || skill.softDeletedAt) continue
-        skills.push(skill)
-        if (skills.length >= limit) break
-      }
-
-      const items = await buildPublicSkillEntries(ctx, skills)
-      return { items, nextCursor: null }
-    }
-
-    const index = sortToIndex(sort)
-    const page = await ctx.db
-      .query('skills')
-      .withIndex(index, (q) => q)
-      .order('desc')
-      .take(Math.min(limit * 5, MAX_LIST_TAKE))
-
-    const filtered = page.filter((skill) => !skill.softDeletedAt).slice(0, limit)
-    const items = await buildPublicSkillEntries(ctx, filtered)
-    return { items, nextCursor: null }
-  },
-})
-
 /**
- * V2 of listPublicPage using convex-helpers paginator for better cache behavior.
+ * listPublicPage - paginated public skill listing.
+ * 
+ * Uses convex-helpers paginator for better cache behavior.
  *
  * Key differences from V1:
  * - Uses `paginator` from convex-helpers (doesn't track end-cursor internally, better caching)

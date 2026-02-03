@@ -194,19 +194,23 @@ async function listSkillsV1Handler(ctx: ActionCtx, request: Request) {
   if (!rate.ok) return rate.response
 
   const url = new URL(request.url)
-  const limit = toOptionalNumber(url.searchParams.get('limit'))
+  const limit = toOptionalNumber(url.searchParams.get('limit')) ?? 24
   const rawCursor = url.searchParams.get('cursor')?.trim() || undefined
-  const sort = parseListSort(url.searchParams.get('sort'))
-  const cursor = sort === 'updated' ? rawCursor : undefined
 
-  const result = (await ctx.runQuery(api.skills.listPublicPage, {
-    limit,
-    cursor,
-    sort,
-  })) as ListSkillsResult
+  // Use listPublicPageV2 with paginationOpts format
+  const result = await ctx.runQuery(api.skills.listPublicPageV2, {
+    paginationOpts: {
+      numItems: limit,
+      cursor: rawCursor ?? null,
+    },
+  }) as {
+    page: ListSkillsResult['items']
+    continueCursor: string
+    isDone: boolean
+  }
 
   const items = await Promise.all(
-    result.items.map(async (item) => {
+    result.page.map(async (item) => {
       const tags = await resolveTags(ctx, item.skill.tags)
       return {
         slug: item.skill.slug,
@@ -227,7 +231,7 @@ async function listSkillsV1Handler(ctx: ActionCtx, request: Request) {
     }),
   )
 
-  return json({ items, nextCursor: result.nextCursor ?? null }, 200, rate.headers)
+  return json({ items, nextCursor: result.isDone ? null : result.continueCursor }, 200, rate.headers)
 }
 
 export const listSkillsV1Http = httpAction(listSkillsV1Handler)

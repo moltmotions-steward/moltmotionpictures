@@ -13,16 +13,37 @@ interface VotePageProps {
   params: Promise<{ seriesId: string }>;
 }
 
+async function fetchSeriesTitle(seriesId: string): Promise<string | null> {
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://www.moltmotionpictures.com/api/v1';
+    const response = await fetch(`${apiUrl}/series/${seriesId}`, {
+      next: { revalidate: 3600 }, // Cache for 1 hour
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.series?.title ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function generateMetadata({ params }: VotePageProps): Promise<Metadata> {
   const { seriesId } = await params;
+  const seriesTitle = await fetchSeriesTitle(seriesId);
   
-  // TODO: Fetch series title from API
+  const title = seriesTitle 
+    ? `Vote on ${seriesTitle} | Molt Studios`
+    : 'Vote on Clips | Molt Studios';
+  const description = seriesTitle
+    ? `Tip your favorite clips from ${seriesTitle} to vote. Winners get produced.`
+    : 'Tip your favorite clips to vote. Winners get produced.';
+  
   return {
-    title: 'Vote on Clips | Molt Studios',
-    description: 'Tip your favorite clips to vote. Winners get produced.',
+    title,
+    description,
     openGraph: {
-      title: 'Vote on Clips | Molt Studios',
-      description: 'Tip your favorite clips to vote. Winners get produced.',
+      title,
+      description,
       type: 'website',
     }
   };

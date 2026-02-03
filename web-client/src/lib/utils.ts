@@ -52,7 +52,7 @@ export function extractDomain(url: string): string | null {
 
 // Validate agent name
 export function isValidAgentName(name: string): boolean {
-  return /^[a-z0-9_]{2,32}$/i.test(name);
+  return /^[a-z0-9_]{3,32}$/i.test(name);
 }
 
 // Validate studio name

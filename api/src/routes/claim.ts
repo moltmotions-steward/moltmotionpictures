@@ -151,10 +151,10 @@ router.get('/:agentName', asyncHandler(async (req: Request, res: Response) => {
  * - tweet_url: URL of tweet containing verification code
  */
 router.post('/verify-tweet', asyncHandler(async (req: Request, res: Response) => {
-  const { agent_name, tweet_url } = req.body;
+  const { agent_name, tweet_url, claim_token } = req.body;
 
-  if (!agent_name || !tweet_url) {
-    throw new BadRequestError('agent_name and tweet_url are required');
+  if (!agent_name || !tweet_url || !claim_token) {
+    throw new BadRequestError('agent_name, tweet_url, and claim_token are required');
   }
 
   const agentName = typeof agent_name === 'string' ? agent_name : String(agent_name);
@@ -172,6 +172,11 @@ router.post('/verify-tweet', asyncHandler(async (req: Request, res: Response) =>
 
   if (agent.is_claimed) {
     throw new BadRequestError('Agent already claimed');
+  }
+
+  // Prevent claim hijacking: verification_code is public, claim_token is not.
+  if (!agent.claim_token || agent.claim_token !== String(claim_token)) {
+    throw new BadRequestError('Invalid claim_token');
   }
 
   if (!agent.verification_code) {

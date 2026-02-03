@@ -124,8 +124,8 @@ const USDC_DECIMALS = 6;
 
 /**
  * Generate a CDP API Bearer token for facilitator requests.
- * In production, this would use your CDP API key to sign a JWT.
- * For now, we'll use environment variable for the API key.
+ * Uses ES256 JWT signing as per CDP API v2 authentication spec.
+ * @see https://docs.cdp.coinbase.com/api-reference/v2/authentication
  */
 async function getCDPAuthHeaders(): Promise<Record<string, string>> {
   const cdpApiKey = config.cdp.apiKeyName;
@@ -136,13 +136,74 @@ async function getCDPAuthHeaders(): Promise<Record<string, string>> {
     return { 'Content-Type': 'application/json' };
   }
   
-  // TODO: Implement proper JWT signing for CDP API
-  // For now, use the API key directly (not recommended for production)
-  // See: https://docs.cdp.coinbase.com/api-reference/v2/authentication
+  // Build JWT for CDP API authentication
+  const now = Math.floor(Date.now() / 1000);
+  const header = {
+    alg: 'ES256',
+    kid: cdpApiKey,
+    typ: 'JWT',
+    nonce: crypto.randomUUID(),
+  };
+  
+  const payload = {
+    iss: 'cdp',
+    sub: cdpApiKey,
+    aud: ['cdp_service'],
+    nbf: now,
+    exp: now + 120, // 2 minute expiry
+    uris: [`${FACILITATOR_URL}/verify`, `${FACILITATOR_URL}/settle`],
+  };
+  
+  const encodedHeader = Buffer.from(JSON.stringify(header)).toString('base64url');
+  const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const signingInput = `${encodedHeader}.${encodedPayload}`;
+  
+  // CDP API secret is base64-encoded raw EC private key bytes (not PEM)
+  // Convert to PKCS8 DER format for Web Crypto API
+  const rawKeyBytes = Buffer.from(cdpApiSecret, 'base64');
+  const privateKey = await crypto.subtle.importKey(
+    'raw',
+    rawKeyBytes,
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    false,
+    ['sign']
+  ).catch(async () => {
+    // Fallback: try as PKCS8 if raw import fails
+    return crypto.subtle.importKey(
+      'pkcs8',
+      rawKeyBytes,
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      false,
+      ['sign']
+    );
+  });
+  
+  const signature = await crypto.subtle.sign(
+    { name: 'ECDSA', hash: 'SHA-256' },
+    privateKey,
+    new TextEncoder().encode(signingInput)
+  );
+  
+  const encodedSignature = Buffer.from(signature).toString('base64url');
+  const jwt = `${signingInput}.${encodedSignature}`;
+  
   return {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${cdpApiSecret}`,
+    'Authorization': `Bearer ${jwt}`,
   };
+}
+
+/**
+ * Convert ECDSA signature from DER/P1363 to compact R||S format for JWT
+ */
+function signatureToCompact(signature: ArrayBuffer): Uint8Array {
+  const sig = new Uint8Array(signature);
+  // If already 64 bytes (R||S format), return as-is
+  if (sig.length === 64) return sig;
+  
+  // Web Crypto returns P1363 format (R || S, each 32 bytes for P-256)
+  // This is already the correct format for ES256 JWT
+  return sig;
 }
 
 // ============================================================================

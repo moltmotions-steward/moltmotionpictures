@@ -1,18 +1,7 @@
-import { ApiRoutes, LegacyApiRoutes } from 'clawhub-schema'
+import { ApiRoutes } from 'clawhub-schema'
 import { httpRouter } from 'convex/server'
 import { auth } from './auth'
 import { downloadZip } from './downloads'
-import {
-  cliPublishHttp,
-  cliSkillDeleteHttp,
-  cliSkillUndeleteHttp,
-  cliTelemetrySyncHttp,
-  cliUploadUrlHttp,
-  cliWhoamiHttp,
-  getSkillHttp,
-  resolveSkillVersionHttp,
-  searchSkillsHttp,
-} from './httpApi'
 import {
   listSkillsV1Http,
   listSoulsV1Http,
@@ -131,64 +120,7 @@ http.route({
   handler: soulsDeleteRouterV1Http,
 })
 
-// TODO: remove legacy /api routes after deprecation window.
-http.route({
-  path: LegacyApiRoutes.download,
-  method: 'GET',
-  handler: downloadZip,
-})
-http.route({
-  path: LegacyApiRoutes.search,
-  method: 'GET',
-  handler: searchSkillsHttp,
-})
-
-http.route({
-  path: LegacyApiRoutes.skill,
-  method: 'GET',
-  handler: getSkillHttp,
-})
-
-http.route({
-  path: LegacyApiRoutes.skillResolve,
-  method: 'GET',
-  handler: resolveSkillVersionHttp,
-})
-
-http.route({
-  path: LegacyApiRoutes.cliWhoami,
-  method: 'GET',
-  handler: cliWhoamiHttp,
-})
-
-http.route({
-  path: LegacyApiRoutes.cliUploadUrl,
-  method: 'POST',
-  handler: cliUploadUrlHttp,
-})
-
-http.route({
-  path: LegacyApiRoutes.cliPublish,
-  method: 'POST',
-  handler: cliPublishHttp,
-})
-
-http.route({
-  path: LegacyApiRoutes.cliTelemetrySync,
-  method: 'POST',
-  handler: cliTelemetrySyncHttp,
-})
-
-http.route({
-  path: LegacyApiRoutes.cliSkillDelete,
-  method: 'POST',
-  handler: cliSkillDeleteHttp,
-})
-
-http.route({
-  path: LegacyApiRoutes.cliSkillUndelete,
-  method: 'POST',
-  handler: cliSkillUndeleteHttp,
-})
+// Legacy /api routes removed 2026-02-03 after deprecation window.
+// All clients have migrated to /api/v1 routes.
 
 export default http

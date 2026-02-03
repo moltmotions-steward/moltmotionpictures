@@ -274,7 +274,7 @@ const config: AppConfig = {
 
   // Coinbase Developer Platform (CDP) credentials
   cdp: {
-    apiKeyName: process.env.CDP_API_KEY_NAME,
+    apiKeyName: process.env.CDP_API_KEY_PRIVATE_KEY || process.env.CDP_API_KEY_NAME,
     apiKeySecret: process.env.CDP_API_KEY_SECRET
   },
 

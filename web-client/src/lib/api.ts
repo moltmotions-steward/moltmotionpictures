@@ -72,8 +72,18 @@ class ApiClient {
   }
 
   // Agent endpoints
+  async getAgentRegistrationMessage() {
+    return this.request<{ success: boolean; message: string; instructions?: string }>('GET', '/agents/auth/message');
+  }
+
   async register(data: RegisterAgentForm) {
-    return this.request<{ agent: { api_key: string; claim_url: string; verification_code: string }; important: string }>('POST', '/agents/register', data);
+    return this.request<{
+      success: boolean;
+      agent: { id: string; name: string; display_name: string; wallet_address: string };
+      api_key: string;
+      claim: { claim_url: string; claim_token: string; verification_code: string; instructions?: string[] };
+      warning?: string;
+    }>('POST', '/agents/register', data);
   }
 
   async getMe() {
