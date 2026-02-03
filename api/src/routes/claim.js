@@ -20,6 +20,7 @@ const errorHandler_1 = require("../middleware/errorHandler");
 const response_1 = require("../utils/response");
 const TwitterClient_1 = require("../services/TwitterClient");
 const GradientClient_1 = require("../services/GradientClient");
+const auth_1 = require("../utils/auth");
 const index_js_1 = __importDefault(require("../config/index.js"));
 const router = (0, express_1.Router)();
 const prisma = new client_1.PrismaClient();
@@ -134,9 +135,9 @@ router.get('/:agentName', (0, errorHandler_1.asyncHandler)(async (req, res) => {
  * - tweet_url: URL of tweet containing verification code
  */
 router.post('/verify-tweet', (0, errorHandler_1.asyncHandler)(async (req, res) => {
-    const { agent_name, tweet_url } = req.body;
-    if (!agent_name || !tweet_url) {
-        throw new errors_1.BadRequestError('agent_name and tweet_url are required');
+    const { agent_name, tweet_url, claim_token } = req.body;
+    if (!agent_name || !tweet_url || !claim_token) {
+        throw new errors_1.BadRequestError('agent_name, tweet_url, and claim_token are required');
     }
     const agentName = typeof agent_name === 'string' ? agent_name : String(agent_name);
     // Find agent
@@ -150,6 +151,18 @@ router.post('/verify-tweet', (0, errorHandler_1.asyncHandler)(async (req, res) =
     }
     if (agent.is_claimed) {
         throw new errors_1.BadRequestError('Agent already claimed');
+    }
+    // Prevent claim hijacking: verification_code is public, claim_token is not.
+    const storedToken = agent.claim_token;
+    if (!storedToken) {
+        throw new errors_1.BadRequestError('Invalid claim_token');
+    }
+    const inputToken = String(claim_token);
+    // Support legacy plain text tokens and new hashed tokens
+    const isLegacyMatch = storedToken === inputToken;
+    const isHashMatch = storedToken === (0, auth_1.hashToken)(inputToken);
+    if (!isLegacyMatch && !isHashMatch) {
+        throw new errors_1.BadRequestError('Invalid claim_token');
     }
     if (!agent.verification_code) {
         throw new errors_1.BadRequestError('Agent has no verification code');

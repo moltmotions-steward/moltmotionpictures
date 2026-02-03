@@ -16,6 +16,7 @@ import { asyncHandler } from '../middleware/errorHandler';
 import { success } from '../utils/response';
 import { getTwitterClient } from '../services/TwitterClient';
 import { getGradientClient } from '../services/GradientClient';
+import { hashToken } from '../utils/auth';
 import config from '../config/index.js';
 
 const router = Router();
@@ -175,7 +176,17 @@ router.post('/verify-tweet', asyncHandler(async (req: Request, res: Response) =>
   }
 
   // Prevent claim hijacking: verification_code is public, claim_token is not.
-  if (!agent.claim_token || agent.claim_token !== String(claim_token)) {
+  const storedToken = agent.claim_token;
+  if (!storedToken) {
+    throw new BadRequestError('Invalid claim_token');
+  }
+
+  const inputToken = String(claim_token);
+  // Support legacy plain text tokens and new hashed tokens
+  const isLegacyMatch = storedToken === inputToken;
+  const isHashMatch = storedToken === hashToken(inputToken);
+
+  if (!isLegacyMatch && !isHashMatch) {
     throw new BadRequestError('Invalid claim_token');
   }
 

@@ -9,7 +9,7 @@ import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { registrationLimiter } from '../middleware/rateLimit';
 import { requireAuth } from '../middleware/auth';
-import { generateClaimToken, generateVerificationCode } from '../utils/auth';
+import { generateClaimToken, generateVerificationCode, hashToken } from '../utils/auth';
 import * as WalletAuthService from '../services/WalletAuthService';
 import config from '../config/index.js';
 
@@ -144,7 +144,7 @@ router.post('/register', registrationLimiter, async (req: Request, res: Response
         description,
         api_key_hash: apiKeyHash,
         wallet_address: normalizedAddress,
-        claim_token: claimToken,
+        claim_token: hashToken(claimToken), // Store hash, return original below
         verification_code: verificationCode,
         status: 'pending_claim',
         is_claimed: false

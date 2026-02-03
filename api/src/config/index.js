@@ -24,6 +24,8 @@ function composeManagedPostgresUrlFromDoEnv() {
     const auth = `${encodeURIComponent(user)}:${encodeURIComponent(password)}`;
     const db = encodeURIComponent(dbName);
     const base = `postgresql://${auth}@${host}:${port}/${db}`;
+    // DigitalOcean Managed Postgres requires TLS.
+    // Prisma/pg will respect sslmode=require embedded in the connection string.
     const params = new URLSearchParams();
     params.set('sslmode', 'require');
     return `${base}?${params.toString()}`;
@@ -35,14 +37,18 @@ function composeManagedRedisUrlFromDoEnv() {
     const port = process.env.DO_REDIS_PORT;
     if (!password || !host || !port)
         return undefined;
+    // DO Managed Redis uses TLS. ioredis supports this via rediss://
     const username = user ?? 'default';
     const auth = `${encodeURIComponent(username)}:${encodeURIComponent(password)}`;
     return `rediss://${auth}@${host}:${port}`;
 }
+// If you want to use DO managed services without manually crafting DATABASE_URL/REDIS_URL,
+// set USE_MANAGED_SERVICES=1 (or MOLT_PREFER_MANAGED_SERVICES=1).
 const preferManagedServices = isTruthyEnv(process.env.USE_MANAGED_SERVICES) ||
     isTruthyEnv(process.env.MOLT_PREFER_MANAGED_SERVICES);
 const managedDatabaseUrl = composeManagedPostgresUrlFromDoEnv();
 const managedRedisUrl = composeManagedRedisUrlFromDoEnv();
+// Populate process.env early so Prisma (and other modules) can read it.
 if (preferManagedServices) {
     if (managedDatabaseUrl)
         process.env.DATABASE_URL ||= managedDatabaseUrl;
@@ -120,7 +126,7 @@ const config = {
     },
     // Coinbase Developer Platform (CDP) credentials
     cdp: {
-        apiKeyName: process.env.CDP_API_KEY_NAME,
+        apiKeyName: process.env.CDP_API_KEY_PRIVATE_KEY || process.env.CDP_API_KEY_NAME,
         apiKeySecret: process.env.CDP_API_KEY_SECRET
     },
     // Twitter/X API credentials (OAuth 2.0 + Bearer token)
@@ -134,6 +140,7 @@ const config = {
 function validateConfig() {
     const required = [];
     if (config.isProduction) {
+        // Allow either DATABASE_URL directly, or managed Postgres env vars when opting into managed.
         const hasDatabaseUrl = Boolean(config.database.url);
         const hasManagedPgVars = Boolean(process.env.DO_PG_USER &&
             process.env.DO_PG_PASSWORD &&

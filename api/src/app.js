@@ -11,11 +11,11 @@ const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const compression_1 = __importDefault(require("compression"));
 const morgan_1 = __importDefault(require("morgan"));
-const errorHandler_1 = require("./middleware/errorHandler");
-const rateLimit_1 = require("./middleware/rateLimit");
 const config_1 = __importDefault(require("./config"));
 const routes_1 = __importDefault(require("./routes"));
 const internal_1 = __importDefault(require("./routes/internal"));
+const errorHandler_1 = require("./middleware/errorHandler");
+const rateLimit_1 = require("./middleware/rateLimit");
 const app = (0, express_1.default)();
 // Security middleware
 app.use((0, helmet_1.default)());

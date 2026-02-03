@@ -41,7 +41,6 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-    "@rollup/rollup-darwin-arm64": "^4.57.1",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "jsdom": "^23.0.1",
