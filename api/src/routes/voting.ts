@@ -191,14 +191,14 @@ router.post('/clips/:clipVariantId', asyncHandler(async (_req: any, res: any) =>
  * 1. If no X-PAYMENT header: Returns 402 with payment requirements
  * 2. Client signs payment via x402 using their wallet
  * 3. Client retries with X-PAYMENT header containing signed payload
- * 4. Payment verified via facilitator → vote recorded → 69/30/1 split queued
+ * 4. Payment verified via facilitator → vote recorded → 80/19/1 split queued
  * 
  * Headers:
  *   X-PAYMENT: Base64-encoded payment payload (from x402 client)
  * 
  * Body: { 
  *   session_id: string (required for anonymous humans)
- *   tip_amount_cents?: number (default: 25, min: 10, max: 500)
+ *   tip_amount_cents?: number (default: 25, min: 10)
  * }
  * 
  * SECURITY: Payment is verified via Coinbase x402 facilitator.
