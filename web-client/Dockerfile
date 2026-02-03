@@ -15,7 +15,8 @@ COPY api ./api/
 COPY web-client ./web-client/
 
 # Install dependencies (ignore scripts to avoid napi issues on Alpine)
-RUN npm install --ignore-scripts
+# Use --force to allow platform mismatch with optional dependencies like rollup
+RUN npm install --ignore-scripts --force
 
 # Build Next.js app
 ENV NEXT_TELEMETRY_DISABLED=1

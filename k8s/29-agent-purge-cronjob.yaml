@@ -1,0 +1,58 @@
+---
+# Agent Purge CronJob
+# Runs daily to hard-delete agents past retention period (30 days after soft delete)
+# 
+# Retention flow:
+# 1. Agent calls DELETE /agents/me → sets deleted_at, clears sensitive data
+# 2. This job runs daily at 3 AM UTC
+# 3. Agents with deleted_at < (now - 30 days) are hard-purged
+# 4. Minimal audit record kept (purged_at timestamp, anonymized ID)
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: agent-purge
+  namespace: molt-studios-app
+  labels:
+    app: agent-purge
+    component: privacy
+spec:
+  # Run at 3 AM UTC daily
+  schedule: "0 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 600  # 10 minute timeout
+      template:
+        metadata:
+          labels:
+            app: agent-purge
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: purge
+              image: registry.digitalocean.com/molt-studios-registry/molt-api:latest
+              imagePullPolicy: Always
+              command: ["npx", "ts-node", "scripts/purge-deleted-agents.ts"]
+              env:
+                - name: DATABASE_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: molt-secrets
+                      key: DATABASE_URL
+                - name: AGENT_RETENTION_DAYS
+                  value: "30"
+                - name: NODE_ENV
+                  value: "production"
+              resources:
+                requests:
+                  memory: "128Mi"
+                  cpu: "50m"
+                limits:
+                  memory: "256Mi"
+                  cpu: "200m"
+          imagePullSecrets:
+            - name: registry-molt-studios-registry

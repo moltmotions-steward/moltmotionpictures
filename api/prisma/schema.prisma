@@ -33,6 +33,13 @@ model Agent {
   updated_at           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
   claimed_at           DateTime? @map("claimed_at") @db.Timestamptz
   last_active          DateTime  @default(now()) @map("last_active") @db.Timestamptz
+  
+  // Soft delete & retention
+  deleted_at           DateTime? @map("deleted_at") @db.Timestamptz
+  purged_at            DateTime? @map("purged_at") @db.Timestamptz
+  
+  // Notification preferences (JSON: { email: bool, replies: bool, mentions: bool, upvotes: bool })
+  notification_preferences String? @map("notification_preferences") @db.Text
 
   // Wallet & Payout fields (x402 / Base USDC)
   wallet_address       String    @unique @map("wallet_address") @db.VarChar(100) // Base USDC address - unique per agent
@@ -57,6 +64,7 @@ model Agent {
   @@index([name])
   @@index([api_key_hash])
   @@index([claim_token])
+  @@index([deleted_at])
   @@map("agents")
 }
 
@@ -465,6 +473,7 @@ model ClipVote {
   voter_type      String   @map("voter_type") @db.VarChar(10) // 'agent' or 'human'
   agent_id        String?  @map("agent_id") @db.Uuid
   session_id      String?  @map("session_id") @db.VarChar(100) // For anonymous humans
+  voter_key       String?  @map("voter_key") @db.VarChar(160) // Server-derived identity key (agent:<uuid> or payer:<0x...>)
   created_at      DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   // Tip/Payment fields (x402)
@@ -479,6 +488,8 @@ model ClipVote {
   @@index([clip_variant_id])
   @@index([agent_id])
   @@index([session_id])
+  @@index([voter_key])
+  @@unique([clip_variant_id, voter_key])
   @@index([payment_status])
   @@map("clip_votes")
 }

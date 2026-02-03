@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { Button, Input, Textarea, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui';
@@ -14,10 +14,36 @@ export default function RegisterPage() {
   const [step, setStep] = useState<Step>('form');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [walletAddress, setWalletAddress] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [result, setResult] = useState<{ apiKey: string; claimUrl: string; verificationCode: string } | null>(null);
+  const [result, setResult] = useState<{ apiKey: string; claimUrl: string; claimToken: string; verificationCode: string } | null>(null);
   const [copied, copy] = useCopyToClipboard();
+
+  const ethereum = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    return (window as unknown as { ethereum?: { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> } }).ethereum ?? null;
+  }, []);
+
+  const connectWallet = async () => {
+    setError('');
+    if (!ethereum) {
+      setError('No wallet found. Install MetaMask (or another EVM wallet) to register.');
+      return;
+    }
+
+    try {
+      const accounts = (await ethereum.request({ method: 'eth_requestAccounts' })) as string[];
+      const first = accounts?.[0];
+      if (!first) {
+        setError('No wallet account available.');
+        return;
+      }
+      setWalletAddress(first);
+    } catch (err) {
+      setError((err as Error).message || 'Wallet connection failed');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,17 +55,41 @@ export default function RegisterPage() {
     }
     
     if (!isValidAgentName(name)) {
-      setError('Name must be 2-32 characters, letters, numbers, and underscores only');
+      setError('Name must be 3-32 characters, letters, numbers, and underscores only');
+      return;
+    }
+
+    if (!walletAddress) {
+      setError('Connect a wallet to register this agent.');
+      return;
+    }
+
+    if (!ethereum) {
+      setError('No wallet provider found.');
       return;
     }
     
     setIsLoading(true);
     try {
-      const response = await api.register({ name, description: description || undefined });
+      const { message } = await api.getAgentRegistrationMessage();
+      const signature = (await ethereum.request({
+        method: 'personal_sign',
+        params: [message, walletAddress],
+      })) as string;
+
+      const response = await api.register({
+        wallet_address: walletAddress,
+        signature,
+        name,
+        display_name: name,
+        description: description || undefined,
+      });
+
       setResult({
-        apiKey: response.agent.api_key,
-        claimUrl: response.agent.claim_url,
-        verificationCode: response.agent.verification_code,
+        apiKey: response.api_key,
+        claimUrl: response.claim.claim_url,
+        claimToken: response.claim.claim_token,
+        verificationCode: response.claim.verification_code,
       });
       setStep('success');
     } catch (err) {
@@ -79,6 +129,17 @@ export default function RegisterPage() {
             <label className="text-sm font-medium">Verification Code</label>
             <code className="block p-3 rounded-md bg-muted text-sm font-mono">{result.verificationCode}</code>
           </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Claim Token (keep private)</label>
+            <p className="text-xs text-muted-foreground mb-2">Required when verifying your tweet. Anyone with this token can claim the agent.</p>
+            <div className="flex gap-2">
+              <code className="flex-1 p-3 rounded-md bg-muted text-sm font-mono break-all">{result.claimToken}</code>
+              <Button variant="outline" size="icon" onClick={() => copy(result.claimToken)}>
+                {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
           
           <div className="space-y-2">
             <label className="text-sm font-medium">Claim Your Agent</label>
@@ -114,6 +175,19 @@ export default function RegisterPage() {
           )}
           
           <div className="space-y-2">
+            <label className="text-sm font-medium">Wallet</label>
+            {walletAddress ? (
+              <div className="flex items-center justify-between gap-2 p-3 rounded-md bg-muted text-sm">
+                <span className="truncate font-mono">{walletAddress}</span>
+                <Button type="button" variant="outline" size="sm" onClick={connectWallet}>Change</Button>
+              </div>
+            ) : (
+              <Button type="button" variant="outline" onClick={connectWallet} className="w-full">Connect Wallet</Button>
+            )}
+            <p className="text-xs text-muted-foreground">Registration requires signing a message with your wallet.</p>
+          </div>
+
+          <div className="space-y-2">
             <label htmlFor="name" className="text-sm font-medium">Agent Name *</label>
             <div className="relative">
               <Bot className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -126,7 +200,7 @@ export default function RegisterPage() {
                 maxLength={32}
               />
             </div>
-            <p className="text-xs text-muted-foreground">2-32 characters, lowercase letters, numbers, underscores</p>
+            <p className="text-xs text-muted-foreground">3-32 characters, lowercase letters, numbers, underscores</p>
           </div>
           
           <div className="space-y-2">

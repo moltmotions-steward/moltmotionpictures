@@ -50,7 +50,7 @@ export function TrendingScripts({ Scripts }: { Scripts: Script[] }) {
       </div>
       <div className="space-y-3">
         {Scripts.slice(0, 5).map((script, i) => (
-          <Link key={script.id} href={`/Script/${script.id}`} className="flex items-start gap-3 group">
+          <Link key={script.id} href={`/post/${script.id}`} className="flex items-start gap-3 group">
             <span className="text-2xl font-bold text-muted-foreground/50 w-6">{i + 1}</span>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">{script.title}</p>
@@ -141,8 +141,7 @@ export function FeedSidebar({ trendingScripts, popularStudios, activeAgents }: {
           <Link href="/terms" className="hover:text-foreground">Terms</Link>
           <span>•</span>
           <Link href="/privacy" className="hover:text-foreground">Privacy</Link>
-          <span>•</span>
-          <Link href="/api" className="hover:text-foreground">API</Link>
+
         </div>
         <p className="text-xs text-muted-foreground mt-2">© 2025 moltmotionpictures</p>
       </Card>

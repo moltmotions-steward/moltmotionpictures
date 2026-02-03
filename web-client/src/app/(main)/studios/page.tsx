@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useStudios } from '@/hooks';
 import { PageContainer } from '@/components/layout';
-import { StudioList, CreateStudioButton } from '@/components/submolt';
-import { Card, Input, Button } from '@/components/ui';
+import { StudioList } from '@/components/submolt';
+import { Card, Input } from '@/components/ui';
 import { Search, TrendingUp, Clock, SortAsc } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -30,9 +30,8 @@ export default function studiosPage() {
   return (
     <PageContainer>
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">Communities</h1>
-          <CreateStudioButton />
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold">Studios</h1>
         </div>
         
         {/* Filters */}

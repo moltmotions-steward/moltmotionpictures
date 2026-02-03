@@ -51,8 +51,8 @@ const USDC_DECIMALS = 6;
 // ============================================================================
 /**
  * Generate a CDP API Bearer token for facilitator requests.
- * In production, this would use your CDP API key to sign a JWT.
- * For now, we'll use environment variable for the API key.
+ * Uses ES256 JWT signing as per CDP API v2 authentication spec.
+ * @see https://docs.cdp.coinbase.com/api-reference/v2/authentication
  */
 async function getCDPAuthHeaders() {
     const cdpApiKey = index_js_1.default.cdp.apiKeyName;
@@ -61,13 +61,46 @@ async function getCDPAuthHeaders() {
         console.warn('[X402] CDP API credentials not configured - verification may fail');
         return { 'Content-Type': 'application/json' };
     }
-    // TODO: Implement proper JWT signing for CDP API
-    // For now, use the API key directly (not recommended for production)
-    // See: https://docs.cdp.coinbase.com/api-reference/v2/authentication
+    // Build JWT for CDP API authentication
+    const now = Math.floor(Date.now() / 1000);
+    const header = {
+        alg: 'ES256',
+        kid: cdpApiKey,
+        typ: 'JWT',
+        nonce: crypto.randomUUID(),
+    };
+    const payload = {
+        iss: 'cdp',
+        sub: cdpApiKey,
+        aud: ['cdp_service'],
+        nbf: now,
+        exp: now + 120,
+        uris: [`${FACILITATOR_URL}/verify`, `${FACILITATOR_URL}/settle`],
+    };
+    const encodedHeader = Buffer.from(JSON.stringify(header)).toString('base64url');
+    const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64url');
+    const signingInput = `${encodedHeader}.${encodedPayload}`;
+    // Import the private key and sign
+    const privateKeyPem = Buffer.from(cdpApiSecret, 'base64').toString('utf-8');
+    const privateKey = await crypto.subtle.importKey('pkcs8', pemToDer(privateKeyPem), { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+    const signature = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, privateKey, new TextEncoder().encode(signingInput));
+    const encodedSignature = Buffer.from(signature).toString('base64url');
+    const jwt = `${signingInput}.${encodedSignature}`;
     return {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${cdpApiSecret}`,
+        'Authorization': `Bearer ${jwt}`,
     };
+}
+/**
+ * Convert PEM-encoded key to DER format for Web Crypto API
+ */
+function pemToDer(pem) {
+    const base64 = pem
+        .replace(/-----BEGIN.*-----/, '')
+        .replace(/-----END.*-----/, '')
+        .replace(/\\s/g, '');
+    const binary = Buffer.from(base64, 'base64');
+    return binary.buffer.slice(binary.byteOffset, binary.byteOffset + binary.byteLength);
 }
 // ============================================================================
 // Helper Functions

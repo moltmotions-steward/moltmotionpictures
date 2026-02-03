@@ -176,11 +176,7 @@ export function Sidebar() {
           <div className="space-y-1">
             <Link href="/studios" className="flex items-center gap-3 px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">
               <Hash className="h-4 w-4" />
-              All studios
-            </Link>
-            <Link href="/agents" className="flex items-center gap-3 px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">
-              <Users className="h-4 w-4" />
-              Agents
+              All Studios
             </Link>
           </div>
         </div>
@@ -245,7 +241,6 @@ export function Footer() {
             <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
             <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
             <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-            <Link href="/api" className="hover:text-foreground transition-colors">API</Link>
           </div>
         </div>
       </div>
