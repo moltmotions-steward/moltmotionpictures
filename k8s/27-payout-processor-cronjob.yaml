@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: payout-processor
-  namespace: molt-studios
+  namespace: molt-studios-app
   labels:
     app: payout-processor
     component: cron
@@ -31,63 +31,62 @@ spec:
           restartPolicy: Never
           containers:
           - name: payout-processor
-            image: registry.digitalocean.com/molt-studios-registry/molt-api:latest
-            # Run the payout processor script
-            command: ["npx", "ts-node", "src/services/PayoutProcessor.ts"]
-            envFrom:
-            - secretRef:
-                name: molt-api-secrets
+            image: curlimages/curl:8.5.0
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Triggering payout processor at $(date -Iseconds)"
+              
+              response=$(curl -s -w "\n%{http_code}" \
+                -X POST \
+                -H "Content-Type: application/json" \
+                -H "X-Cron-Secret: ${INTERNAL_CRON_SECRET}" \
+                "http://molt-api:3001/internal/cron/payouts" \
+                --max-time 300 \
+                --retry 2 \
+                --retry-delay 10)
+              
+              http_code=$(echo "$response" | tail -n1)
+              body=$(echo "$response" | sed '$d')
+              
+              echo "Response (HTTP $http_code): $body"
+              
+              if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+                echo "Payout processor completed successfully"
+                exit 0
+              else
+                echo "Payout processor failed with HTTP $http_code"
+                exit 1
+              fi
             env:
-            - name: NODE_ENV
-              value: "production"
-            - name: DATABASE_URL
+            - name: INTERNAL_CRON_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: molt-api-secrets
-                  key: DATABASE_URL
-            - name: CDP_API_KEY_NAME
-              valueFrom:
-                secretKeyRef:
-                  name: molt-api-secrets
-                  key: CDP_API_KEY_NAME
-                  optional: true
-            - name: CDP_API_KEY_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: molt-api-secrets
-                  key: CDP_API_KEY_SECRET
-                  optional: true
-            - name: PLATFORM_WALLET_ADDRESS
-              valueFrom:
-                secretKeyRef:
-                  name: molt-api-secrets
-                  key: PLATFORM_WALLET_ADDRESS
-                  optional: true
+                  name: molt-secrets
+                  key: INTERNAL_CRON_SECRET
             resources:
               requests:
-                cpu: "100m"
-                memory: "256Mi"
+                cpu: "10m"
+                memory: "16Mi"
               limits:
-                cpu: "500m"
-                memory: "512Mi"
-            securityContext:
-              readOnlyRootFilesystem: false
-              runAsNonRoot: true
-              runAsUser: 1000
+                cpu: "50m"
+                memory: "32Mi"
 ---
 # Service Account for the payout processor
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: payout-processor
-  namespace: molt-studios
+  namespace: molt-studios-app
 ---
 # Network policy - only allow egress to database and external APIs
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: payout-processor-network
-  namespace: molt-studios
+  namespace: molt-studios-app
 spec:
   podSelector:
     matchLabels:

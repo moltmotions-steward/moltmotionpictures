@@ -3,10 +3,13 @@ kind: Kustomization
 
 resources:
   - ../00-namespace.yaml
-  - ../01-secrets.yaml
+  - 01-secrets-local.yaml
   - ../10-redis.yaml
   - ../15-postgres.yaml
   - ../20-api.yaml
+  - ../25-voting-cronjob.yaml
+  - ../26-network-policies.yaml
+  - ../27-payout-processor-cronjob.yaml
   - ../30-web-client.yaml
 
 # Patch images to use local tags and generic pull policy

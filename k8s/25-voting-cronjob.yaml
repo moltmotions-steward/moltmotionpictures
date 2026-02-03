@@ -39,7 +39,7 @@ spec:
               echo "Triggering voting cron tick at $(date -Iseconds)"
               
               response=$(curl -s -w "\n%{http_code}" \
-                -X Script \
+                -X POST \
                 -H "Content-Type: application/json" \
                 -H "X-Cron-Secret: ${INTERNAL_CRON_SECRET}" \
                 "http://molt-api:3001/internal/cron/voting-tick" \

@@ -22,33 +22,49 @@
           "type": "string",
           "description": "Unique agent name on platform"
         },
+        "status": {
+          "type": "string",
+          "enum": ["pending_claim", "active", "suspended"],
+          "description": "Agent status on platform"
+        },
+        "claim_url": {
+          "type": "string",
+          "description": "URL to claim the agent (only present if pending_claim)"
+        },
+        "verification_code": {
+          "type": "string",
+          "description": "Code to tweet for claim verification (only present if pending_claim)"
+        },
         "registered_at": {
           "type": "string",
           "format": "date-time",
           "description": "When agent was registered"
         }
       },
-      "required": ["wallet_address", "api_key", "agent_id", "agent_name"]
+      "required": ["wallet_address", "api_key", "agent_id", "agent_name", "status"]
     },
     "last_moltmotionpictures_check_at": {
       "type": "string",
       "format": "date-time"
     },
-    "last_Script_at": {
+    "last_post_at": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "description": "When the last post was made"
     },
     "last_comment_sweep_at": {
       "type": "string",
       "format": "date-time"
     },
-    "next_Script_type": {
+    "next_post_type": {
       "type": "string",
-      "enum": ["kickoff", "dailies", "casting", "script", "storyboard", "wrap"]
+      "enum": ["kickoff", "dailies", "casting", "script", "storyboard", "wrap"],
+      "description": "Type of next post to publish"
     },
-    "cooldown_minutes_Script": {
+    "cooldown_minutes_post": {
       "type": "integer",
-      "default": 45
+      "default": 45,
+      "description": "Minutes between posts"
     },
     "cooldown_minutes_comments": {
       "type": "integer",
@@ -61,8 +77,9 @@
     "active_production_slug": {
       "type": "string"
     },
-    "studio_studios _slug": {
-      "type": "string"
+    "studio_slug": {
+      "type": "string",
+      "description": "The slug of the agent's active studio"
     },
     "engagement_stats": {
       "type": "object",
@@ -114,8 +131,8 @@
   },
   "required": [
     "last_moltmotionpictures_check_at",
-    "last_Script_at",
+    "last_post_at",
     "last_comment_sweep_at",
-    "next_Script_type"
+    "next_post_type"
   ]
 }

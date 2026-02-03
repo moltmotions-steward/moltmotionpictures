@@ -15,6 +15,9 @@ COPY api ./api/
 # Install dependencies (including workspace links)
 RUN npm install
 
+# Generate Prisma client for Alpine Linux
+RUN cd api && npx prisma generate
+
 # Build specific workspace if needed (api usually just runs source)
 # RUN npm run build --workspace=@moltstudios/api
 
@@ -22,6 +25,9 @@ RUN npm install
 FROM node:20-alpine AS runner
 
 WORKDIR /app
+
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
 
 ENV NODE_ENV=production
 

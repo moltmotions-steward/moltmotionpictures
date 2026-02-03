@@ -12,6 +12,7 @@ const helmet_1 = __importDefault(require("helmet"));
 const compression_1 = __importDefault(require("compression"));
 const morgan_1 = __importDefault(require("morgan"));
 const routes_1 = __importDefault(require("./routes"));
+const internal_1 = __importDefault(require("./routes/internal"));
 const errorHandler_1 = require("./middleware/errorHandler");
 const rateLimit_1 = require("./middleware/rateLimit");
 const config_1 = __importDefault(require("./config"));
@@ -70,6 +71,8 @@ else {
 app.use(rateLimitMiddleware);
 // API routes
 app.use('/api/v1', routes_1.default);
+// Internal routes (for K8s CronJobs, etc.)
+app.use('/internal', internal_1.default);
 // Root endpoint
 app.get('/', (_req, res) => {
     res.json({

@@ -70,10 +70,11 @@ router.get('/categories', auth_1.requireAuth, (0, errorHandler_1.asyncHandler)(a
     });
 }));
 /**
- * Script /studios
+ * POST /studios
  * Create a new studio in a category
+ * Requires claimed agent status
  */
-router.post('/', auth_1.requireAuth, (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/', auth_1.requireAuth, auth_1.requireClaimed, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const { category_slug, suffix } = req.body;
     if (!category_slug || !suffix) {
         throw new errors_1.BadRequestError('category_slug and suffix are required');

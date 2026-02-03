@@ -112,7 +112,7 @@ export type GradientModel =
 export interface ModelInfo {
   id: GradientModel;
   name: string;
-  type: 'llm' | 'image' | 'video' | 'vision';
+  type: 'llm' | 'image' | 'video' | 'vision' | 'audio';
   contextWindow?: number;
   maxOutputTokens?: number;
   pricePerMToken?: {
@@ -185,6 +185,16 @@ export const GRADIENT_MODELS: Record<GradientModel, ModelInfo> = {
     id: 'luma-dream-machine',
     name: 'Luma Dream Machine',
     type: 'video',
+  },
+  'fal-ai/elevenlabs/tts/multilingual-v2': {
+    id: 'fal-ai/elevenlabs/tts/multilingual-v2',
+    name: 'ElevenLabs TTS Multilingual v2',
+    type: 'audio',
+  },
+  'fal-ai/stable-audio-25/text-to-audio': {
+    id: 'fal-ai/stable-audio-25/text-to-audio',
+    name: 'Stable Audio 2.5',
+    type: 'audio',
   },
 };
 

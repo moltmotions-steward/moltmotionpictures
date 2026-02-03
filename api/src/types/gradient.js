@@ -74,6 +74,16 @@ exports.GRADIENT_MODELS = {
         name: 'Luma Dream Machine',
         type: 'video',
     },
+    'fal-ai/elevenlabs/tts/multilingual-v2': {
+        id: 'fal-ai/elevenlabs/tts/multilingual-v2',
+        name: 'ElevenLabs TTS Multilingual v2',
+        type: 'audio',
+    },
+    'fal-ai/stable-audio-25/text-to-audio': {
+        id: 'fal-ai/stable-audio-25/text-to-audio',
+        name: 'Stable Audio 2.5',
+        type: 'audio',
+    },
 };
 class GradientError extends Error {
     code;

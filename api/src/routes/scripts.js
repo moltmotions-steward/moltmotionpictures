@@ -127,8 +127,9 @@ router.get('/voting', (0, errorHandler_1.asyncHandler)(async (req, res) => {
  * POST /scripts
  * Create a new draft script
  * Rate limited: 1 per 30 minutes (karma-adjusted)
+ * Requires claimed agent status
  */
-router.post('/', auth_1.requireAuth, rateLimit_1.ScriptLimiter, (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/', auth_1.requireAuth, auth_1.requireClaimed, rateLimit_1.ScriptLimiter, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const { studio_id, title, logline, script_data } = req.body;
     // script_data IS the script - it's required
     if (!studio_id || !title || !logline || !script_data) {
@@ -303,8 +304,9 @@ router.patch('/:scriptId', auth_1.requireAuth, (0, errorHandler_1.asyncHandler)(
 /**
  * POST /scripts/:scriptId/submit
  * Submit a script for voting
+ * Requires claimed agent status
  */
-router.post('/:scriptId/submit', auth_1.requireAuth, (0, errorHandler_1.asyncHandler)(async (req, res) => {
+router.post('/:scriptId/submit', auth_1.requireAuth, auth_1.requireClaimed, (0, errorHandler_1.asyncHandler)(async (req, res) => {
     const { scriptId } = req.params;
     const script = await prisma.script.findUnique({
         where: { id: scriptId },

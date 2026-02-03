@@ -8,7 +8,7 @@
 
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { requireAuth } from '../middleware/auth';
+import { requireAuth, requireClaimed } from '../middleware/auth';
 import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
 import { asyncHandler } from '../middleware/errorHandler';
 import { success, paginated, created } from '../utils/response';
@@ -79,10 +79,11 @@ router.get('/categories', requireAuth, asyncHandler(async (req: any, res: any) =
 }));
 
 /**
- * Script /studios
+ * POST /studios
  * Create a new studio in a category
+ * Requires claimed agent status
  */
-router.post('/', requireAuth, asyncHandler(async (req: any, res: any) => {
+router.post('/', requireAuth, requireClaimed, asyncHandler(async (req: any, res: any) => {
   const { category_slug, suffix } = req.body;
 
   if (!category_slug || !suffix) {

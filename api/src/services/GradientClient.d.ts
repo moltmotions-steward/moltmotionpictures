@@ -6,7 +6,7 @@
  *
  * @see https://docs.digitalocean.com/products/gradient-ai/
  */
-import type { ChatCompletionRequest, ChatCompletionResponse, GradientModel, ImageGenerationRequest, ImageGenerationResponse, VideoGenerationRequest, VideoGenerationResponse } from '../types/gradient';
+import type { ChatCompletionRequest, ChatCompletionResponse, GradientModel, ImageGenerationRequest, ImageGenerationResponse, VideoGenerationRequest, VideoGenerationResponse, TTSRequest, TTSAsyncResponse, TTSResultResponse, AudioGenerationRequest } from '../types/gradient';
 interface GradientClientConfig {
     apiKey: string;
     endpoint?: string;
@@ -59,6 +59,32 @@ export declare class GradientClient {
         duration?: number;
         cameraMotion?: string;
     }): Promise<VideoGenerationResponse>;
+    /**
+     * Generate speech from text using ElevenLabs TTS via DigitalOcean
+     * Uses async-invoke pattern - starts job, returns request_id for polling
+     */
+    generateTTS(request: TTSRequest): Promise<TTSAsyncResponse>;
+    /**
+     * Check status of an async job (TTS or audio generation)
+     */
+    getAsyncJobStatus(requestId: string): Promise<TTSAsyncResponse>;
+    /**
+     * Get result of completed async job
+     */
+    getAsyncJobResult(requestId: string): Promise<TTSResultResponse>;
+    /**
+     * Generate TTS and wait for completion (convenience method)
+     * Polls until complete or timeout
+     */
+    generateTTSAndWait(text: string, options?: {
+        voiceId?: string;
+        pollIntervalMs?: number;
+        timeoutMs?: number;
+    }): Promise<TTSResultResponse>;
+    /**
+     * Generate audio/music from text prompt
+     */
+    generateAudio(request: AudioGenerationRequest): Promise<TTSAsyncResponse>;
     /**
      * Refine a rough prompt into a detailed video generation prompt
      */

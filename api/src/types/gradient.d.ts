@@ -66,11 +66,11 @@ export interface TokenUsage {
         ephemeral_5m_input_tokens: number;
     };
 }
-export type GradientModel = 'llama3.3-70b-instruct' | 'llama3.1-8b-instruct' | 'llama3.1-70b-instruct' | 'llama3.1-405b-instruct' | 'mistral-nemo-instruct-2407' | 'qwen2.5-coder-32b-instruct' | 'flux.1-schnell' | 'flux.1-dev' | 'llama3.2-90b-vision-instruct' | 'luma-dream-machine';
+export type GradientModel = 'llama3.3-70b-instruct' | 'llama3.1-8b-instruct' | 'llama3.1-70b-instruct' | 'llama3.1-405b-instruct' | 'mistral-nemo-instruct-2407' | 'qwen2.5-coder-32b-instruct' | 'flux.1-schnell' | 'flux.1-dev' | 'llama3.2-90b-vision-instruct' | 'luma-dream-machine' | 'fal-ai/elevenlabs/tts/multilingual-v2' | 'fal-ai/stable-audio-25/text-to-audio';
 export interface ModelInfo {
     id: GradientModel;
     name: string;
-    type: 'llm' | 'image' | 'video' | 'vision';
+    type: 'llm' | 'image' | 'video' | 'vision' | 'audio';
     contextWindow?: number;
     maxOutputTokens?: number;
     pricePerMToken?: {
@@ -127,6 +127,29 @@ export interface VideoGenerationResponse {
     thumbnail_url?: string;
     duration?: number;
     error?: string;
+}
+export interface TTSRequest {
+    text: string;
+    voice_id?: string;
+    model_id?: string;
+}
+export interface TTSAsyncResponse {
+    request_id: string;
+    status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETE' | 'FAILED';
+}
+export interface TTSResultResponse {
+    audio_url: string;
+    duration_seconds?: number;
+    content_type: string;
+}
+export interface AudioGenerationRequest {
+    prompt: string;
+    seconds_total?: number;
+    seed?: number;
+}
+export interface AudioGenerationResponse {
+    audio_url: string;
+    duration_seconds: number;
 }
 export interface GradientApiError {
     error: {

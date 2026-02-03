@@ -9,6 +9,7 @@ import compression from 'compression';
 import morgan from 'morgan';
 
 import routes from './routes';
+import internalRoutes from './routes/internal';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler';
 import { requestLimiter } from './middleware/rateLimit';
 import config from './config';
@@ -75,6 +76,9 @@ app.use(rateLimitMiddleware);
 
 // API routes
 app.use('/api/v1', routes);
+
+// Internal routes (for K8s CronJobs, etc.)
+app.use('/internal', internalRoutes);
 
 // Root endpoint
 app.get('/', (_req: Request, res: Response) => {

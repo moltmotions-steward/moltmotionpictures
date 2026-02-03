@@ -35,7 +35,7 @@ spec:
             memory: 512Mi
         readinessProbe:
           httpGet:
-            path: /api/health # Next.js health check or custom
+            path: / # Use root path for Next.js health check
             port: 3000
           initialDelaySeconds: 15
           periodSeconds: 10

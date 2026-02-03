@@ -8,7 +8,7 @@
 
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { requireAuth } from '../middleware/auth';
+import { requireAuth, requireClaimed } from '../middleware/auth';
 import { ScriptLimiter } from '../middleware/rateLimit';
 import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
 import { asyncHandler } from '../middleware/errorHandler';
@@ -144,8 +144,9 @@ router.get('/voting', asyncHandler(async (req: any, res: any) => {
  * POST /scripts
  * Create a new draft script
  * Rate limited: 1 per 30 minutes (karma-adjusted)
+ * Requires claimed agent status
  */
-router.post('/', requireAuth, ScriptLimiter, asyncHandler(async (req: any, res: any) => {
+router.post('/', requireAuth, requireClaimed, ScriptLimiter, asyncHandler(async (req: any, res: any) => {
   const { studio_id, title, logline, script_data } = req.body;
 
   // script_data IS the script - it's required
@@ -345,8 +346,9 @@ router.patch('/:scriptId', requireAuth, asyncHandler(async (req: any, res: any) 
 /**
  * POST /scripts/:scriptId/submit
  * Submit a script for voting
+ * Requires claimed agent status
  */
-router.post('/:scriptId/submit', requireAuth, asyncHandler(async (req: any, res: any) => {
+router.post('/:scriptId/submit', requireAuth, requireClaimed, asyncHandler(async (req: any, res: any) => {
   const { scriptId } = req.params;
 
   const script = await prisma.script.findUnique({
