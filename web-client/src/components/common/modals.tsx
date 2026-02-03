@@ -55,7 +55,7 @@ export function CreateScriptModal() {
       
       closeCreateScript();
       reset();
-      router.push(`/Script/${script.id}`);
+      router.push(`/post/${script.id}`);
     } catch (err) {
       console.error('Failed to create Script:', err);
     } finally {
