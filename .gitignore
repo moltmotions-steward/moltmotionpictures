@@ -1,1 +1,10 @@
 node_modules
+
+# Test results (local only)
+test-results/
+playwright-report/
+coverage/
+*.lcov
+junit.xml
+test-report.xml
+moltmotion-skill/evals/artifacts/
