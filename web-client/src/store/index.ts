@@ -2,10 +2,10 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Agent, Post, PostSort, TimeRange, Notification } from '@/types';
+import type { Agent, Script, ScriptSort, TimeRange, Notification } from '@/types';
 import { api } from '@/lib/api';
 
-export type { PostSort };
+export type { ScriptSort };
 
 // Auth Store
 interface AuthStore {
@@ -63,85 +63,85 @@ export const useAuthStore = create<AuthStore>()(
         } catch { /* ignore */ }
       },
     }),
-    { name: 'moltbook-auth', partialize: (state) => ({ apiKey: state.apiKey }) }
+    { name: 'moltmotionpictures-auth', partialize: (state) => ({ apiKey: state.apiKey }) }
   )
 );
 
 // Feed Store
 interface FeedStore {
-  posts: Post[];
-  sort: PostSort;
+  Scripts: Script[];
+  sort: ScriptSort;
   timeRange: TimeRange;
-  submolt: string | null;
+  studio: string | null;
   isLoading: boolean;
   hasMore: boolean;
   offset: number;
   
-  setSort: (sort: PostSort) => void;
+  setSort: (sort: ScriptSort) => void;
   setTimeRange: (timeRange: TimeRange) => void;
-  setSubmolt: (submolt: string | null) => void;
-  loadPosts: (reset?: boolean) => Promise<void>;
+  setStudio: (studio: string | null) => void;
+  loadScripts: (reset?: boolean) => Promise<void>;
   loadMore: () => Promise<void>;
-  updatePostVote: (postId: string, vote: 'up' | 'down' | null, scoreDiff: number) => void;
+  updateScriptVote: (ScriptId: string, vote: 'up' | 'down' | null, scoreDiff: number) => void;
 }
 
 export const useFeedStore = create<FeedStore>((set, get) => ({
-  posts: [],
+  Scripts: [],
   sort: 'hot',
   timeRange: 'day',
-  submolt: null,
+  studio: null,
   isLoading: false,
   hasMore: true,
   offset: 0,
   
   setSort: (sort) => {
-    set({ sort, posts: [], offset: 0, hasMore: true });
-    get().loadPosts(true);
+    set({ sort, Scripts: [], offset: 0, hasMore: true });
+    get().loadScripts(true);
   },
   
   setTimeRange: (timeRange) => {
-    set({ timeRange, posts: [], offset: 0, hasMore: true });
-    get().loadPosts(true);
+    set({ timeRange, Scripts: [], offset: 0, hasMore: true });
+    get().loadScripts(true);
   },
   
-  setSubmolt: (submolt) => {
-    set({ submolt, posts: [], offset: 0, hasMore: true });
-    get().loadPosts(true);
+  setStudio: (studio) => {
+    set({ studio, Scripts: [], offset: 0, hasMore: true });
+    get().loadScripts(true);
   },
   
-  loadPosts: async (reset = false) => {
-    const { sort, timeRange, submolt, isLoading } = get();
+  loadScripts: async (reset = false) => {
+    const { sort, timeRange, studio, isLoading } = get();
     if (isLoading) return;
     
     set({ isLoading: true });
     try {
       const offset = reset ? 0 : get().offset;
-      const response = submolt 
-        ? await api.getSubmoltFeed(submolt, { sort, limit: 25, offset })
-        : await api.getPosts({ sort, timeRange, limit: 25, offset });
+      const response = studio 
+        ? await api.getStudioFeed(studio, { sort, limit: 25, offset })
+        : await api.getScripts({ sort, timeRange, limit: 25, offset });
       
       set({
-        posts: reset ? response.data : [...get().posts, ...response.data],
+        Scripts: reset ? response.data : [...get().Scripts, ...response.data],
         hasMore: response.pagination.hasMore,
         offset: offset + response.data.length,
         isLoading: false,
       });
     } catch (err) {
       set({ isLoading: false });
-      console.error('Failed to load posts:', err);
+      console.error('Failed to load Scripts:', err);
     }
   },
   
   loadMore: async () => {
     const { hasMore, isLoading } = get();
     if (!hasMore || isLoading) return;
-    await get().loadPosts();
+    await get().loadScripts();
   },
   
-  updatePostVote: (postId, vote, scoreDiff) => {
+  updateScriptVote: (ScriptId, vote, scoreDiff) => {
     set({
-      posts: get().posts.map(p => 
-        p.id === postId ? { ...p, userVote: vote, score: p.score + scoreDiff } : p
+      Scripts: get().Scripts.map(p => 
+        p.id === ScriptId ? { ...p, userVote: vote, score: p.score + scoreDiff } : p
       ),
     });
   },
@@ -151,13 +151,13 @@ export const useFeedStore = create<FeedStore>((set, get) => ({
 interface UIStore {
   sidebarOpen: boolean;
   mobileMenuOpen: boolean;
-  createPostOpen: boolean;
+  createScriptOpen: boolean;
   searchOpen: boolean;
   
   toggleSidebar: () => void;
   toggleMobileMenu: () => void;
-  openCreatePost: () => void;
-  closeCreatePost: () => void;
+  openCreateScript: () => void;
+  closeCreateScript: () => void;
   openSearch: () => void;
   closeSearch: () => void;
 }
@@ -165,13 +165,13 @@ interface UIStore {
 export const useUIStore = create<UIStore>((set) => ({
   sidebarOpen: true,
   mobileMenuOpen: false,
-  createPostOpen: false,
+  createScriptOpen: false,
   searchOpen: false,
   
   toggleSidebar: () => set(s => ({ sidebarOpen: !s.sidebarOpen })),
   toggleMobileMenu: () => set(s => ({ mobileMenuOpen: !s.mobileMenuOpen })),
-  openCreatePost: () => set({ createPostOpen: true }),
-  closeCreatePost: () => set({ createPostOpen: false }),
+  openCreateScript: () => set({ createScriptOpen: true }),
+  closeCreateScript: () => set({ createScriptOpen: false }),
   openSearch: () => set({ searchOpen: true }),
   closeSearch: () => set({ searchOpen: false }),
 }));
@@ -236,7 +236,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
 // Subscriptions Store
 interface SubscriptionStore {
-  subscribedSubmolts: string[];
+  subscribedstudios: string[];
   addSubscription: (name: string) => void;
   removeSubscription: (name: string) => void;
   isSubscribed: (name: string) => boolean;
@@ -245,20 +245,20 @@ interface SubscriptionStore {
 export const useSubscriptionStore = create<SubscriptionStore>()(
   persist(
     (set, get) => ({
-      subscribedSubmolts: [],
+      subscribedstudios: [],
       
       addSubscription: (name) => {
-        if (!get().subscribedSubmolts.includes(name)) {
-          set({ subscribedSubmolts: [...get().subscribedSubmolts, name] });
+        if (!get().subscribedstudios.includes(name)) {
+          set({ subscribedstudios: [...get().subscribedstudios, name] });
         }
       },
       
       removeSubscription: (name) => {
-        set({ subscribedSubmolts: get().subscribedSubmolts.filter(s => s !== name) });
+        set({ subscribedstudios: get().subscribedstudios.filter(s => s !== name) });
       },
       
-      isSubscribed: (name) => get().subscribedSubmolts.includes(name),
+      isSubscribed: (name) => get().subscribedstudios.includes(name),
     }),
-    { name: 'moltbook-subscriptions' }
+    { name: 'moltmotionpictures-subscriptions' }
   )
 );

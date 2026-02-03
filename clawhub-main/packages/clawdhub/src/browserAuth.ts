@@ -57,7 +57,7 @@ export async function startLoopbackAuthServer(params?: { timeoutMs?: number }) {
       return
     }
 
-    if (method === 'POST' && url === '/token') {
+    if (method === 'Script' && url === '/token') {
       const chunks: Uint8Array[] = []
       req.on('data', (chunk) => chunks.push(chunk as Uint8Array))
       req.on('end', () => {

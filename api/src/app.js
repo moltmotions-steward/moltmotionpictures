@@ -1,86 +1,85 @@
+"use strict";
 /**
- * Express Application Setup
+ * Express Application Setup (TypeScript)
  */
-
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const compression = require('compression');
-const morgan = require('morgan');
-
-const routes = require('./routes');
-const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
-const { requestLimiter } = require('./middleware/rateLimit');
-const config = require('./config');
-
-const app = express();
-
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const cors_1 = __importDefault(require("cors"));
+const helmet_1 = __importDefault(require("helmet"));
+const compression_1 = __importDefault(require("compression"));
+const morgan_1 = __importDefault(require("morgan"));
+const routes_1 = __importDefault(require("./routes"));
+const errorHandler_1 = require("./middleware/errorHandler");
+const rateLimit_1 = require("./middleware/rateLimit");
+const config_1 = __importDefault(require("./config"));
+const app = (0, express_1.default)();
 // Security middleware
-app.use(helmet());
-
+app.use((0, helmet_1.default)());
 // CORS
-app.use(cors({
-  origin: config.isProduction 
-    ? ['https://www.moltbook.com', 'https://moltbook.com']
-    : '*',
-  methods: ['GET', 'POST', 'PATCH', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+app.use((0, cors_1.default)({
+    origin: config_1.default.isProduction
+        ? ['https://www.moltmotionpictures.com', 'https://moltmotionpictures.com']
+        : '*',
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
-
 // Compression
-app.use(compression());
-
+app.use((0, compression_1.default)());
 // Request logging
-if (!config.isProduction) {
-  app.use(morgan('dev'));
-} else {
-  app.use(morgan('combined'));
+if (!config_1.default.isProduction) {
+    app.use((0, morgan_1.default)('dev'));
 }
-
+else {
+    app.use((0, morgan_1.default)('combined'));
+}
 // Body parsing
-app.use(express.json({ limit: '1mb' }));
-
+app.use(express_1.default.json({ limit: '1mb' }));
 // Trust proxy (for rate limiting behind reverse proxy)
 app.set('trust proxy', 1);
-
-// Integration: Rate Limiter
-let rateLimitMiddleware = (req, res, next) => next();
-try {
-  // Try to load the package if available (monorepo/linked)
-  const rateLimiter = require('@moltstudios/rate-limiter');
-  if (rateLimiter && typeof rateLimiter === 'function') {
-      rateLimitMiddleware = rateLimiter({
-        windowMs: 15 * 60 * 1000, // 15 minutes
-        max: 100 // limit each IP to 100 requests per windowMs
-      });
-      console.log('✅ Integrated: @moltstudios/rate-limiter');
-  } else if (rateLimiter && rateLimiter.rateLimiter) {
-       rateLimitMiddleware = rateLimiter.rateLimiter({
-        windowMs: 15 * 60 * 1000,
-        max: 100
-      });
-      console.log('✅ Integrated: @moltstudios/rate-limiter');
-  }
-} catch (e) {
-  console.warn('⚠️  Package @moltstudios/rate-limiter not found or failed to load. Falling back to local requestLimiter.');
-  rateLimitMiddleware = requestLimiter;
+let rateLimitMiddleware = (_req, _res, next) => next();
+if (process.env.DISABLE_RATE_LIMIT === '1') {
+    console.log('⚠️  Rate limiting disabled via DISABLE_RATE_LIMIT=1');
+}
+else {
+    try {
+        // Try to load the package if available (monorepo/linked)
+        const rateLimiter = require('@moltstudios/rate-limiter');
+        if (rateLimiter && typeof rateLimiter === 'function') {
+            rateLimitMiddleware = rateLimiter({
+                windowMs: 15 * 60 * 1000, // 15 minutes
+                max: 100 // limit each IP to 100 requests per windowMs
+            });
+            console.log('✅ Integrated: @moltstudios/rate-limiter');
+        }
+        else if (rateLimiter && rateLimiter.rateLimiter) {
+            rateLimitMiddleware = rateLimiter.rateLimiter({
+                windowMs: 15 * 60 * 1000,
+                max: 100
+            });
+            console.log('✅ Integrated: @moltstudios/rate-limiter');
+        }
+    }
+    catch {
+        console.warn('⚠️  Package @moltstudios/rate-limiter not found or failed to load. Falling back to local requestLimiter.');
+        rateLimitMiddleware = rateLimit_1.requestLimiter;
+    }
 }
 app.use(rateLimitMiddleware);
-
 // API routes
-app.use('/api/v1', routes);
-
+app.use('/api/v1', routes_1.default);
 // Root endpoint
-app.get('/', (req, res) => {
-  res.json({
-    name: 'Moltbook API',
-    version: '1.0.0',
-    documentation: 'https://www.moltbook.com/skill.md'
-  });
+app.get('/', (_req, res) => {
+    res.json({
+        name: 'moltmotionpictures API',
+        version: '1.0.0',
+        documentation: 'https://www.moltmotionpictures.com/skill.md'
+    });
 });
-
 // Error handling
-app.use(notFoundHandler);
-app.use(errorHandler);
-
-module.exports = app;
+app.use(errorHandler_1.notFoundHandler);
+app.use(errorHandler_1.errorHandler);
+exports.default = app;
+//# sourceMappingURL=app.js.map

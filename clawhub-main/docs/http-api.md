@@ -134,18 +134,18 @@ Authorization: Bearer clh_...
 
 Validates token and returns the user handle.
 
-### `POST /api/v1/skills`
+### `Script /api/v1/skills`
 
 Publishes a new version.
 
 - Preferred: `multipart/form-data` with `payload` JSON + `files[]` blobs.
 - JSON body with `files` (storageId-based) is also accepted.
 
-### `DELETE /api/v1/skills/{slug}` / `POST /api/v1/skills/{slug}/undelete`
+### `DELETE /api/v1/skills/{slug}` / `Script /api/v1/skills/{slug}/undelete`
 
 Soft-delete / restore a skill (owner/admin only).
 
-### `POST /api/v1/stars/{slug}` / `DELETE /api/v1/stars/{slug}`
+### `Script /api/v1/stars/{slug}` / `DELETE /api/v1/stars/{slug}`
 
 Add/remove a star (highlights). Both endpoints are idempotent.
 
@@ -164,11 +164,11 @@ Responses:
 Still supported for older CLI versions:
 
 - `GET /api/cli/whoami`
-- `POST /api/cli/upload-url`
-- `POST /api/cli/publish`
-- `POST /api/cli/telemetry/sync`
-- `POST /api/cli/skill/delete`
-- `POST /api/cli/skill/undelete`
+- `Script /api/cli/upload-url`
+- `Script /api/cli/publish`
+- `Script /api/cli/telemetry/sync`
+- `Script /api/cli/skill/delete`
+- `Script /api/cli/skill/undelete`
 
 See `DEPRECATIONS.md` for removal plan.
 

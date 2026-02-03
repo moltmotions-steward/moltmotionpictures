@@ -1,5 +1,5 @@
 /**
- * @moltbook/rate-limiter Test Suite
+ * @moltmotionpictures/rate-limiter Test Suite
  * 
  * Run: npm test
  */
@@ -8,8 +8,8 @@ const {
   RateLimiter,
   MemoryStore,
   rateLimitMiddleware,
-  createMoltbookLimiter,
-  MOLTBOOK_LIMITS
+  createmoltmotionpicturesLimiter,
+  moltmotionpictures_LIMITS
 } = require('../src');
 
 // ============================================
@@ -64,7 +64,7 @@ function assertEqual(actual, expected, message) {
 // ============================================
 
 async function runTests() {
-  console.log('\n @moltbook/rate-limiter Test Suite\n');
+  console.log('\n @moltmotionpictures/rate-limiter Test Suite\n');
   console.log('═'.repeat(50));
 
   // RateLimiter Creation
@@ -86,10 +86,10 @@ async function runTests() {
     assertEqual(limiter.limits.custom.max, 5);
   });
 
-  test('includes default Moltbook limits', async () => {
+  test('includes default moltmotionpictures limits', async () => {
     const limiter = new RateLimiter();
     assertEqual(limiter.limits.requests.max, 100);
-    assertEqual(limiter.limits.posts.max, 1);
+    assertEqual(limiter.limits.Scripts.max, 1);
     assertEqual(limiter.limits.comments.max, 50);
   });
 
@@ -238,7 +238,7 @@ async function runTests() {
     
     const statuses = await limiter.getAllStatuses('user8');
     assert(statuses.requests, 'Should have requests');
-    assert(statuses.posts, 'Should have posts');
+    assert(statuses.Scripts, 'Should have Scripts');
     assert(statuses.comments, 'Should have comments');
   });
 
@@ -326,13 +326,13 @@ async function runTests() {
   // Factory Function
   describe('Factory Function', () => {});
   
-  test('createMoltbookLimiter creates configured limiter', async () => {
-    const limiter = createMoltbookLimiter();
+  test('createmoltmotionpicturesLimiter creates configured limiter', async () => {
+    const limiter = createmoltmotionpicturesLimiter();
     
     assertEqual(limiter.limits.requests.max, 100);
     assertEqual(limiter.limits.requests.window, 60);
-    assertEqual(limiter.limits.posts.max, 1);
-    assertEqual(limiter.limits.posts.window, 1800);
+    assertEqual(limiter.limits.Scripts.max, 1);
+    assertEqual(limiter.limits.Scripts.window, 1800);
   });
 
   // Middleware
@@ -363,12 +363,12 @@ async function runTests() {
   // Constants
   describe('Constants', () => {});
   
-  test('MOLTBOOK_LIMITS is defined', async () => {
-    assert(MOLTBOOK_LIMITS.requests);
-    assert(MOLTBOOK_LIMITS.posts);
-    assert(MOLTBOOK_LIMITS.comments);
-    assertEqual(MOLTBOOK_LIMITS.requests.max, 100);
-    assertEqual(MOLTBOOK_LIMITS.posts.window, 1800);
+  test('moltmotionpictures_LIMITS is defined', async () => {
+    assert(moltmotionpictures_LIMITS.requests);
+    assert(moltmotionpictures_LIMITS.Scripts);
+    assert(moltmotionpictures_LIMITS.comments);
+    assertEqual(moltmotionpictures_LIMITS.requests.max, 100);
+    assertEqual(moltmotionpictures_LIMITS.Scripts.window, 1800);
   });
 
   // Error Handling

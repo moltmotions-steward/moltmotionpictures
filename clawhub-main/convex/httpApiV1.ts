@@ -3,6 +3,7 @@ import { api, internal } from './_generated/api'
 import type { Doc, Id } from './_generated/dataModel'
 import type { ActionCtx } from './_generated/server'
 import { httpAction } from './_generated/server'
+import { checkSkillModeration } from './lib/access'
 import { requireApiTokenUser } from './lib/apiTokenAuth'
 import { hashToken } from './lib/tokens'
 import { publishVersionForUser } from './skills'
@@ -281,6 +282,9 @@ async function skillsGetRouterV1Handler(ctx: ActionCtx, request: Request) {
   if (second === 'versions' && segments.length === 2) {
     const skill = await ctx.runQuery(internal.skills.getSkillBySlugInternal, { slug })
     if (!skill || skill.softDeletedAt) return text('Skill not found', 404, rate.headers)
+    // MODERATION ENFORCEMENT
+    const moderationError = checkSkillModeration(skill)
+    if (moderationError) return text(moderationError, 403, rate.headers)
 
     const url = new URL(request.url)
     const limit = toOptionalNumber(url.searchParams.get('limit'))
@@ -306,6 +310,9 @@ async function skillsGetRouterV1Handler(ctx: ActionCtx, request: Request) {
   if (second === 'versions' && third && segments.length === 3) {
     const skill = await ctx.runQuery(internal.skills.getSkillBySlugInternal, { slug })
     if (!skill || skill.softDeletedAt) return text('Skill not found', 404, rate.headers)
+    // MODERATION ENFORCEMENT
+    const moderationError = checkSkillModeration(skill)
+    if (moderationError) return text(moderationError, 403, rate.headers)
 
     const version = await ctx.runQuery(api.skills.getVersionBySkillAndVersion, {
       skillId: skill._id,
@@ -456,7 +463,7 @@ function toFileLike(entry: FormDataEntryValue): FileLikeEntry | null {
   return entry as FileLikeEntry
 }
 
-async function skillsPostRouterV1Handler(ctx: ActionCtx, request: Request) {
+async function skillsScriptRouterV1Handler(ctx: ActionCtx, request: Request) {
   const rate = await applyRateLimit(ctx, request, 'write')
   if (!rate.ok) return rate.response
 
@@ -478,7 +485,7 @@ async function skillsPostRouterV1Handler(ctx: ActionCtx, request: Request) {
   }
 }
 
-export const skillsPostRouterV1Http = httpAction(skillsPostRouterV1Handler)
+export const skillsScriptRouterV1Http = httpAction(skillsScriptRouterV1Handler)
 
 async function skillsDeleteRouterV1Handler(ctx: ActionCtx, request: Request) {
   const rate = await applyRateLimit(ctx, request, 'write')
@@ -1058,7 +1065,7 @@ async function publishSoulV1Handler(ctx: ActionCtx, request: Request) {
 
 export const publishSoulV1Http = httpAction(publishSoulV1Handler)
 
-async function soulsPostRouterV1Handler(ctx: ActionCtx, request: Request) {
+async function soulsScriptRouterV1Handler(ctx: ActionCtx, request: Request) {
   const rate = await applyRateLimit(ctx, request, 'write')
   if (!rate.ok) return rate.response
 
@@ -1080,7 +1087,7 @@ async function soulsPostRouterV1Handler(ctx: ActionCtx, request: Request) {
   }
 }
 
-export const soulsPostRouterV1Http = httpAction(soulsPostRouterV1Handler)
+export const soulsScriptRouterV1Http = httpAction(soulsScriptRouterV1Handler)
 
 async function soulsDeleteRouterV1Handler(ctx: ActionCtx, request: Request) {
   const rate = await applyRateLimit(ctx, request, 'write')
@@ -1104,7 +1111,7 @@ async function soulsDeleteRouterV1Handler(ctx: ActionCtx, request: Request) {
 
 export const soulsDeleteRouterV1Http = httpAction(soulsDeleteRouterV1Handler)
 
-async function starsPostRouterV1Handler(ctx: ActionCtx, request: Request) {
+async function starsScriptRouterV1Handler(ctx: ActionCtx, request: Request) {
   const rate = await applyRateLimit(ctx, request, 'write')
   if (!rate.ok) return rate.response
 
@@ -1127,7 +1134,7 @@ async function starsPostRouterV1Handler(ctx: ActionCtx, request: Request) {
   }
 }
 
-export const starsPostRouterV1Http = httpAction(starsPostRouterV1Handler)
+export const starsScriptRouterV1Http = httpAction(starsScriptRouterV1Handler)
 
 async function starsDeleteRouterV1Handler(ctx: ActionCtx, request: Request) {
   const rate = await applyRateLimit(ctx, request, 'write')
@@ -1159,14 +1166,14 @@ export const __handlers = {
   listSkillsV1Handler,
   skillsGetRouterV1Handler,
   publishSkillV1Handler,
-  skillsPostRouterV1Handler,
+  skillsScriptRouterV1Handler,
   skillsDeleteRouterV1Handler,
   listSoulsV1Handler,
   soulsGetRouterV1Handler,
   publishSoulV1Handler,
-  soulsPostRouterV1Handler,
+  soulsScriptRouterV1Handler,
   soulsDeleteRouterV1Handler,
-  starsPostRouterV1Handler,
+  starsScriptRouterV1Handler,
   starsDeleteRouterV1Handler,
   whoamiV1Handler,
 }

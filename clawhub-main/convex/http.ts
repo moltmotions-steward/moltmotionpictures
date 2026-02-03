@@ -22,12 +22,12 @@ import {
   searchSkillsV1Http,
   skillsDeleteRouterV1Http,
   skillsGetRouterV1Http,
-  skillsPostRouterV1Http,
+  skillsScriptRouterV1Http,
   soulsDeleteRouterV1Http,
   soulsGetRouterV1Http,
-  soulsPostRouterV1Http,
+  soulsScriptRouterV1Http,
   starsDeleteRouterV1Http,
-  starsPostRouterV1Http,
+  starsScriptRouterV1Http,
   whoamiV1Http,
 } from './httpApiV1'
 
@@ -74,7 +74,7 @@ http.route({
 http.route({
   pathPrefix: `${ApiRoutes.skills}/`,
   method: 'POST',
-  handler: skillsPostRouterV1Http,
+  handler: skillsScriptRouterV1Http,
 })
 
 http.route({
@@ -86,7 +86,7 @@ http.route({
 http.route({
   pathPrefix: `${ApiRoutes.stars}/`,
   method: 'POST',
-  handler: starsPostRouterV1Http,
+  handler: starsScriptRouterV1Http,
 })
 
 http.route({
@@ -122,7 +122,7 @@ http.route({
 http.route({
   pathPrefix: `${ApiRoutes.souls}/`,
   method: 'POST',
-  handler: soulsPostRouterV1Http,
+  handler: soulsScriptRouterV1Http,
 })
 
 http.route({

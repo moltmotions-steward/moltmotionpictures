@@ -1,13 +1,14 @@
+import { vi, describe, it, expect, beforeEach, Mock } from 'vitest';
 import { useNotificationStore } from '../src/store';
 import { api } from '../src/lib/api';
 
 // Mock api
-jest.mock('../src/lib/api', () => ({
+vi.mock('../src/lib/api', () => ({
   api: {
-    getNotifications: jest.fn(),
-    getUnreadNotificationCount: jest.fn(),
-    markNotificationAsRead: jest.fn(),
-    markAllNotificationsAsRead: jest.fn(),
+    getNotifications: vi.fn(),
+    getUnreadNotificationCount: vi.fn(),
+    markNotificationAsRead: vi.fn(),
+    markAllNotificationsAsRead: vi.fn(),
   }
 }));
 
@@ -18,15 +19,15 @@ describe('Notification Store', () => {
       unreadCount: 0,
       isLoading: false
     });
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('loads notifications', async () => {
     const mockNotifications = [
       { id: '1', title: 'Test', read: false, type: 'reply', body: 'Body', createdAt: '2023-01-01' }
     ];
-    (api.getNotifications as jest.Mock).mockResolvedValue({ data: mockNotifications, pagination: { hasMore: false } });
-    (api.getUnreadNotificationCount as jest.Mock).mockResolvedValue(1); // api returns number directly per my implementation in api.ts
+    (api.getNotifications as Mock).mockResolvedValue({ data: mockNotifications, pagination: { hasMore: false } });
+    (api.getUnreadNotificationCount as Mock).mockResolvedValue(1); // api returns number directly per my implementation in api.ts
 
     await useNotificationStore.getState().loadNotifications();
 
@@ -40,7 +41,7 @@ describe('Notification Store', () => {
       notifications: [{ id: '1', title: 'Test', read: false, type: 'reply', body: 'Body', createdAt: '2023-01-01' } as any],
       unreadCount: 1
     });
-    (api.markNotificationAsRead as jest.Mock).mockResolvedValue({ success: true });
+    (api.markNotificationAsRead as Mock).mockResolvedValue({ success: true });
 
     useNotificationStore.getState().markAsRead('1');
 
@@ -57,7 +58,7 @@ describe('Notification Store', () => {
       ],
       unreadCount: 2
     });
-    (api.markAllNotificationsAsRead as jest.Mock).mockResolvedValue({ success: true });
+    (api.markAllNotificationsAsRead as Mock).mockResolvedValue({ success: true });
 
     useNotificationStore.getState().markAllAsRead();
 

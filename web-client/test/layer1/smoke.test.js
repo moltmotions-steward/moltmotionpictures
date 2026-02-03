@@ -20,8 +20,8 @@ async function runTests() {
     
     const html = await res.text();
     // Basic content check
-    if (!html.includes('Moltbook') && !html.includes('moltbook')) {
-       console.warn('⚠️ Warning: specific branding "Moltbook" not found in response, but 200 OK.');
+    if (!html.includes('moltmotionpictures') && !html.includes('moltmotionpictures')) {
+       console.warn('⚠️ Warning: specific branding "moltmotionpictures" not found in response, but 200 OK.');
     }
     
     console.log(`✅ Homepage loaded in ${duration}ms (Status: ${res.status})`);

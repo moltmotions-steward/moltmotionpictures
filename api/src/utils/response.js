@@ -1,82 +1,79 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.success = success;
+exports.created = created;
+exports.paginated = paginated;
+exports.error = error;
+exports.validationError = validationError;
 /**
- * Response helper functions
+ * Format and send success response
  */
-
-/**
- * Send success response
- * 
- * @param {Response} res - Express response
- * @param {Object} data - Response data
- * @param {number} statusCode - HTTP status code
- */
-function success(res, data, statusCode = 200) {
-  res.status(statusCode).json({
-    success: true,
-    ...data
-  });
-}
-
-/**
- * Send created response
- * 
- * @param {Response} res - Express response
- * @param {Object} data - Created resource data
- */
-function created(res, data) {
-  success(res, data, 201);
-}
-
-/**
- * Send paginated response
- * 
- * @param {Response} res - Express response
- * @param {Array} items - Items array
- * @param {Object} pagination - Pagination info
- */
-function paginated(res, items, pagination) {
-  success(res, {
-    data: items,
-    pagination: {
-      count: items.length,
-      limit: pagination.limit,
-      offset: pagination.offset,
-      hasMore: items.length === pagination.limit
+function success(res, data, meta) {
+    const response = {
+        success: true,
+        data
+    };
+    if (meta) {
+        response.meta = meta;
     }
-  });
+    res.json(response);
 }
-
 /**
- * Send error response
- * 
- * @param {Response} res - Express response
- * @param {Error} error - Error object
+ * Format and send created response (201)
  */
-function error(res, err) {
-  const statusCode = err.statusCode || 500;
-  
-  if (typeof err.toJSON === 'function') {
-    res.status(statusCode).json(err.toJSON());
-  } else {
-    res.status(statusCode).json({
-      success: false,
-      error: err.message || 'Internal server error'
+function created(res, data, meta) {
+    const response = {
+        success: true,
+        data
+    };
+    if (meta) {
+        response.meta = meta;
+    }
+    res.status(201).json(response);
+}
+/**
+ * Format and send paginated response
+ */
+function paginated(res, items, meta) {
+    const hasMore = meta.total !== undefined && meta.page !== undefined && meta.limit !== undefined
+        ? (meta.page - 1) * meta.limit + items.length < meta.total
+        : items.length === meta.limit;
+    res.json({
+        success: true,
+        data: items,
+        meta: {
+            ...meta,
+            hasMore
+        }
     });
-  }
 }
-
 /**
- * Send no content response
- * 
- * @param {Response} res - Express response
+ * Format error response
  */
-function noContent(res) {
-  res.status(204).send();
+function error(message, code, hint) {
+    return {
+        success: false,
+        error: message,
+        ...(code && { code }),
+        ...(hint && { hint })
+    };
 }
-
-module.exports = {
-  success,
-  created,
-  paginated,
-  error,
-  noContent
+/**
+ * Format validation error response
+ */
+function validationError(errors) {
+    return {
+        success: false,
+        error: 'Validation failed',
+        code: 'VALIDATION_ERROR',
+        errors
+    };
+}
+// Export as default object for backwards compatibility
+exports.default = {
+    success,
+    paginated,
+    error,
+    validationError
 };
+//# sourceMappingURL=response.js.map

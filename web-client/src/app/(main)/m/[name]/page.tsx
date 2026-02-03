@@ -2,33 +2,33 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { useSubmolt, useAuth, useInfiniteScroll } from '@/hooks';
+import { useStudio, useAuth, useInfiniteScroll } from '@/hooks';
 import { PageContainer } from '@/components/layout';
-import { SubmoltCard } from '@/components/submolt';
-import { CreatePostCard, PostList, FeedSortTabs } from '@/components/post';
+import { StudioCard } from '@/components/submolt';
+import { CreateScriptCard, ScriptList, FeedSortTabs } from '@/components/post';
 import { Button, Skeleton, Card } from '@/components/ui';
-import { useSubscriptionStore, useFeedStore, PostSort } from '@/store';
+import { useSubscriptionStore, useFeedStore, ScriptSort } from '@/store';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
-export default function SubmoltPage() {
+export default function StudioPage() {
   const params = useParams<{ name: string }>();
   const searchParams = useSearchParams();
-  const sortParam = (searchParams.get('sort') as PostSort) || 'hot';
+  const sortParam = (searchParams.get('sort') as ScriptSort) || 'hot';
 
-  const { data: submolt, isLoading: submoltLoading, error } = useSubmolt(params.name);
+  const { data: studio, isLoading: studioLoading, error } = useStudio(params.name);
   const { isAuthenticated } = useAuth();
   const { isSubscribed, addSubscription, removeSubscription } = useSubscriptionStore();
-  const { posts, sort, isLoading, hasMore, setSort, setSubmolt, loadMore } = useFeedStore();
+  const { Scripts, sort, isLoading, hasMore, setSort, setStudio, loadMore } = useFeedStore();
   const { ref } = useInfiniteScroll(loadMore, hasMore);
 
   // Initialize store
   useEffect(() => {
-    if (submolt) {
-      setSubmolt(submolt.name);
+    if (studio) {
+      setStudio(studio.name);
     }
-  }, [submolt, setSubmolt]);
+  }, [studio, setStudio]);
 
   // Handle sort change from URL
   useEffect(() => {
@@ -51,23 +51,23 @@ export default function SubmoltPage() {
           </Link>
         </div>
 
-        {submoltLoading ? (
+        {studioLoading ? (
           <Skeleton className="h-48 w-full rounded-lg mb-6" />
-        ) : submolt ? (
-          <SubmoltCard submolt={submolt} />
+        ) : studio ? (
+          <StudioCard studio={studio} />
         ) : null}
 
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex-1">
             {isAuthenticated && (
-              <CreatePostCard submolt={params.name} />
+              <CreateScriptCard studio={params.name} />
             )}
 
             <div className="mb-4">
               <FeedSortTabs value={sort} onChange={(val) => setSort(val as any)} />
             </div>
 
-            <PostList posts={posts} isLoading={isLoading} />
+            <ScriptList Scripts={Scripts} isLoading={isLoading} />
             
             <div ref={ref} className="h-10 w-full flex items-center justify-center">
               {isLoading && hasMore && <Skeleton className="h-6 w-24" />}
@@ -76,9 +76,9 @@ export default function SubmoltPage() {
 
           <div className="hidden md:block w-80">
             <Card className="p-4 sticky top-20">
-              <h3 className="font-semibold mb-2">About {submolt?.displayName || params.name}</h3>
+              <h3 className="font-semibold mb-2">About {studio?.displayName || params.name}</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                {submolt?.description || `Welcome to the m/${params.name} community.`}
+                {studio?.description || `Welcome to the m/${params.name} community.`}
               </p>
               <div className="text-xs text-muted-foreground">
                 <p>Created {new Date().toLocaleDateString()}</p>

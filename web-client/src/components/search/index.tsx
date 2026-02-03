@@ -7,7 +7,7 @@ import { useSearch, useDebounce, useKeyboardShortcut } from '@/hooks';
 import { useUIStore } from '@/store';
 import { Dialog, DialogContent, Input, Skeleton } from '@/components/ui';
 import { Search, ArrowRight, Hash, Users, FileText, Clock, X } from 'lucide-react';
-import { cn, getAgentUrl, getSubmoltUrl, getPostUrl, formatScore, getInitials } from '@/lib/utils';
+import { cn, getAgentUrl, getStudioUrl, getScriptUrl, formatScore, getInitials } from '@/lib/utils';
 
 export function SearchModal() {
   const router = useRouter();
@@ -21,7 +21,7 @@ export function SearchModal() {
   // Load recent searches from localStorage
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('moltbook_recent_searches');
+      const saved = localStorage.getItem('moltmotionpictures_recent_searches');
       if (saved) setRecentSearches(JSON.parse(saved));
     }
   }, []);
@@ -42,7 +42,7 @@ export function SearchModal() {
     const updated = [term, ...recentSearches.filter(s => s !== term)].slice(0, 5);
     setRecentSearches(updated);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('moltbook_recent_searches', JSON.stringify(updated));
+      localStorage.setItem('moltmotionpictures_recent_searches', JSON.stringify(updated));
     }
   };
   
@@ -63,11 +63,11 @@ export function SearchModal() {
   const clearRecent = () => {
     setRecentSearches([]);
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('moltbook_recent_searches');
+      localStorage.removeItem('moltmotionpictures_recent_searches');
     }
   };
   
-  const hasResults = data && (data.posts?.length || data.agents?.length || data.submolts?.length);
+  const hasResults = data && (data.Scripts?.length || data.agents?.length || data.studios?.length);
   
   return (
     <Dialog open={searchOpen} onOpenChange={(open) => !open && closeSearch()}>
@@ -79,7 +79,7 @@ export function SearchModal() {
             <input
               ref={inputRef}
               type="text"
-              placeholder="Search moltbook..."
+              placeholder="Search moltmotionpictures..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="flex-1 h-14 px-3 bg-transparent text-lg focus:outline-none"
@@ -130,23 +130,23 @@ export function SearchModal() {
                   </div>
                 )}
                 
-                {/* Submolts */}
-                {data.submolts && data.submolts.length > 0 && (
+                {/* studios */}
+                {data.studios && data.studios.length > 0 && (
                   <div className="mb-2">
                     <div className="px-4 py-1 text-xs font-semibold text-muted-foreground uppercase">Communities</div>
-                    {data.submolts.slice(0, 3).map(submolt => (
+                    {data.studios.slice(0, 3).map(studio => (
                       <Link
-                        key={submolt.id}
-                        href={getSubmoltUrl(submolt.name)}
-                        onClick={() => handleResultClick(submolt.name)}
+                        key={studio.id}
+                        href={getStudioUrl(studio.name)}
+                        onClick={() => handleResultClick(studio.name)}
                         className="flex items-center gap-3 px-4 py-2 hover:bg-muted transition-colors"
                       >
                         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
                           <Hash className="h-4 w-4 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{submolt.displayName || submolt.name}</p>
-                          <p className="text-xs text-muted-foreground">m/{submolt.name} • {formatScore(submolt.subscriberCount)} members</p>
+                          <p className="font-medium truncate">{studio.displayName || studio.name}</p>
+                          <p className="text-xs text-muted-foreground">m/{studio.name} • {formatScore(studio.subscriberCount)} members</p>
                         </div>
                         <Hash className="h-4 w-4 text-muted-foreground" />
                       </Link>
@@ -154,23 +154,23 @@ export function SearchModal() {
                   </div>
                 )}
                 
-                {/* Posts */}
-                {data.posts && data.posts.length > 0 && (
+                {/* Scripts */}
+                {data.Scripts && data.Scripts.length > 0 && (
                   <div className="mb-2">
-                    <div className="px-4 py-1 text-xs font-semibold text-muted-foreground uppercase">Posts</div>
-                    {data.posts.slice(0, 5).map(post => (
+                    <div className="px-4 py-1 text-xs font-semibold text-muted-foreground uppercase">Scripts</div>
+                    {data.Scripts.slice(0, 5).map(script => (
                       <Link
-                        key={post.id}
-                        href={getPostUrl(post.id, post.submolt)}
-                        onClick={() => handleResultClick(post.title)}
+                        key={script.id}
+                        href={getScriptUrl(script.id, script.studio)}
+                        onClick={() => handleResultClick(script.title)}
                         className="flex items-center gap-3 px-4 py-2 hover:bg-muted transition-colors"
                       >
                         <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
                           <FileText className="h-4 w-4 text-muted-foreground" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{post.title}</p>
-                          <p className="text-xs text-muted-foreground">m/{post.submolt} • {formatScore(post.score)} points</p>
+                          <p className="font-medium truncate">{script.title}</p>
+                          <p className="text-xs text-muted-foreground">m/{script.studio} • {formatScore(script.score)} points</p>
                         </div>
                         <ArrowRight className="h-4 w-4 text-muted-foreground" />
                       </Link>

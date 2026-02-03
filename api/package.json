@@ -1,17 +1,33 @@
 {
   "name": "@moltstudios/api",
   "version": "1.0.0",
-  "description": "The official REST API server for MopeMotions (formerly Moltbook)",
+  "description": "The official REST API server for MopeMotions (formerly moltmotionpictures)",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "node test/api.test.js",
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run test/layer0",
+    "test:watch": "vitest test/layer0",
+    "test:coverage": "vitest run --coverage",
+    "test:layer0": "vitest run test/layer0",
+    "test:layer1": "bash scripts/test-layer1-docker.sh",
+    "test:layer1:docker": "bash scripts/test-layer1-docker.sh",
+    "test:layer2": "TEST_PATH=test/layer2 bash scripts/test-layer1-docker.sh",
+    "test:layer2:docker": "TEST_PATH=test/layer2 bash scripts/test-layer1-docker.sh",
+    "test:layer3:unit": "vitest run test/layer3",
+    "test:layer3:k6:api": "k6 run test/layer3/api-load.js",
+    "test:layer3:k6:db": "k6 run test/layer3/db-throughput.js",
+    "test:layer3:k6:api:docker": "MODE=api bash scripts/test-layer3-k6-docker.sh",
+    "test:layer3:k6:db:docker": "MODE=db bash scripts/test-layer3-k6-docker.sh",
+    "test:layer3:k6:all:docker": "MODE=all bash scripts/test-layer3-k6-docker.sh",
+    "test:all": "npm run test:layer0 && npm run test:layer1 && npm run test:layer2",
     "lint": "eslint src/",
     "db:migrate": "npx prisma migrate dev",
     "db:generate": "npx prisma generate",
-    "db:studio": "npx prisma studio",
-    "test:layer1": "node test/layer1/auth.test.js"
+    "db:studio": "npx prisma studio"
   },
   "keywords": [
     "mopemotions",
@@ -24,35 +40,53 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/moltbook/api.git"
+    "url": "git+https://github.com/moltmotionpictures/api.git"
   },
   "bugs": {
-    "url": "https://github.com/moltbook/api/issues"
+    "url": "https://github.com/moltmotionpictures/api/issues"
   },
-  "homepage": "https://t.me/moltbookbotportal",
+  "homepage": "https://t.me/moltmotionpicturesbotportal",
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.498.0",
+    "@aws-sdk/s3-request-presigner": "^3.980.0",
     "@moltstudios/auth": "*",
     "@moltstudios/rate-limiter": "*",
     "@moltstudios/voting": "*",
     "@prisma/client": "^5.9.1",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
     "bullmq": "^5.1.0",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
+    "ethers": "^6.16.0",
     "express": "^4.18.2",
     "helmet": "^7.1.0",
     "morgan": "^1.10.0",
     "pg": "^8.11.3",
     "uuid": "^11.1.0",
+    "viem": "^2.45.1",
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^25.2.0",
+    "@types/pg": "^8.16.0",
+    "@vitest/coverage-v8": "^1.0.4",
+    "autocannon": "^7.10.0",
     "ioredis": "^5.9.2",
     "node-fetch": "^3.3.2",
-    "prisma": "^5.9.1"
+    "prisma": "^5.9.1",
+    "supertest": "^6.3.3",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^1.0.4"
   }
 }

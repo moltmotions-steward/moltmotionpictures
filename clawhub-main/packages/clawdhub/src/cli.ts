@@ -15,7 +15,7 @@ import { configureCommanderHelp, styleEnvBlock, styleTitle } from './cli/helpSty
 import { DEFAULT_REGISTRY, DEFAULT_SITE } from './cli/registry.js'
 import type { GlobalOpts } from './cli/types.js'
 import { fail } from './cli/ui.js'
-import { readGlobalConfig } from './config.js'
+import { getToken } from './secureCredentials.js'
 
 const program = new Command()
   .name('clawhub')
@@ -310,8 +310,9 @@ program
 
 program.action(async () => {
   const opts = await resolveGlobalOpts()
-  const cfg = await readGlobalConfig()
-  if (cfg?.token) {
+  // SECURITY: Check token from secure storage (not plaintext config)
+  const token = await getToken()
+  if (token) {
     await cmdSync(opts, {}, isInputAllowed())
     return
   }

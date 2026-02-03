@@ -1,121 +1,103 @@
+"use strict";
 /**
- * Authentication utilities
+ * Authentication utilities (TypeScript)
  */
-
-const crypto = require('crypto');
-const config = require('../config');
-
-const { tokenPrefix, claimPrefix } = config.moltbook;
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.randomHex = randomHex;
+exports.generateApiKey = generateApiKey;
+exports.generateClaimToken = generateClaimToken;
+exports.generateVerificationCode = generateVerificationCode;
+exports.validateApiKey = validateApiKey;
+exports.extractToken = extractToken;
+exports.hashToken = hashToken;
+exports.verifyToken = verifyToken;
+const crypto_1 = require("crypto");
+const config_1 = __importDefault(require("../config"));
+const { tokenPrefix, claimPrefix } = config_1.default.moltmotionpictures;
 const TOKEN_LENGTH = 32;
-
 // Word list for verification codes
 const ADJECTIVES = [
-  'reef', 'wave', 'coral', 'shell', 'tide', 'kelp', 'foam', 'salt',
-  'deep', 'blue', 'aqua', 'pearl', 'sand', 'surf', 'cove', 'bay'
+    'reef', 'wave', 'coral', 'shell', 'tide', 'kelp', 'foam', 'salt',
+    'deep', 'blue', 'aqua', 'pearl', 'sand', 'surf', 'cove', 'bay'
 ];
-
 /**
  * Generate a secure random hex string
- * 
- * @param {number} bytes - Number of random bytes
- * @returns {string} Hex string
  */
 function randomHex(bytes) {
-  return crypto.randomBytes(bytes).toString('hex');
+    return (0, crypto_1.randomBytes)(bytes).toString('hex');
 }
-
 /**
  * Generate a new API key
- * 
- * @returns {string} API key with moltbook_ prefix
  */
 function generateApiKey() {
-  return `${tokenPrefix}${randomHex(TOKEN_LENGTH)}`;
+    return `${tokenPrefix}${randomHex(TOKEN_LENGTH)}`;
 }
-
 /**
  * Generate a claim token
- * 
- * @returns {string} Claim token with moltbook_claim_ prefix
  */
 function generateClaimToken() {
-  return `${claimPrefix}${randomHex(TOKEN_LENGTH)}`;
+    return `${claimPrefix}${randomHex(TOKEN_LENGTH)}`;
 }
-
 /**
  * Generate human-readable verification code
- * 
- * @returns {string} Code like 'reef-X4B2'
  */
 function generateVerificationCode() {
-  const adjective = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
-  const suffix = randomHex(2).toUpperCase();
-  return `${adjective}-${suffix}`;
+    const adjective = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+    const suffix = randomHex(2).toUpperCase();
+    return `${adjective}-${suffix}`;
 }
-
 /**
  * Validate API key format
- * 
- * @param {string} token - Token to validate
- * @returns {boolean} True if valid
  */
 function validateApiKey(token) {
-  if (!token || typeof token !== 'string') return false;
-  if (!token.startsWith(tokenPrefix)) return false;
-  
-  const expectedLength = tokenPrefix.length + (TOKEN_LENGTH * 2);
-  if (token.length !== expectedLength) return false;
-  
-  const body = token.slice(tokenPrefix.length);
-  return /^[0-9a-f]+$/i.test(body);
+    if (!token || typeof token !== 'string')
+        return false;
+    if (!token.startsWith(tokenPrefix))
+        return false;
+    const expectedLength = tokenPrefix.length + (TOKEN_LENGTH * 2);
+    if (token.length !== expectedLength)
+        return false;
+    const body = token.slice(tokenPrefix.length);
+    return /^[0-9a-f]+$/i.test(body);
 }
-
 /**
  * Extract token from Authorization header
- * 
- * @param {string} authHeader - Authorization header value
- * @returns {string|null} Token or null
  */
 function extractToken(authHeader) {
-  if (!authHeader || typeof authHeader !== 'string') return null;
-  
-  const parts = authHeader.split(' ');
-  if (parts.length !== 2) return null;
-  
-  const [scheme, token] = parts;
-  if (scheme.toLowerCase() !== 'bearer') return null;
-  
-  return token;
+    if (!authHeader || typeof authHeader !== 'string')
+        return null;
+    const parts = authHeader.split(' ');
+    if (parts.length !== 2)
+        return null;
+    const [scheme, token] = parts;
+    if (scheme.toLowerCase() !== 'bearer')
+        return null;
+    return token;
 }
-
 /**
  * Hash a token for secure storage
- * 
- * @param {string} token - Token to hash
- * @returns {string} SHA-256 hash
  */
 function hashToken(token) {
-  return crypto.createHash('sha256').update(token).digest('hex');
+    return (0, crypto_1.createHash)('sha256').update(token).digest('hex');
 }
-
 /**
- * Timing-safe token comparison
- * 
- * @param {string} a - First token
- * @param {string} b - Second token
- * @returns {boolean} True if equal
+ * Verify a token matches a hash
  */
-function compareTokens(a, b) {
-  if (!a || !b || a.length !== b.length) return false;
-  return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+function verifyToken(token, hash) {
+    return hashToken(token) === hash;
 }
-
-module.exports = {
-  generateApiKey,
-  generateClaimToken,
-  generateVerificationCode,
-  validateApiKey,
-  extractToken,
-  hashToken,
-  compareTokens
+// Default export for CommonJS compatibility
+exports.default = {
+    randomHex,
+    generateApiKey,
+    generateClaimToken,
+    generateVerificationCode,
+    validateApiKey,
+    extractToken,
+    hashToken,
+    verifyToken
 };
+//# sourceMappingURL=auth.js.map

@@ -2,6 +2,7 @@ import { v } from 'convex/values'
 import { zipSync } from 'fflate'
 import { api } from './_generated/api'
 import { httpAction, mutation } from './_generated/server'
+import { checkSkillModeration } from './lib/access'
 import { insertStatEvent } from './skillStatEvents'
 
 export const downloadZip = httpAction(async (ctx, request) => {
@@ -20,6 +21,13 @@ export const downloadZip = httpAction(async (ctx, request) => {
   }
 
   const skill = skillResult.skill
+  
+  // MODERATION ENFORCEMENT: Block flagged/hidden skills from download
+  const moderationError = checkSkillModeration(skill as any)
+  if (moderationError) {
+    return new Response(moderationError, { status: 403 })
+  }
+  
   let version = skillResult.latestVersion
 
   if (versionParam) {

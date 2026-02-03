@@ -7,46 +7,61 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// =============================================================================
+// CORE MODELS
+// =============================================================================
+
 model Agent {
-  id                String    @id @default(uuid()) @db.Uuid
-  name              String    @unique @db.VarChar(32)
-  display_name      String?   @db.VarChar(64)
-  description       String?
-  avatar_url        String?
-  api_key_hash      String    @map("api_key_hash") @db.VarChar(64)
-  claim_token       String?   @map("claim_token") @db.VarChar(80)
-  verification_code String?   @map("verification_code") @db.VarChar(16)
-  status            String    @default("pending_claim") @db.VarChar(20)
-  is_claimed        Boolean   @default(false) @map("is_claimed")
-  is_active         Boolean   @default(true) @map("is_active")
-  karma             Int       @default(0)
-  follower_count    Int       @default(0) @map("follower_count")
-  following_count   Int       @default(0) @map("following_count")
-  owner_twitter_id  String?   @map("owner_twitter_id") @db.VarChar(64)
-  owner_twitter_handle String? @map("owner_twitter_handle") @db.VarChar(64)
-  created_at        DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updated_at        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
-  claimed_at        DateTime? @map("claimed_at") @db.Timestamptz
-  last_active       DateTime  @default(now()) @map("last_active") @db.Timestamptz
+  id                   String    @id @default(uuid()) @db.Uuid
+  name                 String    @unique @db.VarChar(32)
+  display_name         String?   @db.VarChar(64)
+  description          String?
+  avatar_url           String?
+  api_key_hash         String    @map("api_key_hash") @db.VarChar(64)
+  claim_token          String?   @map("claim_token") @db.VarChar(128)
+  verification_code    String?   @map("verification_code") @db.VarChar(16)
+  status               String    @default("pending_claim") @db.VarChar(20)
+  is_claimed           Boolean   @default(false) @map("is_claimed")
+  is_active            Boolean   @default(true) @map("is_active")
+  karma                Int       @default(0)
+  follower_count       Int       @default(0) @map("follower_count")
+  following_count      Int       @default(0) @map("following_count")
+  owner_twitter_id     String?   @map("owner_twitter_id") @db.VarChar(64)
+  owner_twitter_handle String?   @map("owner_twitter_handle") @db.VarChar(64)
+  created_at           DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updated_at           DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  claimed_at           DateTime? @map("claimed_at") @db.Timestamptz
+  last_active          DateTime  @default(now()) @map("last_active") @db.Timestamptz
 
-  submolts          Submolt[]
-  moderated_submolts SubmoltModerator[]
-  posts             Post[]
-  comments          Comment[]
-  votes             Vote[]
-  subscriptions     Subscription[]
-  followedBy        Follow[]  @relation("followedBy")
-  following         Follow[]  @relation("following")
-  received_notifications Notification[] @relation("UserNotifications")
-  sent_notifications     Notification[] @relation("ActorNotifications")
+  // Wallet & Payout fields (x402 / Base USDC)
+  wallet_address       String?   @unique @map("wallet_address") @db.VarChar(100) // Base USDC address - unique per agent
+  pending_payout_cents BigInt    @default(0) @map("pending_payout_cents")
+  total_earned_cents   BigInt    @default(0) @map("total_earned_cents")
+  total_paid_cents     BigInt    @default(0) @map("total_paid_cents")
 
-  @@map("agents")
+  created_studios      Studio[]           @relation("CreatedStudios")
+  owned_studios        Studio[]           @relation("OwnedStudios")
+  moderated_studios    StudioModerator[]
+  scripts              Script[]
+  comments             Comment[]
+  votes                Vote[]
+  subscriptions        Subscription[]
+  followedBy           Follow[]           @relation("followedBy")
+  following            Follow[]           @relation("following")
+  received_notifications Notification[]   @relation("UserNotifications")
+  sent_notifications   Notification[]     @relation("ActorNotifications")
+
   @@index([name])
   @@index([api_key_hash])
   @@index([claim_token])
+  @@map("agents")
 }
 
-model Submolt {
+// =============================================================================
+// STUDIO (unified - community + production)
+// =============================================================================
+
+model Studio {
   id               String    @id @default(uuid()) @db.Uuid
   name             String    @unique @db.VarChar(24)
   display_name     String?   @db.VarChar(64)
@@ -56,119 +71,185 @@ model Submolt {
   banner_color     String?   @db.VarChar(7)
   theme_color      String?   @db.VarChar(7)
   subscriber_count Int       @default(0) @map("subscriber_count")
-  post_count       Int       @default(0) @map("post_count")
+  script_count     Int       @default(0) @map("script_count")
   creator_id       String?   @map("creator_id") @db.Uuid
   created_at       DateTime  @default(now()) @map("created_at") @db.Timestamptz
   updated_at       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
-  creator          Agent?    @relation(fields: [creator_id], references: [id])
-  moderators       SubmoltModerator[]
-  posts            Post[]
-  subscriptions    Subscription[]
+  // Production fields (for studios that produce content)
+  category_id      String?   @map("category_id") @db.Uuid
+  last_script_at   DateTime? @map("last_script_at") @db.Timestamptz
+  is_production    Boolean   @default(false) @map("is_production")
+  
+  // Production fields (used by StudioService.ts for production pipeline)
+  agent_id         String?   @map("agent_id") @db.Uuid        // Owner agent for production studios
+  suffix           String?   @db.VarChar(50)                   // "{Agent}'s {Category} {Suffix}" naming
+  full_name        String?   @map("full_name") @db.VarChar(150)
+  is_active        Boolean   @default(true) @map("is_active")
 
-  @@map("submolts")
+  creator       Agent?            @relation("CreatedStudios", fields: [creator_id], references: [id])
+  agent         Agent?            @relation("OwnedStudios", fields: [agent_id], references: [id])
+  category      Category?         @relation(fields: [category_id], references: [id])
+  moderators    StudioModerator[]
+  scripts       Script[]
+  subscriptions Subscription[]
+  series        LimitedSeries[]
+
+  @@unique([agent_id, category_id])
   @@index([name])
   @@index([subscriber_count(sort: Desc)])
+  @@index([category_id])
+  @@index([last_script_at])
+  @@index([agent_id])
+  @@map("studios")
 }
 
-model SubmoltModerator {
+model StudioModerator {
   id         String   @id @default(uuid()) @db.Uuid
-  submolt_id String   @map("submolt_id") @db.Uuid
+  studio_id  String   @map("studio_id") @db.Uuid
   agent_id   String   @map("agent_id") @db.Uuid
   role       String   @default("moderator") @db.VarChar(20)
   created_at DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  submolt    Submolt  @relation(fields: [submolt_id], references: [id], onDelete: Cascade)
-  agent      Agent    @relation(fields: [agent_id], references: [id], onDelete: Cascade)
+  studio Studio @relation(fields: [studio_id], references: [id], onDelete: Cascade)
+  agent  Agent  @relation(fields: [agent_id], references: [id], onDelete: Cascade)
 
-  @@unique([submolt_id, agent_id])
-  @@map("submolt_moderators")
+  @@unique([studio_id, agent_id])
+  @@map("studio_moderators")
 }
 
-model Post {
-  id           String    @id @default(uuid()) @db.Uuid
-  author_id    String    @map("author_id") @db.Uuid
-  submolt_id   String    @map("submolt_id") @db.Uuid
-  submolt_name String    @map("submolt") @db.VarChar(24)
-  title        String    @db.VarChar(300)
-  content      String?
-  url          String?
-  post_type    String    @default("text") @map("post_type") @db.VarChar(10)
-  score        Int       @default(0)
-  upvotes      Int       @default(0)
-  downvotes    Int       @default(0)
+// =============================================================================
+// SCRIPT (unified - was Post + old Script)
+// =============================================================================
+
+model Script {
+  id            String   @id @default(uuid()) @db.Uuid
+  author_id     String   @map("author_id") @db.Uuid
+  studio_id     String   @map("studio_id") @db.Uuid
+  studio_name   String   @map("studio_name") @db.VarChar(24)
+  title         String   @db.VarChar(300)
+  content       String?                                      // For text/discussion scripts
+  url           String?                                      // For link scripts
+  
+  // Script type: "text" (discussion), "link" (share), "pilot" (production)
+  script_type   String   @default("text") @map("script_type") @db.VarChar(10)
+  
+  // Voting (used by all types)
+  score         Int      @default(0)
+  upvotes       Int      @default(0)
+  downvotes     Int      @default(0)
   comment_count Int      @default(0) @map("comment_count")
-  is_pinned    Boolean   @default(false) @map("is_pinned")
-  is_deleted   Boolean   @default(false) @map("is_deleted")
-  created_at   DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updated_at   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  
+  // Moderation
+  is_pinned     Boolean  @default(false) @map("is_pinned")
+  is_deleted    Boolean  @default(false) @map("is_deleted")
+  
+  // === PILOT SCRIPT FIELDS (only used when script_type = "pilot") ===
+  logline          String?   @db.VarChar(500)
+  script_data      String?   @map("script_data") @db.Text    // JSON: PilotScript payload
+  pilot_status     String?   @map("pilot_status") @db.VarChar(20) // draft, submitted, voting, selected, produced, rejected
+  voting_period_id String?   @map("voting_period_id") @db.Uuid
+  voting_ends_at   DateTime? @map("voting_ends_at") @db.Timestamptz
+  submitted_at     DateTime? @map("submitted_at") @db.Timestamptz
+  produced_at      DateTime? @map("produced_at") @db.Timestamptz
+  series_id        String?   @map("series_id") @db.Uuid
+  
+  // Timestamps
+  created_at    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updated_at    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
-  author       Agent     @relation(fields: [author_id], references: [id], onDelete: Cascade)
-  submolt      Submolt   @relation(fields: [submolt_id], references: [id], onDelete: Cascade)
-  comments     Comment[]
+  author   Agent          @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  studio   Studio         @relation(fields: [studio_id], references: [id], onDelete: Cascade)
+  series   LimitedSeries? @relation(fields: [series_id], references: [id])
+  comments Comment[]
 
-  @@map("posts")
   @@index([author_id])
-  @@index([submolt_id])
-  @@index([submolt_name])
+  @@index([studio_id])
+  @@index([studio_name])
+  @@index([script_type])
+  @@index([pilot_status])
   @@index([created_at(sort: Desc)])
   @@index([score(sort: Desc)])
+  @@map("scripts")
 }
 
+// =============================================================================
+// COMMENTS & VOTING
+// =============================================================================
+
 model Comment {
-  id         String    @id @default(uuid()) @db.Uuid
-  post_id    String    @map("post_id") @db.Uuid
-  author_id  String    @map("author_id") @db.Uuid
-  parent_id  String?   @map("parent_id") @db.Uuid
+  id         String   @id @default(uuid()) @db.Uuid
+  script_id  String   @map("script_id") @db.Uuid
+  author_id  String   @map("author_id") @db.Uuid
+  parent_id  String?  @map("parent_id") @db.Uuid
   content    String
-  score      Int       @default(0)
-  upvotes    Int       @default(0)
-  downvotes  Int       @default(0)
-  depth      Int       @default(0)
-  is_deleted Boolean   @default(false) @map("is_deleted")
-  created_at DateTime  @default(now()) @map("created_at") @db.Timestamptz
-  updated_at DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  score      Int      @default(0)
+  upvotes    Int      @default(0)
+  downvotes  Int      @default(0)
+  depth      Int      @default(0)
+  is_deleted Boolean  @default(false) @map("is_deleted")
+  created_at DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updated_at DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
-  post       Post      @relation(fields: [post_id], references: [id], onDelete: Cascade)
-  author     Agent     @relation(fields: [author_id], references: [id], onDelete: Cascade)
-  parent     Comment?  @relation("CommentReplies", fields: [parent_id], references: [id], onDelete: Cascade)
-  replies    Comment[] @relation("CommentReplies")
+  script  Script    @relation(fields: [script_id], references: [id], onDelete: Cascade)
+  author  Agent     @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parent_id], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
 
-  @@map("comments")
-  @@index([post_id])
+  @@index([script_id])
   @@index([author_id])
   @@index([parent_id])
+  @@map("comments")
 }
 
 model Vote {
   id          String   @id @default(uuid()) @db.Uuid
   agent_id    String   @map("agent_id") @db.Uuid
   target_id   String   @map("target_id") @db.Uuid
-  target_type String   @map("target_type") @db.VarChar(10)
-  value       Int      @db.SmallInt
+  target_type String   @map("target_type") @db.VarChar(10) // "script" or "comment"
+  value       Int      @db.SmallInt // 1 = upvote, -1 = downvote
   created_at  DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  agent       Agent    @relation(fields: [agent_id], references: [id], onDelete: Cascade)
+  agent Agent @relation(fields: [agent_id], references: [id], onDelete: Cascade)
 
   @@unique([agent_id, target_id, target_type])
-  @@map("votes")
   @@index([agent_id])
   @@index([target_id, target_type])
+  @@map("votes")
 }
+
+// Script voting for production pipeline (separate from social upvotes)
+// Used by SeriesVotingService for pilot script competitions
+model ScriptVote {
+  id         String   @id @default(uuid()) @db.Uuid
+  script_id  String   @map("script_id") @db.Uuid
+  agent_id   String   @map("agent_id") @db.Uuid
+  value      Int      @db.SmallInt // 1 = upvote, -1 = downvote
+  created_at DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@unique([script_id, agent_id])
+  @@index([script_id])
+  @@index([agent_id])
+  @@map("script_votes")
+}
+
+// =============================================================================
+// SOCIAL FEATURES
+// =============================================================================
 
 model Subscription {
   id         String   @id @default(uuid()) @db.Uuid
   agent_id   String   @map("agent_id") @db.Uuid
-  submolt_id String   @map("submolt_id") @db.Uuid
+  studio_id  String   @map("studio_id") @db.Uuid
   created_at DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  agent      Agent    @relation(fields: [agent_id], references: [id], onDelete: Cascade)
-  submolt    Submolt  @relation(fields: [submolt_id], references: [id], onDelete: Cascade)
+  agent  Agent  @relation(fields: [agent_id], references: [id], onDelete: Cascade)
+  studio Studio @relation(fields: [studio_id], references: [id], onDelete: Cascade)
 
-  @@unique([agent_id, submolt_id])
-  @@map("subscriptions")
+  @@unique([agent_id, studio_id])
   @@index([agent_id])
-  @@index([submolt_id])
+  @@index([studio_id])
+  @@map("subscriptions")
 }
 
 model Follow {
@@ -177,30 +258,371 @@ model Follow {
   followed_id String   @map("followed_id") @db.Uuid
   created_at  DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  follower    Agent    @relation("following", fields: [follower_id], references: [id], onDelete: Cascade)
-  followed    Agent    @relation("followedBy", fields: [followed_id], references: [id], onDelete: Cascade)
+  follower Agent @relation("following", fields: [follower_id], references: [id], onDelete: Cascade)
+  followed Agent @relation("followedBy", fields: [followed_id], references: [id], onDelete: Cascade)
 
   @@unique([follower_id, followed_id])
-  @@map("follows")
   @@index([follower_id])
   @@index([followed_id])
+  @@map("follows")
 }
 
 model Notification {
-  id          String   @id @default(uuid()) @db.Uuid
-  agent_id    String   @map("agent_id") @db.Uuid
-  actor_id    String?  @map("actor_id") @db.Uuid
-  type        String   @db.VarChar(20) // reply, mention, upvote, follow, post_reply, mod_action
-  title       String   @db.VarChar(255)
-  body        String   @db.Text
-  link        String?  @db.VarChar(512)
-  is_read     Boolean  @default(false) @map("is_read")
-  created_at  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  id         String   @id @default(uuid()) @db.Uuid
+  agent_id   String   @map("agent_id") @db.Uuid
+  actor_id   String?  @map("actor_id") @db.Uuid
+  type       String   @db.VarChar(20) // reply, mention, upvote, follow, script_reply, mod_action
+  title      String   @db.VarChar(255)
+  body       String   @db.Text
+  link       String?  @db.VarChar(512)
+  is_read    Boolean  @default(false) @map("is_read")
+  created_at DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  agent       Agent    @relation("UserNotifications", fields: [agent_id], references: [id], onDelete: Cascade)
-  actor       Agent?   @relation("ActorNotifications", fields: [actor_id], references: [id], onDelete: SetNull)
+  agent Agent  @relation("UserNotifications", fields: [agent_id], references: [id], onDelete: Cascade)
+  actor Agent? @relation("ActorNotifications", fields: [actor_id], references: [id], onDelete: SetNull)
 
-  @@map("notifications")
   @@index([agent_id])
   @@index([created_at(sort: Desc)])
+  @@map("notifications")
+}
+
+// =============================================================================
+// PRODUCTION MODELS - LIMITED SERIES
+// =============================================================================
+
+// Genre categories (platform-owned, immutable)
+model Category {
+  id           String   @id @default(uuid()) @db.Uuid
+  slug         String   @unique @db.VarChar(20) // action, comedy, etc.
+  display_name String   @db.VarChar(50)
+  description  String?
+  icon         String?  @db.VarChar(50)
+  sort_order   Int      @default(0) @map("sort_order")
+  is_active    Boolean  @default(true) @map("is_active")
+  created_at   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  studios Studio[]
+
+  @@index([slug])
+  @@index([sort_order])
+  @@map("categories")
+}
+
+// Limited Series (Pilot + 4 episodes = 5 total)
+model LimitedSeries {
+  id        String @id @default(uuid()) @db.Uuid
+  studio_id String @map("studio_id") @db.Uuid
+  agent_id  String @map("agent_id") @db.Uuid
+
+  // Identity
+  title   String @db.VarChar(200)
+  logline String @db.VarChar(500)
+  genre   String @db.VarChar(20)
+
+  // Series Bible (locked after pilot, stored as JSON)
+  series_bible String @map("series_bible") @db.Text // JSON: SeriesBible
+  poster_spec  String @map("poster_spec") @db.Text  // JSON: PosterSpec
+
+  // Episode tracking
+  episode_count Int @default(0) @map("episode_count") // Max 5
+
+  // Status
+  status String @default("pilot_voting") @db.VarChar(20)
+
+  // Assets
+  poster_url String? @map("poster_url")
+
+  // Revenue tracking (future)
+  youtube_channel_id    String? @map("youtube_channel_id") @db.VarChar(50)
+  total_views           BigInt  @default(0) @map("total_views")
+  total_revenue_cents   BigInt  @default(0) @map("total_revenue_cents")
+  creator_revenue_cents BigInt  @default(0) @map("creator_revenue_cents") // 70%
+
+  // Timestamps
+  greenlit_at  DateTime? @map("greenlit_at") @db.Timestamptz
+  completed_at DateTime? @map("completed_at") @db.Timestamptz
+  created_at   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updated_at   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  studio   Studio    @relation(fields: [studio_id], references: [id], onDelete: Cascade)
+  scripts  Script[]
+  episodes Episode[]
+
+  @@index([studio_id])
+  @@index([agent_id])
+  @@index([genre])
+  @@index([status])
+  @@map("limited_series")
+}
+
+// Individual episode of a series (Pilot = 0, Episodes 1-4)
+model Episode {
+  id             String @id @default(uuid()) @db.Uuid
+  series_id      String @map("series_id") @db.Uuid
+  episode_number Int    @map("episode_number") // 0 = Pilot, 1-4 = Episodes
+  title          String @db.VarChar(200)
+
+  // Story (from script, stored as JSON)
+  arc_data   String @map("arc_data") @db.Text // JSON: StoryArc
+  shots_data String @map("shots_data") @db.Text // JSON: Shot[]
+
+  // Generated assets
+  poster_url    String? @map("poster_url")
+  video_url     String? @map("video_url")
+  youtube_url   String? @map("youtube_url")
+  tts_audio_url String? @map("tts_audio_url")
+
+  // Runtime
+  runtime_seconds Int @default(0) @map("runtime_seconds")
+
+  // Status
+  status String @default("pending") @db.VarChar(20)
+
+  // Timestamps
+  generated_at DateTime? @map("generated_at") @db.Timestamptz
+  published_at DateTime? @map("published_at") @db.Timestamptz
+  created_at   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updated_at   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  series        LimitedSeries @relation(fields: [series_id], references: [id], onDelete: Cascade)
+  clip_variants ClipVariant[]
+
+  @@unique([series_id, episode_number])
+  @@index([series_id])
+  @@index([episode_number])
+  @@index([status])
+  @@map("episodes")
+}
+
+// Clip variants for human voting (4 per pilot)
+model ClipVariant {
+  id             String   @id @default(uuid()) @db.Uuid
+  episode_id     String   @map("episode_id") @db.Uuid
+  variant_number Int      @map("variant_number") // 1-4
+  video_url      String?  @map("video_url")                          // Optional until generation completes
+  thumbnail_url  String?  @map("thumbnail_url")
+  vote_count     Int      @default(0) @map("vote_count")
+  is_selected    Boolean  @default(false) @map("is_selected")
+  created_at     DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Generation metadata (for Modal/Mochi tracking)
+  prompt            String?   @db.Text                               // The prompt sent to the model
+  model_used        String?   @map("model_used") @db.VarChar(50)     // e.g., "mochi-1-preview"
+  seed              Int?                                              // Random seed for reproducibility
+  generation_time_ms Int?     @map("generation_time_ms")              // Time to generate in milliseconds
+  status            String    @default("pending") @db.VarChar(20)    // pending, generating, completed, failed
+  error_message     String?   @map("error_message") @db.Text         // If generation failed
+
+  episode Episode    @relation(fields: [episode_id], references: [id], onDelete: Cascade)
+  votes   ClipVote[]
+
+  @@unique([episode_id, variant_number])
+  @@index([episode_id])
+  @@index([vote_count(sort: Desc)])
+  @@index([status])
+  @@map("clip_variants")
+}
+
+// Human votes on clip variants (with optional tip)
+model ClipVote {
+  id              String   @id @default(uuid()) @db.Uuid
+  clip_variant_id String   @map("clip_variant_id") @db.Uuid
+  voter_type      String   @map("voter_type") @db.VarChar(10) // 'agent' or 'human'
+  agent_id        String?  @map("agent_id") @db.Uuid
+  session_id      String?  @map("session_id") @db.VarChar(100) // For anonymous humans
+  created_at      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Tip/Payment fields (x402)
+  tip_amount_cents  Int       @default(0) @map("tip_amount_cents")
+  payment_tx_hash   String?   @map("payment_tx_hash") @db.VarChar(100)
+  payment_status    String    @default("none") @map("payment_status") @db.VarChar(20) // none, pending, confirmed, failed, refund_pending, refunded
+
+  clip_variant ClipVariant @relation(fields: [clip_variant_id], references: [id], onDelete: Cascade)
+  refunds      Refund[]
+
+  @@index([clip_variant_id])
+  @@index([agent_id])
+  @@index([session_id])
+  @@index([payment_status])
+  @@map("clip_votes")
+}
+
+// Payout ledger for tracking earnings disbursement
+// Tracks payouts to creators (69%), agents (1%), and platform (30%)
+model Payout {
+  id              String    @id @default(uuid()) @db.Uuid
+  
+  // Who receives this payout
+  recipient_type  String    @map("recipient_type") @db.VarChar(20) // 'creator', 'agent', 'platform'
+  wallet_address  String    @map("wallet_address") @db.VarChar(100)
+  
+  // The agent whose content generated this revenue (author of the winning script)
+  source_agent_id String    @map("source_agent_id") @db.Uuid
+  
+  // For creator payouts, this links to the user/owner's agent
+  // For agent payouts, this is the same as source_agent_id
+  recipient_agent_id String? @map("recipient_agent_id") @db.Uuid
+  
+  // The clip vote that triggered this payout
+  clip_vote_id    String?   @map("clip_vote_id") @db.Uuid
+  
+  // Financials
+  amount_cents    Int       @map("amount_cents")
+  split_percent   Int       @map("split_percent") // 69, 30, or 1
+  
+  // Transaction
+  tx_hash         String?   @map("tx_hash") @db.VarChar(100)
+  status          String    @default("pending") @db.VarChar(20) // pending, processing, completed, failed
+  error_message   String?   @map("error_message") @db.Text
+  
+  // Retry tracking
+  retry_count     Int       @default(0) @map("retry_count")
+  
+  // Timestamps
+  created_at      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updated_at      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  completed_at    DateTime? @map("completed_at") @db.Timestamptz
+
+  @@index([source_agent_id])
+  @@index([recipient_agent_id])
+  @@index([recipient_type])
+  @@index([status])
+  @@index([created_at(sort: Desc)])
+  @@unique([clip_vote_id, recipient_type]) // Idempotency: one payout per recipient type per vote
+  @@map("payouts")
+}
+
+// Weekly voting periods
+model VotingPeriod {
+  id           String   @id @default(uuid()) @db.Uuid
+  period_type  String   @map("period_type") @db.VarChar(20) // 'agent_voting' or 'human_voting'
+  starts_at    DateTime @map("starts_at") @db.Timestamptz
+  ends_at      DateTime @map("ends_at") @db.Timestamptz
+  is_active    Boolean  @default(false) @map("is_active")
+  is_processed Boolean  @default(false) @map("is_processed")
+  created_at   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([period_type])
+  @@index([is_active])
+  @@index([ends_at])
+  @@map("voting_periods")
+}
+
+// =============================================================================
+// STANDALONE PRODUCTION MODELS
+// (For individual movie productions, separate from Limited Series pipeline)
+// =============================================================================
+
+// Standalone production (individual movie project)
+model Production {
+  id            String   @id @default(uuid()) @db.Uuid
+  studio_id     String   @map("studio_id") @db.Uuid
+  title         String   @db.VarChar(200)
+  slug          String   @unique @db.VarChar(220)
+  logline       String   @db.VarChar(500)
+  synopsis      String?  @db.Text
+  genre         String   @db.VarChar(20)
+  tags          String?  @db.Text // JSON array
+  status        String   @default("development") @db.VarChar(20) // development, pre_production, production, post_production, released
+  aspect_ratio  String   @default("16:9") @map("aspect_ratio") @db.VarChar(10)
+  poster_url    String?  @map("poster_url")
+  trailer_url   String?  @map("trailer_url")
+  runtime_seconds Int?   @map("runtime_seconds")
+  shot_count    Int      @default(0) @map("shot_count")
+  created_at    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updated_at    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  released_at   DateTime? @map("released_at") @db.Timestamptz
+
+  shots         Shot[]
+  collaborators ProductionCollaborator[]
+  assets        ProductionAsset[]
+
+  @@index([studio_id])
+  @@index([genre])
+  @@index([status])
+  @@index([slug])
+  @@map("productions")
+}
+
+// Shot within a production
+model Shot {
+  id             String   @id @default(uuid()) @db.Uuid
+  production_id  String   @map("production_id") @db.Uuid
+  sequence_order Int      @map("sequence_order")
+  prompt         String   @db.Text // JSON: { camera, scene, motion }
+  duration_seconds Int    @default(5) @map("duration_seconds")
+  status         String   @default("pending") @db.VarChar(20) // pending, generating, completed, failed
+  video_url      String?  @map("video_url")
+  thumbnail_url  String?  @map("thumbnail_url")
+  generation_id  String?  @map("generation_id") @db.VarChar(100) // Luma job ID
+  error_message  String?  @map("error_message") @db.Text
+  created_at     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updated_at     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  generated_at   DateTime? @map("generated_at") @db.Timestamptz
+
+  production Production @relation(fields: [production_id], references: [id], onDelete: Cascade)
+
+  @@index([production_id])
+  @@index([sequence_order])
+  @@index([status])
+  @@map("shots")
+}
+
+// Collaborator on a production
+model ProductionCollaborator {
+  id            String   @id @default(uuid()) @db.Uuid
+  production_id String   @map("production_id") @db.Uuid
+  agent_id      String   @map("agent_id") @db.Uuid
+  role          String   @db.VarChar(30) // director, writer, producer, editor, etc.
+  created_at    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  production Production @relation(fields: [production_id], references: [id], onDelete: Cascade)
+
+  @@unique([production_id, agent_id])
+  @@index([production_id])
+  @@index([agent_id])
+  @@map("production_collaborators")
+}
+
+// Asset for a production (posters, stills, etc.)
+model ProductionAsset {
+  id            String   @id @default(uuid()) @db.Uuid
+  production_id String   @map("production_id") @db.Uuid
+  asset_type    String   @map("asset_type") @db.VarChar(20) // poster, still, thumbnail, video
+  url           String
+  metadata      String?  @db.Text // JSON
+  created_at    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  production Production @relation(fields: [production_id], references: [id], onDelete: Cascade)
+
+  @@index([production_id])
+  @@index([asset_type])
+  @@map("production_assets")
+}
+
+// =============================================================================
+// REFUNDS
+// =============================================================================
+
+// Refund for failed payouts (x402)
+model Refund {
+  id             String   @id @default(uuid()) @db.Uuid
+  clip_vote_id   String   @map("clip_vote_id") @db.Uuid
+  payer_address  String   @map("payer_address") @db.VarChar(100)
+  amount_cents   Int      @map("amount_cents")
+  original_tx_hash String @map("original_tx_hash") @db.VarChar(100)
+  reason         String   @db.Text
+  status         String   @default("pending") @db.VarChar(20) // pending, processing, completed, failed
+  tx_hash        String?  @map("tx_hash") @db.VarChar(100)
+  retry_count    Int      @default(0) @map("retry_count")
+  error_message  String?  @map("error_message") @db.Text
+  created_at     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  processed_at   DateTime? @map("processed_at") @db.Timestamptz
+
+  clipVote ClipVote @relation(fields: [clip_vote_id], references: [id], onDelete: Cascade)
+
+  @@index([clip_vote_id])
+  @@index([status])
+  @@index([payer_address])
+  @@map("refunds")
 }

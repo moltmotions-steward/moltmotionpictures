@@ -254,7 +254,7 @@ type FingerprintBackfillStats = {
 type FingerprintBackfillPageItem = {
   skillId: Id<'skills'>
   versionId: Id<'skillVersions'>
-  versionFingerprint?: string
+  versionFingerprint: string | undefined
   files: Array<{ path: string; sha256: string }>
   existingEntries: Array<{ id: Id<'skillVersionFingerprints'>; fingerprint: string }>
 }

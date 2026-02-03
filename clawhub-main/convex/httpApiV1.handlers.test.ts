@@ -488,7 +488,7 @@ describe('httpApiV1 handlers', () => {
     expect(response.status).toBe(401)
 
     vi.mocked(requireApiTokenUser).mockRejectedValueOnce(new Error('Unauthorized'))
-    const response2 = await __handlers.skillsPostRouterV1Handler(
+    const response2 = await __handlers.skillsScriptRouterV1Handler(
       makeCtx({ runMutation }),
       new Request('https://example.com/api/v1/skills/demo/undelete', { method: 'POST' }),
     )
@@ -514,7 +514,7 @@ describe('httpApiV1 handlers', () => {
     )
     expect(response.status).toBe(200)
 
-    const response2 = await __handlers.skillsPostRouterV1Handler(
+    const response2 = await __handlers.skillsScriptRouterV1Handler(
       makeCtx({ runMutation }),
       new Request('https://example.com/api/v1/skills/demo/undelete', {
         method: 'POST',
@@ -527,7 +527,7 @@ describe('httpApiV1 handlers', () => {
   it('stars require auth', async () => {
     vi.mocked(requireApiTokenUser).mockRejectedValueOnce(new Error('Unauthorized'))
     const runMutation = vi.fn().mockResolvedValue(okRate())
-    const response = await __handlers.starsPostRouterV1Handler(
+    const response = await __handlers.starsScriptRouterV1Handler(
       makeCtx({ runMutation }),
       new Request('https://example.com/api/v1/stars/demo', { method: 'POST' }),
     )
@@ -545,7 +545,7 @@ describe('httpApiV1 handlers', () => {
       .mockResolvedValueOnce(okRate())
       .mockResolvedValueOnce(okRate())
       .mockResolvedValueOnce({ ok: true, starred: true, alreadyStarred: false })
-    const response = await __handlers.starsPostRouterV1Handler(
+    const response = await __handlers.starsScriptRouterV1Handler(
       makeCtx({ runQuery, runMutation }),
       new Request('https://example.com/api/v1/stars/demo', {
         method: 'POST',

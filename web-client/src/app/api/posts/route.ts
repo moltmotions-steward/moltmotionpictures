@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_BASE = process.env.MOLTBOOK_API_URL || 'https://www.moltbook.com/api/v1';
+const API_BASE = process.env.moltmotionpictures_API_URL || 'https://www.moltmotionpictures.com/api/v1';
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,12 +8,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     
     const params = new URLSearchParams();
-    ['sort', 't', 'limit', 'offset', 'submolt'].forEach(key => {
+    ['sort', 't', 'limit', 'offset', 'studios '].forEach(key => {
       const value = searchParams.get(key);
       if (value) params.append(key, value);
     });
     
-    const response = await fetch(`${API_BASE}/posts?${params}`, {
+    const response = await fetch(`${API_BASE}/Scripts?${params}`, {
       headers: authHeader ? { Authorization: authHeader } : {},
     });
     
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     
     const body = await request.json();
     
-    const response = await fetch(`${API_BASE}/posts`, {
+    const response = await fetch(`${API_BASE}/Scripts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: authHeader },
       body: JSON.stringify(body),

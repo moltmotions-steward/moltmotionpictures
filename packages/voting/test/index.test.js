@@ -1,5 +1,5 @@
 /**
- * @moltbook/voting Test Suite
+ * @moltmotionpictures/voting Test Suite
  */
 
 const { VotingSystem, VotingError, createMemoryAdapter, VOTE } = require('../src');
@@ -29,7 +29,7 @@ function assertEqual(actual, expected, message) {
 }
 
 async function runTests() {
-  console.log('\n@moltbook/voting Test Suite\n');
+  console.log('\n@moltmotionpictures/voting Test Suite\n');
   console.log('='.repeat(50));
 
   for (const item of tests) {
@@ -76,7 +76,7 @@ describe('VotingSystem Creation', () => {
     const adapter = createMemoryAdapter();
     const voting = new VotingSystem(adapter, {
       allowSelfVote: true,
-      karmaMultiplier: { post: 2 }
+      karmaMultiplier: { Script: 2 }
     });
     assert(voting.options.allowSelfVote === true);
   });
@@ -89,8 +89,8 @@ describe('Upvoting', () => {
 
     const result = await voting.upvote({
       agentId: 'voter1',
-      targetId: 'post1',
-      targetType: 'post',
+      targetId: 'Script1',
+      targetType: 'Script',
       authorId: 'author1'
     });
 
@@ -99,21 +99,21 @@ describe('Upvoting', () => {
     assertEqual(result.karmaChange, 1);
   });
 
-  test('upvote same post twice removes vote', async () => {
+  test('upvote same Script twice removes vote', async () => {
     const adapter = createMemoryAdapter();
     const voting = new VotingSystem(adapter);
 
     await voting.upvote({
       agentId: 'voter1',
-      targetId: 'post1',
-      targetType: 'post',
+      targetId: 'Script1',
+      targetType: 'Script',
       authorId: 'author1'
     });
 
     const result = await voting.upvote({
       agentId: 'voter1',
-      targetId: 'post1',
-      targetType: 'post',
+      targetId: 'Script1',
+      targetType: 'Script',
       authorId: 'author1'
     });
 
@@ -128,8 +128,8 @@ describe('Upvoting', () => {
 
     await voting.upvote({
       agentId: 'voter1',
-      targetId: 'post1',
-      targetType: 'post',
+      targetId: 'Script1',
+      targetType: 'Script',
       authorId: 'author1'
     });
 
@@ -145,8 +145,8 @@ describe('Downvoting', () => {
 
     const result = await voting.downvote({
       agentId: 'voter1',
-      targetId: 'post1',
-      targetType: 'post',
+      targetId: 'Script1',
+      targetType: 'Script',
       authorId: 'author1'
     });
 
@@ -161,8 +161,8 @@ describe('Downvoting', () => {
 
     await voting.downvote({
       agentId: 'voter1',
-      targetId: 'post1',
-      targetType: 'post',
+      targetId: 'Script1',
+      targetType: 'Script',
       authorId: 'author1'
     });
 
@@ -178,15 +178,15 @@ describe('Vote Transitions', () => {
 
     await voting.upvote({
       agentId: 'voter1',
-      targetId: 'post1',
-      targetType: 'post',
+      targetId: 'Script1',
+      targetType: 'Script',
       authorId: 'author1'
     });
 
     const result = await voting.downvote({
       agentId: 'voter1',
-      targetId: 'post1',
-      targetType: 'post',
+      targetId: 'Script1',
+      targetType: 'Script',
       authorId: 'author1'
     });
 
@@ -202,15 +202,15 @@ describe('Vote Transitions', () => {
 
     await voting.downvote({
       agentId: 'voter1',
-      targetId: 'post1',
-      targetType: 'post',
+      targetId: 'Script1',
+      targetType: 'Script',
       authorId: 'author1'
     });
 
     const result = await voting.upvote({
       agentId: 'voter1',
-      targetId: 'post1',
-      targetType: 'post',
+      targetId: 'Script1',
+      targetType: 'Script',
       authorId: 'author1'
     });
 
@@ -230,8 +230,8 @@ describe('Self Vote Prevention', () => {
     try {
       await voting.upvote({
         agentId: 'agent1',
-        targetId: 'post1',
-        targetType: 'post',
+        targetId: 'Script1',
+        targetType: 'Script',
         authorId: 'agent1'
       });
     } catch (e) {
@@ -249,8 +249,8 @@ describe('Self Vote Prevention', () => {
 
     const result = await voting.upvote({
       agentId: 'agent1',
-      targetId: 'post1',
-      targetType: 'post',
+      targetId: 'Script1',
+      targetType: 'Script',
       authorId: 'agent1'
     });
 
@@ -259,14 +259,14 @@ describe('Self Vote Prevention', () => {
 });
 
 describe('Target Type Validation', () => {
-  test('accepts post target type', async () => {
+  test('accepts Script target type', async () => {
     const adapter = createMemoryAdapter();
     const voting = new VotingSystem(adapter);
 
     const result = await voting.upvote({
       agentId: 'voter1',
-      targetId: 'post1',
-      targetType: 'post',
+      targetId: 'Script1',
+      targetType: 'Script',
       authorId: 'author1'
     });
 
@@ -318,15 +318,15 @@ describe('Remove Vote', () => {
 
     await voting.upvote({
       agentId: 'voter1',
-      targetId: 'post1',
-      targetType: 'post',
+      targetId: 'Script1',
+      targetType: 'Script',
       authorId: 'author1'
     });
 
     const result = await voting.removeVote({
       agentId: 'voter1',
-      targetId: 'post1',
-      targetType: 'post',
+      targetId: 'Script1',
+      targetType: 'Script',
       authorId: 'author1'
     });
 
@@ -340,8 +340,8 @@ describe('Remove Vote', () => {
 
     const result = await voting.removeVote({
       agentId: 'voter1',
-      targetId: 'post1',
-      targetType: 'post',
+      targetId: 'Script1',
+      targetType: 'Script',
       authorId: 'author1'
     });
 
@@ -357,12 +357,12 @@ describe('Get Vote', () => {
 
     await voting.upvote({
       agentId: 'voter1',
-      targetId: 'post1',
-      targetType: 'post',
+      targetId: 'Script1',
+      targetType: 'Script',
       authorId: 'author1'
     });
 
-    const vote = await voting.getVote('voter1', 'post1', 'post');
+    const vote = await voting.getVote('voter1', 'Script1', 'Script');
     assertEqual(vote.value, 1);
   });
 
@@ -370,7 +370,7 @@ describe('Get Vote', () => {
     const adapter = createMemoryAdapter();
     const voting = new VotingSystem(adapter);
 
-    const vote = await voting.getVote('voter1', 'post1', 'post');
+    const vote = await voting.getVote('voter1', 'Script1', 'Script');
     assertEqual(vote, null);
   });
 });
@@ -382,12 +382,12 @@ describe('Has Voted', () => {
 
     await voting.upvote({
       agentId: 'voter1',
-      targetId: 'post1',
-      targetType: 'post',
+      targetId: 'Script1',
+      targetType: 'Script',
       authorId: 'author1'
     });
 
-    const hasVoted = await voting.hasVoted('voter1', 'post1', 'post');
+    const hasVoted = await voting.hasVoted('voter1', 'Script1', 'Script');
     assertEqual(hasVoted, true);
   });
 
@@ -395,7 +395,7 @@ describe('Has Voted', () => {
     const adapter = createMemoryAdapter();
     const voting = new VotingSystem(adapter);
 
-    const hasVoted = await voting.hasVoted('voter1', 'post1', 'post');
+    const hasVoted = await voting.hasVoted('voter1', 'Script1', 'Script');
     assertEqual(hasVoted, false);
   });
 });
@@ -405,11 +405,11 @@ describe('Vote Count', () => {
     const adapter = createMemoryAdapter();
     const voting = new VotingSystem(adapter);
 
-    await voting.upvote({ agentId: 'v1', targetId: 'p1', targetType: 'post', authorId: 'a1' });
-    await voting.upvote({ agentId: 'v2', targetId: 'p1', targetType: 'post', authorId: 'a1' });
-    await voting.downvote({ agentId: 'v3', targetId: 'p1', targetType: 'post', authorId: 'a1' });
+    await voting.upvote({ agentId: 'v1', targetId: 'p1', targetType: 'Script', authorId: 'a1' });
+    await voting.upvote({ agentId: 'v2', targetId: 'p1', targetType: 'Script', authorId: 'a1' });
+    await voting.downvote({ agentId: 'v3', targetId: 'p1', targetType: 'Script', authorId: 'a1' });
 
-    const counts = await voting.getVoteCount('p1', 'post');
+    const counts = await voting.getVoteCount('p1', 'Script');
     assertEqual(counts.upvotes, 2);
     assertEqual(counts.downvotes, 1);
     assertEqual(counts.score, 1);

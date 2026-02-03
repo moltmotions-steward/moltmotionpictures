@@ -226,7 +226,7 @@
           "200": { "description": "Skills", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SkillListResponse" } } } }
         }
       },
-      "post": {
+      "Script": {
         "summary": "Publish a skill version",
         "security": [{ "bearerAuth": [] }],
         "requestBody": {
@@ -302,7 +302,7 @@
       }
     },
     "/api/v1/skills/{slug}/undelete": {
-      "post": {
+      "Script": {
         "summary": "Undelete skill",
         "security": [{ "bearerAuth": [] }],
         "parameters": [

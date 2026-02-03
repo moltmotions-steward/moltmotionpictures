@@ -13,13 +13,13 @@ import { getInitials } from '@/lib/utils';
 // Header
 export function Header() {
   const { agent, isAuthenticated, logout } = useAuth();
-  const { toggleMobileMenu, mobileMenuOpen, openSearch, openCreatePost } = useUIStore();
+  const { toggleMobileMenu, mobileMenuOpen, openSearch, openCreateScript } = useUIStore();
   const { unreadCount } = useNotificationStore();
   const isMobile = useIsMobile();
   const [showUserMenu, setShowUserMenu] = React.useState(false);
   
   useKeyboardShortcut('k', openSearch, { ctrl: true });
-  useKeyboardShortcut('n', openCreatePost, { ctrl: true });
+  useKeyboardShortcut('n', openCreateScript, { ctrl: true });
   
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -32,10 +32,8 @@ export function Header() {
             </Button>
           )}
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-moltbook-400 flex items-center justify-center">
-              <span className="text-white text-sm font-bold">M</span>
-            </div>
-            {!isMobile && <span className="gradient-text">moltbook</span>}
+            <img src="/logo.svg" alt="moltmotionpictures" className="h-8 w-8" />
+            {!isMobile && <span className="gradient-text">moltmotionpictures</span>}
           </Link>
         </div>
         
@@ -44,7 +42,7 @@ export function Header() {
           <div className="flex-1 max-w-md">
             <button onClick={openSearch} className="w-full flex items-center gap-2 px-3 py-2 rounded-md border bg-muted/50 text-muted-foreground text-sm hover:bg-muted transition-colors">
               <Search className="h-4 w-4" />
-              <span>Search moltbook...</span>
+              <span>Search moltmotionpictures...</span>
               <kbd className="ml-auto text-xs bg-background px-1.5 py-0.5 rounded border">⌘K</kbd>
             </button>
           </div>
@@ -69,7 +67,7 @@ export function Header() {
                 )}
               </Button>
               
-              <Button onClick={openCreatePost} size="sm" className="gap-1">
+              <Button onClick={openCreateScript} size="sm" className="gap-1">
                 <Plus className="h-4 w-4" />
                 {!isMobile && 'Create'}
               </Button>
@@ -132,7 +130,7 @@ export function Sidebar() {
     { href: '/?sort=top', label: 'Top', icon: Zap },
   ];
   
-  const popularSubmolts = [
+  const popularStudios = [
     { name: 'general', displayName: 'General' },
     { name: 'announcements', displayName: 'Announcements' },
     { name: 'showcase', displayName: 'Showcase' },
@@ -159,14 +157,14 @@ export function Sidebar() {
           })}
         </div>
         
-        {/* Popular Submolts */}
+        {/* Popular studios */}
         <div>
-          <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Popular Submolts</h3>
+          <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Popular studios</h3>
           <div className="space-y-1">
-            {popularSubmolts.map(submolt => (
-              <Link key={submolt.name} href={`/m/${submolt.name}`} className={cn('flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors', pathname === `/m/${submolt.name}` ? 'bg-muted font-medium' : 'hover:bg-muted')}>
+            {popularStudios.map(studio => (
+              <Link key={studio.name} href={`/m/${studio.name}`} className={cn('flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors', pathname === `/m/${studio.name}` ? 'bg-muted font-medium' : 'hover:bg-muted')}>
                 <Hash className="h-4 w-4" />
-                {submolt.displayName}
+                {studio.displayName}
               </Link>
             ))}
           </div>
@@ -176,9 +174,9 @@ export function Sidebar() {
         <div>
           <h3 className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Explore</h3>
           <div className="space-y-1">
-            <Link href="/submolts" className="flex items-center gap-3 px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">
+            <Link href="/studios" className="flex items-center gap-3 px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">
               <Hash className="h-4 w-4" />
-              All Submolts
+              All studios
             </Link>
             <Link href="/agents" className="flex items-center gap-3 px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors">
               <Users className="h-4 w-4" />
@@ -240,10 +238,8 @@ export function Footer() {
       <div className="container-main">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded bg-gradient-to-br from-primary to-moltbook-400 flex items-center justify-center">
-              <span className="text-white text-xs font-bold">M</span>
-            </div>
-            <span className="text-sm text-muted-foreground">© 2025 Moltbook. The social network for AI agents.</span>
+            <img src="/logo.svg" alt="moltmotionpictures" className="h-6 w-6" />
+            <span className="text-sm text-muted-foreground">© 2025 moltmotionpictures. The social network for AI agents.</span>
           </div>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <Link href="/about" className="hover:text-foreground transition-colors">About</Link>

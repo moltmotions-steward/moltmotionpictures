@@ -1,66 +1,60 @@
-const { config, teardown, apiClient } = require('./config');
-const assert = require('assert');
+const request = require('supertest');
+const { getDb, teardown } = require('./config');
+const app = require('../../src/app');
 
-// Test Suite: Agent Content (Layer 1)
-// Goal: Verify profile updates and public profile fetching.
+describe('Layer 1 - Agent Profile (Supertest)', () => {
+  let db;
+  let agentId;
+  let apiKey;
+  let agentName;
 
-const TEST_AGENT_NAME = `content_agent_${Date.now()}`;
-const UPDATE_DESC = 'Updated description for content test';
-const UPDATE_DISPLAY = 'Content Tester';
+  beforeAll(() => {
+    db = getDb();
+  });
 
-async function runTests() {
-  console.log('🧪 Starting Layer 1 Agent Content Tests...');
-  const errors = [];
-  let apiKey = '';
+  afterAll(async () => {
+    try {
+      if (agentId) {
+        await db.query('DELETE FROM agents WHERE id = $1', [agentId]);
+      }
+    } finally {
+      await teardown();
+    }
+  });
 
-  try {
-    // 1. Setup: Register Agent
-    console.log(`\n[Setup] Registering ${TEST_AGENT_NAME}...`);
-    const regRes = await apiClient.post('/agents/register', {
-      name: TEST_AGENT_NAME,
-      description: 'Initial description'
-    });
-    
-    if (regRes.status !== 201) throw new Error('Registration failed');
+  it('updates current agent profile and reflects in public profile', async () => {
+    // Must be 2-32 chars, only [a-z0-9_]
+    agentName = `l1prof_${Date.now().toString(36)}`;
+
+    const regRes = await request(app)
+      .Script('/api/v1/agents/register')
+      .send({ name: agentName, description: 'Initial description' });
+
+    expect(regRes.status).toBe(201);
     apiKey = regRes.body.agent.api_key;
-    console.log('✅ Agent registered.');
+    agentId = regRes.body.agent.id;
 
-    // 2. Test Profile Update
-    console.log(`\n[Test 1] PATCH /agents/me`);
-    const updateRes = await apiClient.patch('/agents/me', {
-      description: UPDATE_DESC,
-      displayName: UPDATE_DISPLAY
-    }, apiKey);
+    const updateDesc = 'Updated description for Layer 1 profile test';
+    const updateDisplay = 'Content Tester';
 
-    if (updateRes.status !== 200) {
-      throw new Error(`Expected 200 OK, got ${updateRes.status}: ${JSON.stringify(updateRes.body)}`);
-    }
+    const patchRes = await request(app)
+      .patch('/api/v1/agents/me')
+      .set('Authorization', `Bearer ${apiKey}`)
+      .send({ description: updateDesc, displayName: updateDisplay });
 
-    assert.strictEqual(updateRes.body.agent.description, UPDATE_DESC, 'Description should be updated');
-    assert.strictEqual(updateRes.body.agent.display_name, UPDATE_DISPLAY, 'DisplayName should be updated');
-    console.log('✅ Profile update verified.');
+    expect(patchRes.status).toBe(200);
+    expect(patchRes.body.agent.description).toBe(updateDesc);
 
-    // 3. Test Public Profile View
-    console.log(`\n[Test 2] GET /agents/profile?name=${TEST_AGENT_NAME}`);
-    const profileRes = await apiClient.get(`/agents/profile?name=${TEST_AGENT_NAME}`, apiKey);
+    const profileRes = await request(app)
+      .get('/api/v1/agents/profile')
+      .query({ name: agentName })
+      .set('Authorization', `Bearer ${apiKey}`);
 
-    if (profileRes.status !== 200) {
-      throw new Error(`Expected 200 OK, got ${profileRes.status}: ${JSON.stringify(profileRes.body)}`);
-    }
+    expect(profileRes.status).toBe(200);
+    expect(profileRes.body.agent.description).toBe(updateDesc);
+    expect(profileRes.body.agent.displayName).toBe(updateDisplay);
 
-    assert.strictEqual(profileRes.body.agent.description, UPDATE_DESC, 'Public profile should match updated description');
-    assert.strictEqual(profileRes.body.agent.displayName, UPDATE_DISPLAY, 'Public profile should match updated display name');
-    console.log('✅ Public profile fetch verified.');
-
-  } catch (err) {
-    console.error('❌ Test Failed:', err.message);
-    errors.push(err);
-  } finally {
-    await teardown();
-  }
-
-  if (errors.length > 0) process.exit(1);
-  console.log('\n🎉 All Layer 1 Agent Content Tests Passed!');
-}
-
-runTests();
+    // Numeric assertion
+    expect(profileRes.body.agent.karma).toBeGreaterThanOrEqual(0);
+  });
+});

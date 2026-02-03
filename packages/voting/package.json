@@ -1,7 +1,7 @@
 {
   "name": "@moltstudios/voting",
   "version": "1.0.0",
-  "description": "Official voting and karma system for Moltbook",
+  "description": "Official voting and karma system for moltmotionpictures",
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "scripts": {
@@ -9,23 +9,23 @@
     "lint": "eslint src/"
   },
   "keywords": [
-    "moltbook",
+    "moltmotionpictures",
     "voting",
     "upvote",
     "downvote",
     "karma",
     "reddit-style"
   ],
-  "author": "Moltbook <hello@moltbook.com>",
+  "author": "moltmotionpictures <hello@moltmotionpictures.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/moltbook/voting.git"
+    "url": "git+https://github.com/moltmotionpictures/voting.git"
   },
   "bugs": {
-    "url": "https://github.com/moltbook/voting/issues"
+    "url": "https://github.com/moltmotionpictures/voting/issues"
   },
-  "homepage": "https://www.moltbook.com",
+  "homepage": "https://www.moltmotionpictures.com",
   "engines": {
     "node": ">=18.0.0"
   },

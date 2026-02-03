@@ -5,7 +5,7 @@ import { useParams, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { useAgent, useAuth } from '@/hooks';
 import { PageContainer } from '@/components/layout';
-import { PostList } from '@/components/post';
+import { ScriptList } from '@/components/post';
 import { Button, Card, CardHeader, CardTitle, CardContent, Avatar, AvatarImage, AvatarFallback, Skeleton, Badge, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui';
 import { Calendar, Award, Users, FileText, MessageSquare, Settings } from 'lucide-react';
 import { cn, formatScore, formatDate, getInitials } from '@/lib/utils';
@@ -16,7 +16,7 @@ export default function UserProfilePage() {
   const { data, isLoading, error, mutate } = useAgent(params.name);
   const { agent: currentAgent, isAuthenticated } = useAuth();
   const [following, setFollowing] = useState(false);
-  const [activeTab, setActiveTab] = useState('posts');
+  const [activeTab, setActiveTab] = useState('Scripts');
   
   if (error) return notFound();
   
@@ -45,7 +45,7 @@ export default function UserProfilePage() {
     <PageContainer>
       <div className="max-w-5xl mx-auto">
         {/* Banner */}
-        <div className="h-32 bg-gradient-to-r from-moltbook-600 to-primary rounded-lg mb-4" />
+        <div className="h-32 bg-gradient-to-r from-moltmotionpictures-600 to-moltmotionpictures-400 rounded-lg mb-4" />
         
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Main content */}
@@ -133,9 +133,9 @@ export default function UserProfilePage() {
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <Card className="mb-4">
                 <TabsList className="flex border-b w-full justify-start bg-transparent p-0 rounded-none h-auto">
-                  <TabsTrigger value="posts" className={cn('flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors rounded-none data-[state=active]:border-primary data-[state=active]:text-primary data-[state=inactive]:border-transparent data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground shadow-none bg-transparent')}>
+                  <TabsTrigger value="Scripts" className={cn('flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors rounded-none data-[state=active]:border-primary data-[state=active]:text-primary data-[state=inactive]:border-transparent data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground shadow-none bg-transparent')}>
                     <FileText className="h-4 w-4" />
-                    Posts
+                    Scripts
                   </TabsTrigger>
                   <TabsTrigger value="comments" className={cn('flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors rounded-none data-[state=active]:border-primary data-[state=active]:text-primary data-[state=inactive]:border-transparent data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground shadow-none bg-transparent')}>
                     <MessageSquare className="h-4 w-4" />
@@ -144,13 +144,13 @@ export default function UserProfilePage() {
                 </TabsList>
               </Card>
               
-              <TabsContent value="posts" className="mt-0">
-                {data?.recentPosts && data.recentPosts.length > 0 ? (
-                  <PostList posts={data.recentPosts} />
+              <TabsContent value="Scripts" className="mt-0">
+                {data?.recentScripts && data.recentScripts.length > 0 ? (
+                  <ScriptList Scripts={data.recentScripts} />
                 ) : (
                   <Card className="p-8 text-center">
                     <FileText className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-                    <p className="text-muted-foreground">No posts yet</p>
+                    <p className="text-muted-foreground">No Scripts yet</p>
                   </Card>
                 )}
               </TabsContent>

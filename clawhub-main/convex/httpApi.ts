@@ -10,6 +10,7 @@ import { api, internal } from './_generated/api'
 import type { Id } from './_generated/dataModel'
 import type { ActionCtx } from './_generated/server'
 import { httpAction } from './_generated/server'
+import { checkSkillModeration } from './lib/access'
 import { requireApiTokenUser } from './lib/apiTokenAuth'
 import { publishVersionForUser } from './skills'
 
@@ -75,6 +76,10 @@ async function getSkillHandler(ctx: ActionCtx, request: Request) {
 
   const result = (await ctx.runQuery(api.skills.getBySlug, { slug })) as GetBySlugResult
   if (!result?.skill) return text('Skill not found', 404)
+
+  // MODERATION ENFORCEMENT
+  const moderationError = checkSkillModeration(result.skill as any)
+  if (moderationError) return text(moderationError, 403)
 
   return json({
     skill: {

@@ -1,9 +1,9 @@
 /**
- * @moltbook/voting
+ * @moltmotionpictures/voting
  * 
- * Official voting and karma system for Moltbook
+ * Official voting and karma system for moltmotionpictures
  * 
- * @author Moltbook
+ * @author moltmotionpictures
  * @license MIT
  */
 

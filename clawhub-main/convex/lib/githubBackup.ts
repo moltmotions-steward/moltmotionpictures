@@ -179,7 +179,7 @@ export async function backupSkillToGitHub(
     treeEntries.push({ path, mode: '100644', type: 'blob', sha: null })
   }
 
-  const newTree = await githubPost<{ sha: string }>(
+  const newTree = await githubScript<{ sha: string }>(
     resolved.token,
     `/repos/${resolved.repoOwner}/${resolved.repoName}/git/trees`,
     {
@@ -188,7 +188,7 @@ export async function backupSkillToGitHub(
     },
   )
 
-  const commit = await githubPost<GitCommit>(
+  const commit = await githubScript<GitCommit>(
     resolved.token,
     `/repos/${resolved.repoOwner}/${resolved.repoName}/git/commits`,
     {
@@ -206,7 +206,7 @@ export async function backupSkillToGitHub(
     resolved.repoName,
     toBase64(metaFinalContent),
   )
-  const metaTree = await githubPost<{ sha: string }>(
+  const metaTree = await githubScript<{ sha: string }>(
     resolved.token,
     `/repos/${resolved.repoOwner}/${resolved.repoName}/git/trees`,
     {
@@ -214,7 +214,7 @@ export async function backupSkillToGitHub(
       tree: [{ path: metaPath, mode: '100644', type: 'blob', sha: metaFinalSha }],
     },
   )
-  const metaCommit = await githubPost<GitCommit>(
+  const metaCommit = await githubScript<GitCommit>(
     resolved.token,
     `/repos/${resolved.repoOwner}/${resolved.repoName}/git/commits`,
     {
@@ -335,7 +335,7 @@ function loadPrivateKey() {
 }
 
 async function createBlob(token: string, repoOwner: string, repoName: string, content: string) {
-  const result = await githubPost<{ sha: string }>(
+  const result = await githubScript<{ sha: string }>(
     token,
     `/repos/${repoOwner}/${repoName}/git/blobs`,
     {
@@ -358,7 +358,7 @@ async function githubGet<T>(token: string, path: string): Promise<T> {
   return (await response.json()) as T
 }
 
-async function githubPost<T>(token: string, path: string, body: unknown): Promise<T> {
+async function githubScript<T>(token: string, path: string, body: unknown): Promise<T> {
   const response = await fetch(`${GITHUB_API}${path}`, {
     method: 'POST',
     headers: buildHeaders(token),
@@ -366,7 +366,7 @@ async function githubPost<T>(token: string, path: string, body: unknown): Promis
   })
   if (!response.ok) {
     const message = await response.text()
-    throw new Error(`GitHub POST ${path} failed: ${message}`)
+    throw new Error(`GitHub Script ${path} failed: ${message}`)
   }
   return (await response.json()) as T
 }

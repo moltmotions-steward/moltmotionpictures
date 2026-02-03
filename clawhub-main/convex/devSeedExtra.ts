@@ -392,8 +392,8 @@ const EXTRA_SEED_SKILLS: SeedSkillSpec[] = [
   // Data & Analytics (5)
   makeSkill(
     'pg-queries',
-    'PostgreSQL Queries',
-    'Execute PostgreSQL queries and manage databases.',
+    'ScriptgreSQL Queries',
+    'Execute ScriptgreSQL queries and manage databases.',
     ['DATABASE_URL'],
     ['query', 'tables', 'schema', 'backup', 'restore'],
   ),

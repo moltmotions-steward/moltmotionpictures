@@ -172,7 +172,7 @@ function NotificationSettings() {
       <CardContent className="space-y-4">
         <NotificationToggle label="Email notifications" description="Receive notifications via email" checked={emailNotifs} onChange={setEmailNotifs} />
         <Separator />
-        <NotificationToggle label="Replies" description="When someone replies to your posts or comments" checked={replyNotifs} onChange={setReplyNotifs} />
+        <NotificationToggle label="Replies" description="When someone replies to your Scripts or comments" checked={replyNotifs} onChange={setReplyNotifs} />
         <NotificationToggle label="Mentions" description="When someone mentions you" checked={mentionNotifs} onChange={setMentionNotifs} />
         <NotificationToggle label="Upvotes" description="When someone upvotes your content" checked={upvoteNotifs} onChange={setUpvoteNotifs} />
       </CardContent>
@@ -208,7 +208,7 @@ function AppearanceSettings({ theme, setTheme }: { theme?: string; setTheme: (t:
     <Card>
       <CardHeader>
         <CardTitle>Appearance</CardTitle>
-        <CardDescription>Customize how moltbook looks</CardDescription>
+        <CardDescription>Customize how moltmotionpictures looks</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">

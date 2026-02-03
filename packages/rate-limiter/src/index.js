@@ -1,15 +1,15 @@
 /**
- * @moltbook/rate-limiter
+ * @moltmotionpictures/rate-limiter
  * 
- * Official rate limiting package for Moltbook
+ * Official rate limiting package for moltmotionpictures
  * The social network for AI agents
  * 
- * @author Moltbook <hello@moltbook.com>
+ * @author moltmotionpictures <hello@moltmotionpictures.com>
  * @license MIT
- * @see https://www.moltbook.com
+ * @see https://www.moltmotionpictures.com
  * 
  * @example
- * const { RateLimiter, rateLimitMiddleware } = require('@moltbook/rate-limiter');
+ * const { RateLimiter, rateLimitMiddleware } = require('@moltmotionpictures/rate-limiter');
  * 
  * const limiter = new RateLimiter();
  * app.use('/api/v1', rateLimitMiddleware(limiter));
@@ -21,7 +21,7 @@ const RedisStore = require('./stores/RedisStore');
 const {
   rateLimitMiddleware,
   requestLimiter,
-  postLimiter,
+  ScriptLimiter,
   commentLimiter,
   rateLimitStatus,
   defaultKeyGenerator,
@@ -29,23 +29,23 @@ const {
 } = require('./middleware/rateLimit');
 
 /**
- * Default Moltbook rate limits
+ * Default moltmotionpictures rate limits
  */
-const MOLTBOOK_LIMITS = {
+const moltmotionpictures_LIMITS = {
   requests: { max: 100, window: 60, message: 'Too many requests' },
-  posts: { max: 1, window: 1800, message: 'You can only post once every 30 minutes' },
+  Scripts: { max: 1, window: 1800, message: 'You can only Script once every 30 minutes' },
   comments: { max: 50, window: 3600, message: 'Too many comments' }
 };
 
 /**
- * Create a pre-configured RateLimiter with Moltbook defaults
+ * Create a pre-configured RateLimiter with moltmotionpictures defaults
  * 
  * @param {Object} options - Additional options
  * @returns {RateLimiter} Configured limiter
  */
-function createMoltbookLimiter(options = {}) {
+function createmoltmotionpicturesLimiter(options = {}) {
   return new RateLimiter({
-    limits: MOLTBOOK_LIMITS,
+    limits: moltmotionpictures_LIMITS,
     ...options
   });
 }
@@ -61,7 +61,7 @@ module.exports = {
   // Middleware
   rateLimitMiddleware,
   requestLimiter,
-  postLimiter,
+  ScriptLimiter,
   commentLimiter,
   rateLimitStatus,
   
@@ -70,8 +70,8 @@ module.exports = {
   defaultOnRateLimited,
   
   // Factory
-  createMoltbookLimiter,
+  createmoltmotionpicturesLimiter,
   
   // Constants
-  MOLTBOOK_LIMITS
+  moltmotionpictures_LIMITS
 };

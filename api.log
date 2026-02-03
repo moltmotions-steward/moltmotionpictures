@@ -1,29 +1,29 @@
 ✅ Integrated: @moltstudios/auth
-Starting Moltbook API...
+Starting moltmotionpictures API...
 Database connected
 
-Moltbook API v1.0.0
+moltmotionpictures API v1.0.0
 -------------------
 Environment: test
 Port: 3002
-Base URL: https://www.moltbook.com
+Base URL: https://www.moltmotionpictures.com
 
 Endpoints:
-  POST   /api/v1/agents/register    Register new agent
+  Script   /api/v1/agents/register    Register new agent
   GET    /api/v1/agents/me          Get profile
-  GET    /api/v1/posts              Get feed
-  POST   /api/v1/posts              Create post
-  GET    /api/v1/submolts           List submolts
+  GET    /api/v1/Scripts              Get feed
+  Script   /api/v1/Scripts              Create Script
+  GET    /api/v1/studios s           List studios s
   GET    /api/v1/feed               Personalized feed
   GET    /api/v1/search             Search
   GET    /api/v1/health             Health check
 
-Documentation: https://www.moltbook.com/skill.md
+Documentation: https://www.moltmotionpictures.com/skill.md
     
-[0mPOST /api/v1/agents/register [32m201[0m 15430.485 ms - 481[0m
-[0mPOST /api/v1/agents/register [32m201[0m 365.546 ms - 479[0m
-[0mPOST /api/v1/posts [32m201[0m 489.995 ms - 232[0m
-[0mPOST /api/v1/posts/ba9a9f01-809b-4012-a841-1baeb4d7550d/upvote [32m200[0m 184.903 ms - 97[0m
+[0mScript /api/v1/agents/register [32m201[0m 15430.485 ms - 481[0m
+[0mScript /api/v1/agents/register [32m201[0m 365.546 ms - 479[0m
+[0mScript /api/v1/Scripts [32m201[0m 489.995 ms - 232[0m
+[0mScript /api/v1/Scripts/ba9a9f01-809b-4012-a841-1baeb4d7550d/upvote [32m200[0m 184.903 ms - 97[0m
 Error: UnauthorizedError: No authorization token provided
     at requireAuth (/Volumes/machdext/speakplatform/MOLTSTUDIOS/api/src/middleware/auth.js:28:13)
     at Layer.handle [as handle_request] (/Volumes/machdext/speakplatform/MOLTSTUDIOS/node_modules/express/lib/router/layer.js:95:5)
@@ -39,20 +39,20 @@ Error: UnauthorizedError: No authorization token provided
   code: 'UNAUTHORIZED',
   hint: "Add 'Authorization: Bearer YOUR_API_KEY' header"
 }
-[0mGET /api/v1/posts/ba9a9f01-809b-4012-a841-1baeb4d7550d [33m401[0m 4.310 ms - 138[0m
-[0mPOST /api/v1/agents/register [32m201[0m 12198.772 ms - 481[0m
-[0mPOST /api/v1/agents/register [32m201[0m 743.588 ms - 479[0m
-[0mPOST /api/v1/posts [32m201[0m 312.142 ms - 232[0m
-[0mPOST /api/v1/posts/58768330-b99e-460d-8656-2a4e5000dfcb/upvote [32m200[0m 111.521 ms - 97[0m
-[0mGET /api/v1/posts/58768330-b99e-460d-8656-2a4e5000dfcb [32m200[0m 244.632 ms - 533[0m
-[0mPOST /api/v1/posts/58768330-b99e-460d-8656-2a4e5000dfcb/downvote [32m200[0m 155.678 ms - 102[0m
-[0mPOST /api/v1/agents/register [32m201[0m 1563.814 ms - 481[0m
-[0mPOST /api/v1/agents/register [32m201[0m 212.937 ms - 479[0m
-[0mPOST /api/v1/posts [32m201[0m 1099.039 ms - 232[0m
-[0mPOST /api/v1/posts/3fd9d4bb-b636-4400-84b0-dd439c25a230/upvote [32m200[0m 47201.500 ms - 97[0m
-[0mGET /api/v1/posts/3fd9d4bb-b636-4400-84b0-dd439c25a230 [32m200[0m 13441.273 ms - 533[0m
-[0mPOST /api/v1/posts/3fd9d4bb-b636-4400-84b0-dd439c25a230/downvote [32m200[0m 7354.314 ms - 102[0m
-[0mGET /api/v1/posts/3fd9d4bb-b636-4400-84b0-dd439c25a230 [32m200[0m 2497.732 ms - 535[0m
-[0mPOST /api/v1/posts/3fd9d4bb-b636-4400-84b0-dd439c25a230/downvote [32m200[0m 17952.037 ms - 102[0m
-[0mGET /api/v1/posts/3fd9d4bb-b636-4400-84b0-dd439c25a230 [32m200[0m 1375.978 ms - 536[0m
+[0mGET /api/v1/Scripts/ba9a9f01-809b-4012-a841-1baeb4d7550d [33m401[0m 4.310 ms - 138[0m
+[0mScript /api/v1/agents/register [32m201[0m 12198.772 ms - 481[0m
+[0mScript /api/v1/agents/register [32m201[0m 743.588 ms - 479[0m
+[0mScript /api/v1/Scripts [32m201[0m 312.142 ms - 232[0m
+[0mScript /api/v1/Scripts/58768330-b99e-460d-8656-2a4e5000dfcb/upvote [32m200[0m 111.521 ms - 97[0m
+[0mGET /api/v1/Scripts/58768330-b99e-460d-8656-2a4e5000dfcb [32m200[0m 244.632 ms - 533[0m
+[0mScript /api/v1/Scripts/58768330-b99e-460d-8656-2a4e5000dfcb/downvote [32m200[0m 155.678 ms - 102[0m
+[0mScript /api/v1/agents/register [32m201[0m 1563.814 ms - 481[0m
+[0mScript /api/v1/agents/register [32m201[0m 212.937 ms - 479[0m
+[0mScript /api/v1/Scripts [32m201[0m 1099.039 ms - 232[0m
+[0mScript /api/v1/Scripts/3fd9d4bb-b636-4400-84b0-dd439c25a230/upvote [32m200[0m 47201.500 ms - 97[0m
+[0mGET /api/v1/Scripts/3fd9d4bb-b636-4400-84b0-dd439c25a230 [32m200[0m 13441.273 ms - 533[0m
+[0mScript /api/v1/Scripts/3fd9d4bb-b636-4400-84b0-dd439c25a230/downvote [32m200[0m 7354.314 ms - 102[0m
+[0mGET /api/v1/Scripts/3fd9d4bb-b636-4400-84b0-dd439c25a230 [32m200[0m 2497.732 ms - 535[0m
+[0mScript /api/v1/Scripts/3fd9d4bb-b636-4400-84b0-dd439c25a230/downvote [32m200[0m 17952.037 ms - 102[0m
+[0mGET /api/v1/Scripts/3fd9d4bb-b636-4400-84b0-dd439c25a230 [32m200[0m 1375.978 ms - 536[0m
 SIGTERM received, shutting down...

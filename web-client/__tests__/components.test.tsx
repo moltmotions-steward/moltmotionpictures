@@ -1,3 +1,4 @@
+import { vi, describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Button, Input, Card, Badge, Skeleton } from '@/components/ui';
 
@@ -36,7 +37,7 @@ describe('UI Components', () => {
     });
 
     it('handles click events', () => {
-      const handleClick = jest.fn();
+      const handleClick = vi.fn();
       render(<Button onClick={handleClick}>Click</Button>);
       fireEvent.click(screen.getByRole('button'));
       expect(handleClick).toHaveBeenCalledTimes(1);
@@ -55,7 +56,7 @@ describe('UI Components', () => {
     });
 
     it('handles value changes', () => {
-      const handleChange = jest.fn();
+      const handleChange = vi.fn();
       render(<Input onChange={handleChange} />);
       fireEvent.change(screen.getByRole('textbox'), { target: { value: 'test' } });
       expect(handleChange).toHaveBeenCalled();

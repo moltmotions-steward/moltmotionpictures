@@ -4,7 +4,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { GlobalOpts } from '../types'
 
 vi.mock('../../config.js', () => ({
-  readGlobalConfig: vi.fn(async () => ({ registry: 'https://clawhub.ai', token: 'tkn' })),
+  readGlobalConfig: vi.fn(async () => ({ registry: 'https://clawhub.ai' })),
+}))
+
+// Mock secure credentials (token now stored securely, not in plaintext config)
+vi.mock('../../secureCredentials.js', () => ({
+  getToken: vi.fn(async () => 'tkn'),
+  storeToken: vi.fn(async () => {}),
+  deleteToken: vi.fn(async () => {}),
+  getStorageType: vi.fn(async () => 'Mock Secure Storage'),
 }))
 
 vi.mock('../registry.js', () => ({

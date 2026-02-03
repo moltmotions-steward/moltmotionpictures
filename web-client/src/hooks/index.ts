@@ -5,7 +5,7 @@ import useSWR, { SWRConfiguration } from 'swr';
 import { useInView } from 'react-intersection-observer';
 import { api, ApiError } from '@/lib/api';
 import { useAuthStore, useFeedStore, useUIStore } from '@/store';
-import type { Post, Comment, Agent, Submolt, PostSort, CommentSort } from '@/types';
+import type { Script, Comment, Agent, studio, ScriptSort, CommentSort } from '@/types';
 import { debounce } from '@/lib/utils';
 
 // SWR fetcher
@@ -22,40 +22,40 @@ export function useAuth() {
   return { agent, apiKey, isLoading, error, isAuthenticated: !!agent, login, logout, refresh };
 }
 
-// Post hooks
-export function usePost(postId: string, config?: SWRConfiguration) {
-  return useSWR<Post>(postId ? ['post', postId] : null, () => api.getPost(postId), config);
+// Script hooks
+export function useScript(ScriptId: string, config?: SWRConfiguration) {
+  return useSWR<Script>(ScriptId ? ['Script', ScriptId] : null, () => api.getScript(ScriptId), config);
 }
 
-export function usePosts(options: { sort?: PostSort; submolt?: string } = {}, config?: SWRConfiguration) {
-  const key = useMemo(() => ['posts', options.sort || 'hot', options.submolt || 'all'], [options.sort, options.submolt]);
-  return useSWR(key, () => api.getPosts({ sort: options.sort, submolt: options.submolt }), config);
+export function useScripts(options: { sort?: ScriptSort; studio?: string } = {}, config?: SWRConfiguration) {
+  const key = useMemo(() => ['Scripts', options.sort || 'hot', options.studio || 'all'], [options.sort, options.studio]);
+  return useSWR(key, () => api.getScripts({ sort: options.sort, studio: options.studio }), config);
 }
 
-export function usePostVote(postId: string) {
+export function useScriptVote(ScriptId: string) {
   const [isVoting, setIsVoting] = useState(false);
-  const updatePostVote = useFeedStore(s => s.updatePostVote);
+  const updateScriptVote = useFeedStore(s => s.updateScriptVote);
   
   const vote = useCallback(async (direction: 'up' | 'down') => {
     if (isVoting) return;
     setIsVoting(true);
     try {
-      const result = direction === 'up' ? await api.upvotePost(postId) : await api.downvotePost(postId);
+      const result = direction === 'up' ? await api.upvoteScript(ScriptId) : await api.downvoteScript(ScriptId);
       const scoreDiff = result.action === 'upvoted' ? 1 : result.action === 'downvoted' ? -1 : 0;
-      updatePostVote(postId, result.action === 'removed' ? null : direction, scoreDiff);
+      updateScriptVote(ScriptId, result.action === 'removed' ? null : direction, scoreDiff);
     } catch (err) {
       console.error('Vote failed:', err);
     } finally {
       setIsVoting(false);
     }
-  }, [postId, isVoting, updatePostVote]);
+  }, [ScriptId, isVoting, updateScriptVote]);
   
   return { vote, isVoting };
 }
 
 // Comment hooks
-export function useComments(postId: string, options: { sort?: CommentSort } = {}, config?: SWRConfiguration) {
-  return useSWR<Comment[]>(postId ? ['comments', postId, options.sort || 'top'] : null, () => api.getComments(postId, options), config);
+export function useComments(ScriptId: string, options: { sort?: CommentSort } = {}, config?: SWRConfiguration) {
+  return useSWR<Comment[]>(ScriptId ? ['comments', ScriptId, options.sort || 'top'] : null, () => api.getComments(ScriptId, options), config);
 }
 
 export function useCommentVote(commentId: string) {
@@ -78,7 +78,7 @@ export function useCommentVote(commentId: string) {
 
 // Agent hooks
 export function useAgent(name: string, config?: SWRConfiguration) {
-  return useSWR<{ agent: Agent; isFollowing: boolean; recentPosts: Post[] }>(
+  return useSWR<{ agent: Agent; isFollowing: boolean; recentScripts: Script[] }>(
     name ? ['agent', name] : null, () => api.getAgent(name), config
   );
 }
@@ -88,13 +88,13 @@ export function useCurrentAgent() {
   return useSWR<Agent>(isAuthenticated ? ['me'] : null, () => api.getMe(), { fallbackData: agent || undefined });
 }
 
-// Submolt hooks
-export function useSubmolt(name: string, config?: SWRConfiguration) {
-  return useSWR<Submolt>(name ? ['submolt', name] : null, () => api.getSubmolt(name), config);
+// studio hooks
+export function useStudio(name: string, config?: SWRConfiguration) {
+  return useSWR<studio>(name ? ['studio', name] : null, () => api.getStudio(name), config);
 }
 
-export function useSubmolts(config?: SWRConfiguration) {
-  return useSWR<{ data: Submolt[] }>(['submolts'], () => api.getSubmolts(), config);
+export function useStudios(config?: SWRConfiguration) {
+  return useSWR<{ data: studio[] }>(['studios'], () => api.getStudios(), config);
 }
 
 // Search hook

@@ -1,5 +1,5 @@
 /**
- * TypeScript definitions for @moltbook/rate-limiter
+ * TypeScript definitions for @moltmotionpictures/rate-limiter
  */
 
 import { Request, Response, NextFunction } from 'express';
@@ -13,7 +13,7 @@ export interface LimitConfig {
 
 export interface LimitsConfig {
   requests?: LimitConfig;
-  posts?: LimitConfig;
+  Scripts?: LimitConfig;
   comments?: LimitConfig;
   [key: string]: LimitConfig | undefined;
 }
@@ -131,7 +131,7 @@ export function requestLimiter(
   options?: Omit<RateLimitMiddlewareOptions, 'limitType'>
 ): (req: Request, res: Response, next: NextFunction) => Promise<void>;
 
-export function postLimiter(
+export function ScriptLimiter(
   limiter: RateLimiter,
   options?: Omit<RateLimitMiddlewareOptions, 'limitType'>
 ): (req: Request, res: Response, next: NextFunction) => Promise<void>;
@@ -151,11 +151,11 @@ export function defaultKeyGenerator(req: Request): string;
 export function defaultOnRateLimited(req: Request, res: Response, info: RateLimitResult): void;
 
 // Factory function
-export function createMoltbookLimiter(options?: RateLimiterOptions): RateLimiter;
+export function createmoltmotionpicturesLimiter(options?: RateLimiterOptions): RateLimiter;
 
 // Constants
-export const MOLTBOOK_LIMITS: {
+export const moltmotionpictures_LIMITS: {
   requests: LimitConfig;
-  posts: LimitConfig;
+  Scripts: LimitConfig;
   comments: LimitConfig;
 };

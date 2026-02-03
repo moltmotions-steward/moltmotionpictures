@@ -1,5 +1,5 @@
 /**
- * TypeScript definitions for @moltbook/voting
+ * TypeScript definitions for @moltmotionpictures/voting
  */
 
 export interface Vote {
@@ -10,7 +10,7 @@ export interface Vote {
 export interface VoteOptions {
   agentId: string;
   targetId: string;
-  targetType: 'post' | 'comment';
+  targetType: 'Script' | 'comment';
   authorId: string;
 }
 
@@ -40,7 +40,7 @@ export interface VotingAdapter {
 export interface VotingOptions {
   allowSelfVote?: boolean;
   karmaMultiplier?: {
-    post?: number;
+    Script?: number;
     comment?: number;
   };
 }

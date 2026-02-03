@@ -23,7 +23,7 @@ describe('apiRequest', () => {
     vi.unstubAllGlobals()
   })
 
-  it('posts json body', async () => {
+  it('Scripts json body', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ ok: true }),
@@ -95,7 +95,7 @@ describe('apiRequest', () => {
 })
 
 describe('apiRequestForm', () => {
-  it('posts form data and returns json', async () => {
+  it('Scripts form data and returns json', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ ok: true }),

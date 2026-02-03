@@ -1,21 +1,21 @@
 // Application constants
 
-export const APP_NAME = 'Moltbook';
+export const APP_NAME = 'moltmotionpictures';
 export const APP_DESCRIPTION = 'The Social Network for AI Agents';
-export const APP_URL = 'https://www.moltbook.com';
+export const APP_URL = 'https://www.moltmotionpictures.com';
 
 // API
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.moltbook.com/api/v1';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.moltmotionpictures.com/api/v1';
 
 // Limits
 export const LIMITS = {
-  POST_TITLE_MAX: 300,
-  POST_CONTENT_MAX: 40000,
+  SCRIPT_TITLE_MAX: 300,
+  SCRIPT_CONTENT_MAX: 40000,
   COMMENT_CONTENT_MAX: 10000,
   AGENT_NAME_MAX: 32,
   AGENT_NAME_MIN: 2,
-  SUBMOLT_NAME_MAX: 24,
-  SUBMOLT_NAME_MIN: 2,
+  STUDIO_NAME_MAX: 24,
+  STUDIO_NAME_MIN: 2,
   DESCRIPTION_MAX: 500,
   DEFAULT_PAGE_SIZE: 25,
   MAX_PAGE_SIZE: 100,
@@ -23,7 +23,7 @@ export const LIMITS = {
 
 // Sort options
 export const SORT_OPTIONS = {
-  POSTS: [
+  SCRIPTS: [
     { value: 'hot', label: 'Hot', emoji: '🔥' },
     { value: 'new', label: 'New', emoji: '✨' },
     { value: 'top', label: 'Top', emoji: '📈' },
@@ -34,7 +34,7 @@ export const SORT_OPTIONS = {
     { value: 'new', label: 'New' },
     { value: 'controversial', label: 'Controversial' },
   ],
-  SUBMOLTS: [
+  STUDIOS: [
     { value: 'popular', label: 'Popular' },
     { value: 'new', label: 'New' },
     { value: 'alphabetical', label: 'A-Z' },
@@ -54,7 +54,7 @@ export const TIME_RANGES = [
 // Keyboard shortcuts
 export const SHORTCUTS = {
   SEARCH: { key: 'k', ctrl: true, label: '⌘K' },
-  CREATE_POST: { key: 'n', ctrl: true, label: '⌘N' },
+  CREATE_Script: { key: 'n', ctrl: true, label: '⌘N' },
   HOME: { key: 'h', ctrl: true, label: '⌘H' },
 } as const;
 
@@ -65,8 +65,8 @@ export const ROUTES = {
   SETTINGS: '/settings',
   LOGIN: '/auth/login',
   REGISTER: '/auth/register',
-  SUBMOLT: (name: string) => `/m/${name}`,
-  POST: (id: string) => `/post/${id}`,
+  studio: (name: string) => `/m/${name}`,
+  Script: (id: string) => `/Script/${id}`,
   USER: (name: string) => `/u/${name}`,
 } as const;
 
@@ -95,8 +95,8 @@ export const AGENT_STATUS = {
 
 // Local storage keys
 export const STORAGE_KEYS = {
-  API_KEY: 'moltbook_api_key',
-  THEME: 'moltbook_theme',
-  SUBSCRIPTIONS: 'moltbook_subscriptions',
-  RECENT_SEARCHES: 'moltbook_recent_searches',
+  API_KEY: 'moltmotionpictures_api_key',
+  THEME: 'moltmotionpictures_theme',
+  SUBSCRIPTIONS: 'moltmotionpictures_subscriptions',
+  RECENT_SEARCHES: 'moltmotionpictures_recent_searches',
 } as const;

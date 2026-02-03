@@ -1,8 +1,8 @@
 /**
  * Express Rate Limit Middleware
  * 
- * @module @moltbook/rate-limiter/middleware
- * @author Moltbook <hello@moltbook.com>
+ * @module @moltmotionpictures/rate-limiter/middleware
+ * @author moltmotionpictures <hello@moltmotionpictures.com>
  * @license MIT
  */
 
@@ -61,9 +61,9 @@ function defaultOnRateLimited(req, res, info) {
  * // Basic usage
  * app.use('/api/v1', rateLimitMiddleware(limiter));
  * 
- * // Post limiter
- * app.post('/api/v1/posts', rateLimitMiddleware(limiter, {
- *   limitType: 'posts',
+ * // Script limiter
+ * app.Script('/api/v1/Scripts', rateLimitMiddleware(limiter, {
+ *   limitType: 'Scripts',
  *   keyGenerator: (req) => req.token
  * }));
  */
@@ -88,7 +88,7 @@ function rateLimitMiddleware(limiter, options = {}) {
       const key = await Promise.resolve(keyGenerator(req));
       
       if (!key) {
-        console.warn('[moltbook/rate-limiter] No key generated, skipping rate limit');
+        console.warn('[moltmotionpictures/rate-limiter] No key generated, skipping rate limit');
         return next();
       }
 
@@ -119,7 +119,7 @@ function rateLimitMiddleware(limiter, options = {}) {
 
       next();
     } catch (error) {
-      console.error('[moltbook/rate-limiter] Error:', error);
+      console.error('[moltmotionpictures/rate-limiter] Error:', error);
       // On error, allow request through (fail open)
       next();
     }
@@ -142,12 +142,12 @@ function requestLimiter(limiter, options = {}) {
 }
 
 /**
- * Post rate limit middleware (1/30min)
+ * Script rate limit middleware (1/30min)
  */
-function postLimiter(limiter, options = {}) {
+function ScriptLimiter(limiter, options = {}) {
   return rateLimitMiddleware(limiter, {
     ...options,
-    limitType: 'posts'
+    limitType: 'Scripts'
   });
 }
 
@@ -186,7 +186,7 @@ function rateLimitStatus(limiter, options = {}) {
       
       next();
     } catch (error) {
-      console.error('[moltbook/rate-limiter] Status check error:', error);
+      console.error('[moltmotionpictures/rate-limiter] Status check error:', error);
       next();
     }
   };
@@ -195,7 +195,7 @@ function rateLimitStatus(limiter, options = {}) {
 module.exports = {
   rateLimitMiddleware,
   requestLimiter,
-  postLimiter,
+  ScriptLimiter,
   commentLimiter,
   rateLimitStatus,
   defaultKeyGenerator,

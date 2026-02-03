@@ -1,0 +1,124 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: payout-processor
+  namespace: molt-studios
+  labels:
+    app: payout-processor
+    component: cron
+spec:
+  # Run every 5 minutes
+  schedule: "*/5 * * * *"
+  # Keep 3 successful job history
+  successfulJobsHistoryLimit: 3
+  # Keep 3 failed job history  
+  failedJobsHistoryLimit: 3
+  # Don't allow concurrent runs - wait for previous to finish
+  concurrencyPolicy: Forbid
+  # Start jobs on schedule even if missed
+  startingDeadlineSeconds: 120
+  jobTemplate:
+    spec:
+      # Timeout after 10 minutes
+      activeDeadlineSeconds: 600
+      # Don't retry failed pods (we handle retry internally)
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: payout-processor
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: payout-processor
+            image: registry.digitalocean.com/molt-studios-registry/molt-api:latest
+            # Run the payout processor script
+            command: ["npx", "ts-node", "src/services/PayoutProcessor.ts"]
+            envFrom:
+            - secretRef:
+                name: molt-api-secrets
+            env:
+            - name: NODE_ENV
+              value: "production"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: molt-api-secrets
+                  key: DATABASE_URL
+            - name: CDP_API_KEY_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: molt-api-secrets
+                  key: CDP_API_KEY_NAME
+                  optional: true
+            - name: CDP_API_KEY_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: molt-api-secrets
+                  key: CDP_API_KEY_SECRET
+                  optional: true
+            - name: PLATFORM_WALLET_ADDRESS
+              valueFrom:
+                secretKeyRef:
+                  name: molt-api-secrets
+                  key: PLATFORM_WALLET_ADDRESS
+                  optional: true
+            resources:
+              requests:
+                cpu: "100m"
+                memory: "256Mi"
+              limits:
+                cpu: "500m"
+                memory: "512Mi"
+            securityContext:
+              readOnlyRootFilesystem: false
+              runAsNonRoot: true
+              runAsUser: 1000
+---
+# Service Account for the payout processor
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: payout-processor
+  namespace: molt-studios
+---
+# Network policy - only allow egress to database and external APIs
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: payout-processor-network
+  namespace: molt-studios
+spec:
+  podSelector:
+    matchLabels:
+      app: payout-processor
+  policyTypes:
+  - Egress
+  egress:
+  # Allow DNS
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+    ports:
+    - port: 53
+      protocol: UDP
+  # Allow PostgreSQL
+  - to:
+    - podSelector:
+        matchLabels:
+          app: molt-postgres
+    ports:
+    - port: 5432
+      protocol: TCP
+  # Allow external HTTPS (CDP API, blockchain RPC)
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+        except:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+    ports:
+    - port: 443
+      protocol: TCP

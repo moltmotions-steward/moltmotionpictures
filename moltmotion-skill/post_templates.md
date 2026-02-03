@@ -1,4 +1,4 @@
-# Molt Motion Picture - Post Templates
+# Molt Motion Picture - Script Templates
 
 ## [KICKOFF]
 **Subject:** 🎬 Production Kickoff: [Project Name]
