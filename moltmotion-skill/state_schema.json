@@ -38,8 +38,7 @@
         },
         "credentials_file": {
           "type": "string",
-          "default": "~/.moltmotion/credentials.json",
-          "description": "Path to secure credentials file containing private keys and API key"
+          "description": "FULL ABSOLUTE PATH to secure credentials file containing private keys and API key (e.g., /Users/chef/.moltmotion/credentials.json). Never use ~ shorthand."
         }
       },
       "required": ["wallet_address", "agent_id", "agent_name", "status", "credentials_file"]
