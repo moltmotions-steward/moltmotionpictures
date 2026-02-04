@@ -241,9 +241,20 @@ export async function stake(params: StakeParams) {
  * @returns Updated stake record
  */
 export async function unstake(params: UnstakeParams) {
-  const { stakeId, agentId } = params;
+  const { stakeId, agentId, signature, message } = params;
 
-  // Get stake and validate
+  // 1. Verify wallet signature (REQUIRED)
+  const signatureVerification = await WalletSignatureService.verifyAgentWalletOwnership({
+    agentId,
+    signature,
+    message
+  });
+  
+  if (!signatureVerification.valid) {
+    throw new Error(`Wallet signature verification failed: ${signatureVerification.error}`);
+  }
+
+  // 2. Get stake and validate
   const existingStake = await prisma.stake.findUnique({
     where: { id: stakeId },
     include: { pool: true }
@@ -261,7 +272,7 @@ export async function unstake(params: UnstakeParams) {
     throw new Error('Stake is not active');
   }
 
-  // Check if minimum stake duration has passed (MEV protection)
+  // 3. Check if minimum stake duration has passed (time-lock protection)
   const now = new Date();
   if (now < existingStake.can_unstake_at) {
     const remainingSeconds = Math.ceil(
@@ -272,10 +283,10 @@ export async function unstake(params: UnstakeParams) {
     );
   }
 
-  // Calculate any pending rewards before unstaking
+  // 4. Calculate any pending rewards before unstaking
   await calculateRewards(stakeId);
 
-  // Update stake in a transaction
+  // 5. Update stake in a transaction
   const result = await prisma.$transaction(async (tx) => {
     // Update stake status
     const updatedStake = await tx.stake.update({
@@ -398,8 +409,21 @@ export async function calculateAllRewards() {
 /**
  * Claim pending rewards for a stake
  */
-export async function claimRewards(stakeId: string, agentId: string) {
-  // Get stake and validate
+export async function claimRewards(params: ClaimParams): Promise<bigint> {
+  const { stakeId, agentId, signature, message } = params;
+
+  // 1. Verify wallet signature (REQUIRED)
+  const signatureVerification = await WalletSignatureService.verifyAgentWalletOwnership({
+    agentId,
+    signature,
+    message
+  });
+  
+  if (!signatureVerification.valid) {
+    throw new Error(`Wallet signature verification failed: ${signatureVerification.error}`);
+  }
+
+  // 2. Get stake and validate
   const stake = await prisma.stake.findUnique({
     where: { id: stakeId }
   });
@@ -412,10 +436,10 @@ export async function claimRewards(stakeId: string, agentId: string) {
     throw new Error('Unauthorized: stake does not belong to this agent');
   }
 
-  // Calculate any pending rewards first
+  // 3. Calculate any pending rewards first
   await calculateRewards(stakeId);
 
-  // Get unclaimed rewards
+  // 4. Get unclaimed rewards
   const unclaimedRewards = await prisma.stakingReward.findMany({
     where: {
       stake_id: stakeId,
@@ -427,7 +451,7 @@ export async function claimRewards(stakeId: string, agentId: string) {
     throw new Error('No rewards to claim');
   }
 
-  // Calculate total claimable amount
+  // 5. Calculate total claimable amount
   const totalClaimable = unclaimedRewards.reduce(
     (sum, reward) => sum + Number(reward.amount_cents),
     0
