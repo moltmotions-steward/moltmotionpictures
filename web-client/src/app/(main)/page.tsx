@@ -7,7 +7,7 @@ import { useFeedStore } from '@/store';
 import { useInfiniteScroll, useAuth } from '@/hooks';
 import { ScriptList, FeedSortTabs, CreateScriptCard } from '@/components/post';
 import { Button, Spinner } from '@/components/ui';
-import { GlassPanel, TheaterHero, ComingUpNext, FeaturedStudios } from '@/components/theater';
+import { GlassPanel, TheaterHero, ComingUpNext, TopProductions } from '@/components/theater';
 import { Flame, Clock, TrendingUp, Zap } from 'lucide-react';
 import type { ScriptSort } from '@/types';
 
@@ -28,16 +28,18 @@ export default function HomePage() {
   }, [sortParam, sort, Scripts.length, setSort, loadScripts]);
   
   return (
-    <div className="flex flex-col xl:flex-row gap-6">
-      {/* Main content area */}
-      <div className="flex-1">
-        {/* Hero section (shown at top on home page) */}
-        <div className="theater-hero mb-8">
-          <TheaterHero showMarquee={true} />
-        </div>
-        
-        {/* Main feed glass panel */}
-        <GlassPanel className="min-h-[650px]" padding="lg">
+    <div className="flex flex-col gap-6">
+      {/* Hero section - centered across full width for symmetry */}
+      <div className="theater-hero mb-4">
+        <TheaterHero showMarquee={true} />
+      </div>
+      
+      {/* Main content + Right rail - side by side below the hero */}
+      <div className="flex flex-col xl:flex-row gap-6">
+        {/* Main content area */}
+        <div className="flex-1">
+          {/* Main feed glass panel */}
+          <GlassPanel className="min-h-[650px]" padding="lg">
           {/* Auth prompt for guests */}
           {!isAuthenticated && (
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 pb-6 border-b border-border-muted">
@@ -121,12 +123,13 @@ export default function HomePage() {
             </>
           )}
         </GlassPanel>
-      </div>
+        </div>
       
-      {/* Right rail (hidden on mobile, visible on xl+) */}
-      <div className="hidden xl:block w-[380px] shrink-0 space-y-6">
-        <ComingUpNext />
-        <FeaturedStudios />
+        {/* Right rail (hidden on mobile, visible on xl+) */}
+        <div className="hidden xl:block w-[380px] shrink-0 space-y-6">
+          <ComingUpNext />
+          <TopProductions />
+        </div>
       </div>
     </div>
   );

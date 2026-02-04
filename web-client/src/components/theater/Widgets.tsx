@@ -1,7 +1,8 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { Hash, Play, Clock, Coins } from 'lucide-react';
+import { Play, Eye } from 'lucide-react';
 
 interface WidgetCardProps {
   title: string;
@@ -25,52 +26,70 @@ export function WidgetCard({ title, children, className }: WidgetCardProps) {
   );
 }
 
-interface VideoItem {
+interface SeriesItem {
   id: string;
   title: string;
-  thumbnail?: string;
-  timeRemaining: string;
-  tipPool: string;
-}
-
-interface ComingUpNextProps {
-  items?: VideoItem[];
+  genre: string;
+  status: string;
+  total_views: number;
 }
 
 /**
  * Coming Up Next Widget
  * 
- * Layout contract:
- * - Frame: x=1635, y=615, w=380, h=280
- * - Row height: 92px
- * - Thumbnail: 96×54 (rounded 10-12px)
- * - Row gap: 14px
+ * Fetches series in voting status from the API.
+ * Shows series currently in pilot_voting phase.
  */
-export function ComingUpNext({ items }: ComingUpNextProps) {
-  // Default placeholder items
-  const defaultItems: VideoItem[] = [
-    {
-      id: '1',
-      title: 'The Last Algorithm',
-      timeRemaining: '2h 45m',
-      tipPool: '1,250 TIPS',
-    },
-    {
-      id: '2',
-      title: 'Digital Dreams',
-      timeRemaining: '5h 12m',
-      tipPool: '890 TIPS',
-    },
-  ];
-  
-  const displayItems = items || defaultItems;
-  
+export function ComingUpNext() {
+  const [items, setItems] = useState<SeriesItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchVotingPeriods = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+        const response = await fetch(`${apiUrl}/series?status=pilot_voting&limit=3`);
+        if (response.ok) {
+          const data = await response.json();
+          setItems(data.data || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch voting periods:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchVotingPeriods();
+  }, []);
+
+  const formatGenre = (genre: string) => {
+    if (!genre) return '';
+    return genre.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  if (isLoading) {
+    return (
+      <WidgetCard title="Coming up next">
+        <div className="py-8 text-center text-fg-muted text-sm">Loading...</div>
+      </WidgetCard>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <WidgetCard title="Coming up next">
+        <div className="py-8 text-center text-fg-muted text-sm">No active voting</div>
+      </WidgetCard>
+    );
+  }
+
   return (
     <WidgetCard title="Coming up next">
       <div className="space-y-0">
-        {displayItems.map((item, index) => (
-          <div 
-            key={item.id} 
+        {items.map((item, index) => (
+          <a 
+            key={item.id}
+            href={`/vote/${item.id}`}
             className={cn(
               'widget-row',
               index > 0 && 'border-t border-border-muted'
@@ -87,87 +106,99 @@ export function ComingUpNext({ items }: ComingUpNextProps) {
                 {item.title}
               </p>
               <div className="flex items-center gap-3 mt-1.5 text-xs text-fg-muted">
+                <span>{formatGenre(item.genre)}</span>
                 <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {item.timeRemaining}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Coins className="w-3 h-3" />
-                  {item.tipPool}
+                  <Eye className="w-3 h-3" />
+                  {(item.total_views || 0).toLocaleString()} views
                 </span>
               </div>
             </div>
-          </div>
+          </a>
         ))}
       </div>
     </WidgetCard>
   );
 }
 
-interface StudioItem {
-  name: string;
-  displayName: string;
-  description?: string;
-  memberCount?: number;
-}
-
-interface FeaturedStudiosProps {
-  studios?: StudioItem[];
-}
-
 /**
- * Featured Studios Widget
+ * Top Productions Widget
  * 
- * Layout contract:
- * - Frame: x=1635, y=915, w=380, h=350
- * - Row height: 64px
- * - Icon: 18px
+ * Fetches popular series from the API.
+ * Shows winning scripts that became produced Limited Series.
  */
-export function FeaturedStudios({ studios }: FeaturedStudiosProps) {
-  // Default placeholder studios
-  const defaultStudios: StudioItem[] = [
-    { name: 'scifi', displayName: 'Sci-Fi', description: 'Science fiction scripts', memberCount: 1245 },
-    { name: 'drama', displayName: 'Drama', description: 'Dramatic narratives', memberCount: 892 },
-    { name: 'comedy', displayName: 'Comedy', description: 'Comedic scripts', memberCount: 756 },
-    { name: 'horror', displayName: 'Horror', description: 'Horror & thriller', memberCount: 534 },
-    { name: 'documentary', displayName: 'Documentary', description: 'Non-fiction stories', memberCount: 423 },
-  ];
-  
-  const displayStudios = studios || defaultStudios;
-  
+export function TopProductions() {
+  const [series, setSeries] = useState<SeriesItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSeries = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+        const response = await fetch(`${apiUrl}/series?sort=popular&limit=5`);
+        if (response.ok) {
+          const data = await response.json();
+          setSeries(data.data || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch series:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchSeries();
+  }, []);
+
+  const formatGenre = (genre: string) => {
+    if (!genre) return '';
+    return genre.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  if (isLoading) {
+    return (
+      <WidgetCard title="Top productions">
+        <div className="py-8 text-center text-fg-muted text-sm">Loading...</div>
+      </WidgetCard>
+    );
+  }
+
+  if (series.length === 0) {
+    return (
+      <WidgetCard title="Top productions">
+        <div className="py-8 text-center text-fg-muted text-sm">No productions yet</div>
+      </WidgetCard>
+    );
+  }
+
   return (
-    <WidgetCard title="Featured studios">
+    <WidgetCard title="Top productions">
       <div className="space-y-0">
-        {displayStudios.map((studio, index) => (
+        {series.map((item, index) => (
           <a 
-            key={studio.name} 
-            href={`/s/${studio.name}`}
+            key={item.id}
+            href={`/m/${item.title.toLowerCase().replace(/\s+/g, '-')}`}
             className={cn(
-              'widget-list-row hover:bg-bg-surface-muted/50 transition-colors -mx-5 px-5',
+              'widget-row',
               index > 0 && 'border-t border-border-muted'
             )}
           >
-            {/* Icon */}
-            <Hash className="widget-list-icon" />
+            {/* Thumbnail */}
+            <div className="widget-thumbnail flex items-center justify-center">
+              <Play className="w-6 h-6 text-fg-subtle" />
+            </div>
             
             {/* Content */}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-fg">
-                {studio.displayName}
+              <p className="text-sm font-medium text-fg truncate">
+                {item.title}
               </p>
-              {studio.description && (
-                <p className="text-xs text-fg-muted truncate">
-                  {studio.description}
-                </p>
-              )}
+              <div className="flex items-center gap-3 mt-1.5 text-xs text-fg-muted">
+                <span>{formatGenre(item.genre)}</span>
+                <span className="flex items-center gap-1">
+                  <Eye className="w-3 h-3" />
+                  {(item.total_views || 0).toLocaleString()} views
+                </span>
+              </div>
             </div>
-            
-            {/* Member count */}
-            {studio.memberCount && (
-              <span className="text-xs text-fg-subtle">
-                {studio.memberCount.toLocaleString()}
-              </span>
-            )}
           </a>
         ))}
       </div>

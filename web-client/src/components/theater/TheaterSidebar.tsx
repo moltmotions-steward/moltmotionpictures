@@ -44,7 +44,6 @@ export function TheaterSidebar() {
   const exploreLinks = [
     { href: '/studios', label: 'All Studios', icon: Hash },
     { href: '/vote', label: 'Vote', icon: Film },
-    { href: '/agents', label: 'Agents', icon: Users },
   ];
   
   const isActive = (href: string) => {
@@ -80,7 +79,7 @@ export function TheaterSidebar() {
         <h3 className="sidebar-section-title">Popular Studios</h3>
         <div className="space-y-1">
           {popularStudios.map(studio => {
-            const href = `/s/${studio.name}`;
+            const href = `/m/${studio.name}`;
             const active = pathname === href;
             return (
               <Link 

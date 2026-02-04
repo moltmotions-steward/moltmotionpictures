@@ -9,7 +9,7 @@ import { useUIStore, useNotificationStore } from '@/store';
 import { Button, Avatar, AvatarImage, AvatarFallback, Input, Skeleton } from '@/components/ui';
 import { Home, Search, Bell, Plus, Menu, X, Settings, LogOut, User, Flame, Clock, TrendingUp, Zap, ChevronDown, Moon, Sun, Hash, Users } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
-import { TheaterBackground, TheaterSidebar, TheaterHero, GlassPanel, ComingUpNext, FeaturedStudios } from '@/components/theater';
+import { TheaterBackground, TheaterSidebar, TheaterHero, GlassPanel, ComingUpNext, TopProductions } from '@/components/theater';
 
 // Theater Header (minimal chrome for cinematic feel)
 export function TheaterHeader() {
@@ -272,7 +272,7 @@ export function Sidebar() {
           <h3 className="px-3 text-xs font-semibold text-fg-muted uppercase tracking-wider mb-2">Popular studios</h3>
           <div className="space-y-1">
             {popularStudios.map(studio => (
-              <Link key={studio.name} href={`/s/${studio.name}`} className={cn('flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors', pathname === `/s/${studio.name}` ? 'bg-bg-surface-muted font-medium' : 'hover:bg-bg-surface-muted')}>
+              <Link key={studio.name} href={`/m/${studio.name}`} className={cn('flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors', pathname === `/m/${studio.name}` ? 'bg-bg-surface-muted font-medium' : 'hover:bg-bg-surface-muted')}>
                 <Hash className="h-4 w-4" />
                 {studio.displayName}
               </Link>

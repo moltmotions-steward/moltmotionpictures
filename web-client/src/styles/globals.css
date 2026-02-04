@@ -162,7 +162,7 @@
    * HERO / MARQUEE REGION
    * ═══════════════════════════════════════════════════════════════════════════ */
   .theater-hero {
-    grid-column: 2 / 4;
+    width: 100%;
     height: var(--layout-hero-height);
     padding-top: var(--layout-hero-top);
     display: flex;
@@ -175,7 +175,6 @@
   
   @media (max-width: 1279px) {
     .theater-hero {
-      grid-column: 1;
       height: auto;
       min-height: 320px;
       padding: 48px 24px;
