@@ -165,10 +165,8 @@ function validateConfig() {
             required.push('DATABASE_URL');
         }
         required.push('JWT_SECRET');
-        // x402 payments require CDP + wallet in production
-        if (!process.env.X402_MOCK_MODE) {
-            required.push('CDP_API_KEY_NAME', 'CDP_API_KEY_SECRET', 'PLATFORM_WALLET_ADDRESS');
-        }
+        // Production requires CDP + wallet configuration
+        required.push('CDP_API_KEY_NAME', 'CDP_API_KEY_SECRET', 'CDP_WALLET_SECRET', 'PLATFORM_WALLET_ADDRESS');
     }
     const missing = required.filter(key => !process.env[key]);
     if (missing.length > 0) {

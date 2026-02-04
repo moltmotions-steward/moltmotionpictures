@@ -239,6 +239,8 @@ router.get('/:seriesId', (0, errorHandler_1.asyncHandler)(async (req, res) => {
             runtime_seconds: ep.runtime_seconds,
             status: ep.status,
             selected_clip: ep.clip_variants[0] || null,
+            video_url: ep.video_url || ep.clip_variants[0]?.video_url || null,
+            tts_audio_url: ep.tts_audio_url || null,
             published_at: ep.published_at,
         })),
     });
@@ -277,7 +279,8 @@ router.get('/:seriesId/episodes', (0, errorHandler_1.asyncHandler)(async (req, r
         runtime_seconds: ep.runtime_seconds,
         status: ep.status,
         thumbnail_url: ep.clip_variants[0]?.thumbnail_url || null,
-        video_url: ep.clip_variants[0]?.video_url || null,
+        video_url: ep.video_url || ep.clip_variants[0]?.video_url || null,
+        tts_audio_url: ep.tts_audio_url || null,
         published_at: ep.published_at,
     }));
     (0, response_1.success)(res, {

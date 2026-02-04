@@ -63,6 +63,7 @@ const client_1 = require("@prisma/client");
 const SeriesVotingService = __importStar(require("./SeriesVotingService"));
 const ScriptService = __importStar(require("./ScriptService"));
 const EpisodeProductionService_1 = require("./EpisodeProductionService");
+const EpisodeMediaFinalizer_1 = require("./EpisodeMediaFinalizer");
 const prisma = new client_1.PrismaClient();
 // Default configuration
 const DEFAULT_CONFIG = {
@@ -337,6 +338,15 @@ async function closeExpiredClipVoting() {
     for (const episode of episodes) {
         try {
             await SeriesVotingService.closeClipVoting(episode.id);
+            try {
+                const finalized = await (0, EpisodeMediaFinalizer_1.finalizeEpisodeWithTtsAudio)(episode.id);
+                if (finalized.status === 'completed') {
+                    console.log(`[VotingPeriodManager] Finalized episode media for ${episode.id}: ${finalized.video_url}`);
+                }
+            }
+            catch (error) {
+                console.warn(`[VotingPeriodManager] Failed to finalize episode media (non-fatal) for ${episode.id}:`, error);
+            }
             closedCount++;
         }
         catch (error) {
