@@ -144,16 +144,16 @@ router.post('/stake', requireAuth, stakingLimiter, async (req: Request, res: Res
       return;
     }
 
-    const { poolId, amountCents, walletAddress } = req.body;
+    const { poolId, amountCents, walletAddress, signature, message } = req.body;
     
     // Log staking operation for audit trail
     console.log(`[Staking] Agent ${req.agent!.id} initiating stake: ${amountCents} cents to wallet ${walletAddress}`);
 
     // Validate required fields
-    if (!amountCents || !walletAddress) {
+    if (!amountCents || !walletAddress || !signature || !message) {
       res.status(400).json({
         success: false,
-        error: 'Missing required fields: amountCents, walletAddress'
+        error: 'Missing required fields: amountCents, walletAddress, signature, message'
       });
       return;
     }

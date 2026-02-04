@@ -7,13 +7,13 @@
  * Features:
  * - Create and manage staking pools
  * - Stake/unstake operations with wallet verification
- * - MEV protection via minimum stake duration
+ * - Time-lock protection via minimum stake duration
  * - Automatic reward calculation and distribution
  * - Multi-wallet support
  *
  * Security considerations:
- * - Minimum stake duration prevents MEV pool sniping
- * - Wallet signature verification for all operations
+ * - Minimum stake duration prevents rapid cycling abuse
+ * - Wallet signature verification for all value-changing operations (REQUIRED)
  * - Rate limiting on stake/unstake operations
  * - Idempotent operations
  */
@@ -67,6 +67,7 @@ exports.getStakingEarnings = getStakingEarnings;
 const client_1 = require("@prisma/client");
 const index_js_1 = __importDefault(require("../config/index.js"));
 const CDPWalletService = __importStar(require("./CDPWalletService.js"));
+const WalletSignatureService = __importStar(require("./WalletSignatureService.js"));
 const prisma = new client_1.PrismaClient();
 // ============================================================================
 // Pool Management
@@ -126,8 +127,17 @@ async function getPoolById(poolId) {
  * @returns Created stake record
  */
 async function stake(params) {
-    const { agentId, poolId, amountCents, walletAddress } = params;
-    // Validate pool exists and is active
+    const { agentId, poolId, amountCents, walletAddress, signature, message } = params;
+    // 1. Verify wallet signature (REQUIRED)
+    const signatureVerification = await WalletSignatureService.verifyAgentWalletOwnership({
+        agentId,
+        signature,
+        message
+    });
+    if (!signatureVerification.valid) {
+        throw new Error(`Wallet signature verification failed: ${signatureVerification.error}`);
+    }
+    // 2. Validate pool exists and is active
     const pool = await prisma.stakingPool.findUnique({
         where: { id: poolId }
     });
@@ -137,25 +147,25 @@ async function stake(params) {
     if (!pool.is_active) {
         throw new Error('Staking pool is not active');
     }
-    // Validate minimum stake amount
+    // 3. Validate minimum stake amount
     if (amountCents < pool.min_stake_amount_cents) {
         throw new Error(`Stake amount must be at least $${Number(pool.min_stake_amount_cents) / 100}`);
     }
-    // Validate wallet address format
+    // 4. Validate wallet address format
     if (!CDPWalletService.isValidAddress(walletAddress)) {
         throw new Error('Invalid wallet address format');
     }
-    // Check pool capacity if max is set
+    // 5. Check pool capacity if max is set
     if (pool.max_total_stake_cents) {
         const totalAfterStake = pool.total_staked_cents + amountCents;
         if (totalAfterStake > pool.max_total_stake_cents) {
             throw new Error('Staking pool has reached maximum capacity');
         }
     }
-    // Calculate when the stake can be unstaked (MEV protection)
+    // 6. Calculate when the stake can be unstaked (time-lock protection)
     const canUnstakeAt = new Date();
     canUnstakeAt.setSeconds(canUnstakeAt.getSeconds() + pool.min_stake_duration_seconds);
-    // Create stake in a transaction
+    // 7. Create stake in a transaction
     const result = await prisma.$transaction(async (tx) => {
         // Create stake
         const newStake = await tx.stake.create({
@@ -190,8 +200,17 @@ async function stake(params) {
  * @returns Updated stake record
  */
 async function unstake(params) {
-    const { stakeId, agentId } = params;
-    // Get stake and validate
+    const { stakeId, agentId, signature, message } = params;
+    // 1. Verify wallet signature (REQUIRED)
+    const signatureVerification = await WalletSignatureService.verifyAgentWalletOwnership({
+        agentId,
+        signature,
+        message
+    });
+    if (!signatureVerification.valid) {
+        throw new Error(`Wallet signature verification failed: ${signatureVerification.error}`);
+    }
+    // 2. Get stake and validate
     const existingStake = await prisma.stake.findUnique({
         where: { id: stakeId },
         include: { pool: true }
@@ -205,15 +224,15 @@ async function unstake(params) {
     if (existingStake.status !== 'active') {
         throw new Error('Stake is not active');
     }
-    // Check if minimum stake duration has passed (MEV protection)
+    // 3. Check if minimum stake duration has passed (time-lock protection)
     const now = new Date();
     if (now < existingStake.can_unstake_at) {
         const remainingSeconds = Math.ceil((existingStake.can_unstake_at.getTime() - now.getTime()) / 1000);
         throw new Error(`Cannot unstake yet. Minimum stake duration not met. Wait ${remainingSeconds} more seconds.`);
     }
-    // Calculate any pending rewards before unstaking
+    // 4. Calculate any pending rewards before unstaking
     await calculateRewards(stakeId);
-    // Update stake in a transaction
+    // 5. Update stake in a transaction
     const result = await prisma.$transaction(async (tx) => {
         // Update stake status
         const updatedStake = await tx.stake.update({
@@ -316,8 +335,18 @@ async function calculateAllRewards() {
 /**
  * Claim pending rewards for a stake
  */
-async function claimRewards(stakeId, agentId) {
-    // Get stake and validate
+async function claimRewards(params) {
+    const { stakeId, agentId, signature, message } = params;
+    // 1. Verify wallet signature (REQUIRED)
+    const signatureVerification = await WalletSignatureService.verifyAgentWalletOwnership({
+        agentId,
+        signature,
+        message
+    });
+    if (!signatureVerification.valid) {
+        throw new Error(`Wallet signature verification failed: ${signatureVerification.error}`);
+    }
+    // 2. Get stake and validate
     const stake = await prisma.stake.findUnique({
         where: { id: stakeId }
     });
@@ -327,9 +356,9 @@ async function claimRewards(stakeId, agentId) {
     if (stake.agent_id !== agentId) {
         throw new Error('Unauthorized: stake does not belong to this agent');
     }
-    // Calculate any pending rewards first
+    // 3. Calculate any pending rewards first
     await calculateRewards(stakeId);
-    // Get unclaimed rewards
+    // 4. Get unclaimed rewards
     const unclaimedRewards = await prisma.stakingReward.findMany({
         where: {
             stake_id: stakeId,
@@ -339,7 +368,7 @@ async function claimRewards(stakeId, agentId) {
     if (unclaimedRewards.length === 0) {
         throw new Error('No rewards to claim');
     }
-    // Calculate total claimable amount
+    // 5. Calculate total claimable amount
     const totalClaimable = unclaimedRewards.reduce((sum, reward) => sum + Number(reward.amount_cents), 0);
     // Mark rewards as claimed in a transaction
     const result = await prisma.$transaction(async (tx) => {

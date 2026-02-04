@@ -51,8 +51,66 @@ const express_1 = require("express");
 const auth_js_1 = require("../middleware/auth.js");
 const rateLimit_js_1 = require("../middleware/rateLimit.js");
 const StakingService = __importStar(require("../services/StakingService.js"));
+const WalletSignatureService = __importStar(require("../services/WalletSignatureService.js"));
 const index_js_1 = __importDefault(require("../config/index.js"));
 const router = (0, express_1.Router)();
+/**
+ * GET /staking/nonce
+ *
+ * Generate a nonce for wallet signature verification.
+ * Required before performing stake/unstake/claim operations.
+ *
+ * Query params:
+ * - walletAddress: Wallet address to generate nonce for
+ * - operation: Optional operation type ('stake', 'unstake', 'claim')
+ */
+router.get('/nonce', auth_js_1.requireAuth, async (req, res) => {
+    try {
+        const { walletAddress, operation } = req.query;
+        if (!walletAddress || typeof walletAddress !== 'string') {
+            res.status(400).json({
+                success: false,
+                error: 'walletAddress query parameter is required'
+            });
+            return;
+        }
+        // Generate nonce for agent
+        const nonceData = await WalletSignatureService.generateNonce({
+            subjectType: 'agent',
+            subjectId: req.agent.id,
+            walletAddress: walletAddress,
+            operation: operation
+        });
+        // Create signature message template
+        const message = WalletSignatureService.createSignatureMessage({
+            subjectType: 'agent',
+            subjectId: req.agent.id,
+            walletAddress: walletAddress,
+            nonce: nonceData.nonce,
+            issuedAt: nonceData.issuedAt,
+            expiresAt: nonceData.expiresAt,
+            operation: operation
+        });
+        // Format message for signing (what user should sign)
+        const messageToSign = WalletSignatureService.formatMessageForSigning(message);
+        res.json({
+            success: true,
+            nonce: nonceData.nonce,
+            issuedAt: nonceData.issuedAt,
+            expiresAt: nonceData.expiresAt,
+            message: message,
+            messageToSign: messageToSign
+        });
+    }
+    catch (error) {
+        console.error('[Staking Routes] Error generating nonce:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to generate nonce',
+            message: error.message
+        });
+    }
+});
 /**
  * GET /staking/pools
  *
@@ -113,14 +171,14 @@ router.post('/stake', auth_js_1.requireAuth, rateLimit_js_1.stakingLimiter, asyn
             });
             return;
         }
-        const { poolId, amountCents, walletAddress } = req.body;
+        const { poolId, amountCents, walletAddress, signature, message } = req.body;
         // Log staking operation for audit trail
         console.log(`[Staking] Agent ${req.agent.id} initiating stake: ${amountCents} cents to wallet ${walletAddress}`);
         // Validate required fields
-        if (!amountCents || !walletAddress) {
+        if (!amountCents || !walletAddress || !signature || !message) {
             res.status(400).json({
                 success: false,
-                error: 'Missing required fields: amountCents, walletAddress'
+                error: 'Missing required fields: amountCents, walletAddress, signature, message'
             });
             return;
         }
@@ -142,12 +200,14 @@ router.post('/stake', auth_js_1.requireAuth, rateLimit_js_1.stakingLimiter, asyn
             const defaultPool = await StakingService.getOrCreateDefaultPool();
             targetPoolId = defaultPool.id;
         }
-        // Create stake
+        // Create stake with signature verification
         const stake = await StakingService.stake({
             agentId: req.agent.id,
             poolId: targetPoolId,
             amountCents: parsedAmount,
-            walletAddress
+            walletAddress,
+            signature,
+            message
         });
         res.status(201).json({
             success: true,
@@ -181,14 +241,17 @@ router.post('/stake', auth_js_1.requireAuth, rateLimit_js_1.stakingLimiter, asyn
  * POST /staking/unstake
  *
  * Unstake tokens from a pool.
- * Requires authentication.
+ * Requires authentication and wallet signature verification.
  * Rate limited to prevent spam.
  *
  * Body:
  * - stakeId: ID of the stake to unstake
+ * - signature: Wallet signature (EIP-191)
+ * - message: Signature message object
  *
  * Authentication: Requires valid API key via Authorization header
  * Security: Time-lock enforced - cannot unstake before can_unstake_at timestamp
+ *           Wallet signature verification required
  */
 router.post('/unstake', auth_js_1.requireAuth, rateLimit_js_1.stakingLimiter, async (req, res) => {
     try {
@@ -199,7 +262,15 @@ router.post('/unstake', auth_js_1.requireAuth, rateLimit_js_1.stakingLimiter, as
             });
             return;
         }
-        const { stakeId } = req.body;
+        const { stakeId, signature, message } = req.body;
+        // Validate required fields
+        if (!stakeId || !signature || !message) {
+            res.status(400).json({
+                success: false,
+                error: 'Missing required fields: stakeId, signature, message'
+            });
+            return;
+        }
         // Log unstaking operation for audit trail
         console.log(`[Staking] Agent ${req.agent.id} initiating unstake: ${stakeId}`);
         if (!stakeId) {
@@ -209,10 +280,12 @@ router.post('/unstake', auth_js_1.requireAuth, rateLimit_js_1.stakingLimiter, as
             });
             return;
         }
-        // Unstake
+        // Unstake with signature verification
         const stake = await StakingService.unstake({
             stakeId,
-            agentId: req.agent.id
+            agentId: req.agent.id,
+            signature,
+            message
         });
         res.json({
             success: true,
@@ -242,14 +315,17 @@ router.post('/unstake', auth_js_1.requireAuth, rateLimit_js_1.stakingLimiter, as
  * POST /staking/claim
  *
  * Claim pending rewards for a stake.
- * Requires authentication.
+ * Requires authentication and wallet signature verification.
  * Rate limited to prevent spam.
  *
  * Body:
  * - stakeId: ID of the stake to claim rewards from
+ * - signature: Wallet signature (EIP-191)
+ * - message: Signature message object
  *
  * Authentication: Requires valid API key via Authorization header
  * Security: Transaction-safe claim prevents double-claiming
+ *           Wallet signature verification required
  */
 router.post('/claim', auth_js_1.requireAuth, rateLimit_js_1.stakingLimiter, async (req, res) => {
     try {
@@ -260,7 +336,15 @@ router.post('/claim', auth_js_1.requireAuth, rateLimit_js_1.stakingLimiter, asyn
             });
             return;
         }
-        const { stakeId } = req.body;
+        const { stakeId, signature, message } = req.body;
+        // Validate required fields
+        if (!stakeId || !signature || !message) {
+            res.status(400).json({
+                success: false,
+                error: 'Missing required fields: stakeId, signature, message'
+            });
+            return;
+        }
         // Log claim operation for audit trail
         console.log(`[Staking] Agent ${req.agent.id} claiming rewards from stake: ${stakeId}`);
         if (!stakeId) {
@@ -270,8 +354,13 @@ router.post('/claim', auth_js_1.requireAuth, rateLimit_js_1.stakingLimiter, asyn
             });
             return;
         }
-        // Claim rewards
-        const claimedAmount = await StakingService.claimRewards(stakeId, req.agent.id);
+        // Claim rewards with signature verification
+        const claimedAmount = await StakingService.claimRewards({
+            stakeId,
+            agentId: req.agent.id,
+            signature,
+            message
+        });
         res.json({
             success: true,
             claimedAmountCents: claimedAmount.toString(),

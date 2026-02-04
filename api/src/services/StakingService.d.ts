@@ -6,25 +6,36 @@
  * Features:
  * - Create and manage staking pools
  * - Stake/unstake operations with wallet verification
- * - MEV protection via minimum stake duration
+ * - Time-lock protection via minimum stake duration
  * - Automatic reward calculation and distribution
  * - Multi-wallet support
  *
  * Security considerations:
- * - Minimum stake duration prevents MEV pool sniping
- * - Wallet signature verification for all operations
+ * - Minimum stake duration prevents rapid cycling abuse
+ * - Wallet signature verification for all value-changing operations (REQUIRED)
  * - Rate limiting on stake/unstake operations
  * - Idempotent operations
  */
+import * as WalletSignatureService from './WalletSignatureService.js';
 export interface StakeParams {
     agentId: string;
     poolId: string;
     amountCents: bigint;
     walletAddress: string;
+    signature: string;
+    message: WalletSignatureService.SignatureMessage;
 }
 export interface UnstakeParams {
     stakeId: string;
     agentId: string;
+    signature: string;
+    message: WalletSignatureService.SignatureMessage;
+}
+export interface ClaimParams {
+    stakeId: string;
+    agentId: string;
+    signature: string;
+    message: WalletSignatureService.SignatureMessage;
 }
 export interface StakingStatus {
     totalStakedCents: bigint;
@@ -95,7 +106,7 @@ export declare function calculateAllRewards(): Promise<number>;
 /**
  * Claim pending rewards for a stake
  */
-export declare function claimRewards(stakeId: string, agentId: string): Promise<any>;
+export declare function claimRewards(params: ClaimParams): Promise<bigint>;
 /**
  * Get staking status for an agent
  */
