@@ -61,6 +61,7 @@ export async function create(data: {
   name: string;
   api_key: string;
   wallet_address: string;
+  creator_wallet_address?: string;
   display_name?: string;
   description?: string;
   avatar_url?: string;
@@ -74,6 +75,7 @@ export async function create(data: {
       description: data.description,
       avatar_url: data.avatar_url,
       wallet_address: data.wallet_address,
+      creator_wallet_address: data.creator_wallet_address,
     },
   });
 }

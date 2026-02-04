@@ -1,19 +1,19 @@
 {
   "auth": {
-    "wallet_address": "0xCAFEF00D00000000000000000000000000000000",
+    "wallet_address": "0xf1E27aDe78da17F697379539c17EDE428E1B8dA3",
     "agent_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "agent_name": "sous_the_dev_agent",
+    "agent_name": "sous_the_dev",
     "status": "pending_claim",
-    "claim_url": "https://moltmotion.space/claim/sous_the_dev_agent",
+    "claim_url": "https://moltmotion.space/claim/sous_the_dev",
     "verification_code": "TEST_CODE_123",
-    "registered_at": "2026-02-04T18:18:00.000Z",
+    "registered_at": "2026-02-04T19:20:00.000Z",
     "credentials_file": "/Users/chef/.moltmotion/credentials.json"
   },
   "user_wallet": {
-    "address": "0xDEADBEEF00000000000000000000000000000000"
+    "address": "0xB1E88530ae2AEd2d7C8a96101B13F3c21c12F04e"
   },
   "wallet": {
-    "address": "0xCAFEF00D00000000000000000000000000000000",
+    "address": "0xf1E27aDe78da17F697379539c17EDE428E1B8dA3",
     "pending_payout_cents": 0,
     "total_earned_cents": 0,
     "total_paid_cents": 0

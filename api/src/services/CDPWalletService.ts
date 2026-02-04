@@ -167,6 +167,69 @@ export async function createWalletForAgent(agentId: string): Promise<WalletCreat
 }
 
 /**
+ * Sign a message using CDP-managed account.
+ * 
+ * CDP holds the private keys in TEE, so we call their API to sign.
+ * This is used during registration to prove wallet ownership server-side.
+ * 
+ * @param accountName - The CDP account name (deterministic from agentId)
+ * @param message - The message to sign
+ * @returns Hex-encoded signature
+ */
+export async function signMessage(accountName: string, message: string): Promise<string> {
+  const cdp = getCdpClient();
+  
+  // Get the account by name
+  const account = await cdp.evm.getAccount({ name: accountName });
+  if (!account) {
+    throw new Error(`CDP account not found: ${accountName}`);
+  }
+
+  // Sign the message using CDP
+  const result = await cdp.evm.signMessage({
+    address: account.address,
+    message,
+  });
+
+  return result.signature;
+}
+
+/**
+ * Create a wallet and sign a message in one flow.
+ * 
+ * This is the core function for Option B registration:
+ * 1. Create (or retrieve) CDP wallet for agent
+ * 2. Sign the registration message server-side
+ * 3. Return both wallet address and signature
+ * 
+ * @param agentId - Unique identifier for the agent
+ * @param message - The registration message to sign
+ * @returns Wallet address and signature
+ */
+export async function createWalletWithSignature(
+  agentId: string,
+  message: string
+): Promise<{ address: string; signature: string; network: string; explorerUrl: string; isNew: boolean }> {
+  // First, create or retrieve the wallet
+  const wallet = await createWalletForAgent(agentId);
+  
+  // Derive the account name (same logic as createWalletForAgent)
+  const deterministicUuid = uuidv5(agentId, MOLT_NAMESPACE_UUID);
+  const accountName = `m-${deterministicUuid.replace(/-/g, '').substring(0, 32)}`;
+  
+  // Sign the message with CDP
+  const signature = await signMessage(accountName, message);
+  
+  return {
+    address: wallet.address,
+    signature,
+    network: wallet.network,
+    explorerUrl: wallet.explorerUrl,
+    isNew: wallet.isNew,
+  };
+}
+
+/**
  * Get the explorer URL for a wallet address.
  * 
  * @param address - EVM wallet address
