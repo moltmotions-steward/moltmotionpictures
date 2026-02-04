@@ -21,12 +21,10 @@ export interface StakeParams {
     poolId: string;
     amountCents: bigint;
     walletAddress: string;
-    walletSignature?: string;
 }
 export interface UnstakeParams {
     stakeId: string;
     agentId: string;
-    walletSignature?: string;
 }
 export interface StakingStatus {
     totalStakedCents: bigint;
@@ -61,108 +59,29 @@ export interface StakingEarnings {
 /**
  * Get or create the default staking pool
  */
-export declare function getOrCreateDefaultPool(): Promise<{
-    name: string;
-    id: string;
-    description: string | null;
-    is_active: boolean;
-    created_at: Date;
-    updated_at: Date;
-    min_stake_amount_cents: bigint;
-    min_stake_duration_seconds: number;
-    apy_basis_points: number;
-    max_total_stake_cents: bigint | null;
-    is_default: boolean;
-    total_staked_cents: bigint;
-    total_stakes_count: number;
-    total_rewards_paid_cents: bigint;
-}>;
+export declare function getOrCreateDefaultPool(): Promise<any>;
 /**
  * Get all active staking pools
  */
-export declare function getActivePools(): Promise<{
-    name: string;
-    id: string;
-    description: string | null;
-    is_active: boolean;
-    created_at: Date;
-    updated_at: Date;
-    min_stake_amount_cents: bigint;
-    min_stake_duration_seconds: number;
-    apy_basis_points: number;
-    max_total_stake_cents: bigint | null;
-    is_default: boolean;
-    total_staked_cents: bigint;
-    total_stakes_count: number;
-    total_rewards_paid_cents: bigint;
-}[]>;
+export declare function getActivePools(): Promise<any>;
 /**
  * Get staking pool by ID
  */
-export declare function getPoolById(poolId: string): Promise<{
-    name: string;
-    id: string;
-    description: string | null;
-    is_active: boolean;
-    created_at: Date;
-    updated_at: Date;
-    min_stake_amount_cents: bigint;
-    min_stake_duration_seconds: number;
-    apy_basis_points: number;
-    max_total_stake_cents: bigint | null;
-    is_default: boolean;
-    total_staked_cents: bigint;
-    total_stakes_count: number;
-    total_rewards_paid_cents: bigint;
-} | null>;
+export declare function getPoolById(poolId: string): Promise<any>;
 /**
  * Stake tokens in a pool
  *
  * @param params - Stake parameters
  * @returns Created stake record
  */
-export declare function stake(params: StakeParams): Promise<{
-    id: string;
-    status: string;
-    created_at: Date;
-    updated_at: Date;
-    wallet_address: string;
-    agent_id: string;
-    amount_cents: bigint;
-    earned_rewards_cents: bigint;
-    claimed_rewards_cents: bigint;
-    last_reward_calc_at: Date;
-    stake_tx_hash: string | null;
-    unstake_tx_hash: string | null;
-    can_unstake_at: Date;
-    staked_at: Date;
-    unstaked_at: Date | null;
-    pool_id: string;
-}>;
+export declare function stake(params: StakeParams): Promise<any>;
 /**
  * Unstake tokens from a pool
  *
  * @param params - Unstake parameters
  * @returns Updated stake record
  */
-export declare function unstake(params: UnstakeParams): Promise<{
-    id: string;
-    status: string;
-    created_at: Date;
-    updated_at: Date;
-    wallet_address: string;
-    agent_id: string;
-    amount_cents: bigint;
-    earned_rewards_cents: bigint;
-    claimed_rewards_cents: bigint;
-    last_reward_calc_at: Date;
-    stake_tx_hash: string | null;
-    unstake_tx_hash: string | null;
-    can_unstake_at: Date;
-    staked_at: Date;
-    unstaked_at: Date | null;
-    pool_id: string;
-}>;
+export declare function unstake(params: UnstakeParams): Promise<any>;
 /**
  * Calculate rewards for a stake based on APY and time staked
  *
@@ -176,7 +95,7 @@ export declare function calculateAllRewards(): Promise<number>;
 /**
  * Claim pending rewards for a stake
  */
-export declare function claimRewards(stakeId: string, agentId: string): Promise<number>;
+export declare function claimRewards(stakeId: string, agentId: string): Promise<any>;
 /**
  * Get staking status for an agent
  */

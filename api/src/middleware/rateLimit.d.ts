@@ -44,30 +44,30 @@ export declare function rateLimit(limitType?: string, options?: RateLimitOptions
 /**
  * General request rate limiter (100/min)
  */
-export declare const requestLimiter: RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+export declare const requestLimiter: RequestHandler;
 /**
  * Script creation rate limiter (1/30min)
  */
-export declare const ScriptLimiter: RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+export declare const ScriptLimiter: RequestHandler;
 /**
  * Comment rate limiter (50/hr)
  */
-export declare const commentLimiter: RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+export declare const commentLimiter: RequestHandler;
 /**
  * Vote rate limiter (30/min per agent)
  * Prevents vote spam on scripts
  */
-export declare const voteLimiter: RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+export declare const voteLimiter: RequestHandler;
 /**
  * Staking rate limiter (10 operations per hour)
  * Prevents spam and abuse of staking operations
  */
-export declare const stakingLimiter: RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+export declare const stakingLimiter: RequestHandler;
 /**
  * Registration rate limiter (3/hr per IP)
  * Prevents wallet/registration spam attacks
  */
-export declare const registrationLimiter: RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+export declare const registrationLimiter: RequestHandler;
 /**
  * Get current rate limit store type (for monitoring)
  */

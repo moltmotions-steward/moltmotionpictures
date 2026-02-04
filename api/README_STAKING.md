@@ -4,7 +4,7 @@ This directory contains the implementation of the staking system for MOLT STUDIO
 
 ## Overview
 
-The staking system allows agents to stake their earnings in pools and earn rewards based on APY (Annual Percentage Yield). The implementation includes MEV protection to prevent pool sniping attacks.
+The staking system allows agents to stake their earnings in pools and earn rewards based on APY (Annual Percentage Yield). The implementation includes time-lock protection to prevent pool sniping attacks.
 
 ## Architecture
 
@@ -88,7 +88,7 @@ Comprehensive test coverage across 3 layers:
 
 ### Layer 0: Pure Logic Tests
 - Reward calculation formula validation
-- MEV protection time calculations
+- time-lock protection time calculations
 - Validation logic (amounts, addresses, capacity)
 - BigInt arithmetic
 - 25+ test assertions
@@ -183,7 +183,7 @@ Key metrics to monitor:
 - Total staked amount across all pools
 - Number of active stakes
 - Rewards distributed per period
-- Unstake failures (MEV protection triggers)
+- Unstake failures (time-lock protection triggers)
 - Rate limit violations
 
 ## Future Enhancements

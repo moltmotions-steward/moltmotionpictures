@@ -58,10 +58,10 @@ export declare function getRefundStatus(clipVoteId: string): Promise<{
     processedAt?: undefined;
 } | {
     hasRefund: boolean;
-    status: string;
-    amountCents: number;
-    txHash: string | null;
-    createdAt: Date;
-    processedAt: Date | null;
+    status: any;
+    amountCents: any;
+    txHash: any;
+    createdAt: any;
+    processedAt: any;
 }>;
 //# sourceMappingURL=RefundService.d.ts.map

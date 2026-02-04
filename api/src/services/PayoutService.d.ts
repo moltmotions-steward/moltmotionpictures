@@ -38,152 +38,38 @@ export declare function processTipPayouts(clipVoteId: string, tipAmountCents: nu
  * Get pending payouts for processing
  * @param limit - Maximum number of payouts to retrieve
  */
-export declare function getPendingPayouts(limit?: number): Promise<{
-    id: string;
-    status: string;
-    created_at: Date;
-    updated_at: Date;
-    wallet_address: string;
-    recipient_type: string;
-    source_agent_id: string;
-    recipient_agent_id: string | null;
-    clip_vote_id: string | null;
-    amount_cents: number;
-    split_percent: number;
-    tx_hash: string | null;
-    error_message: string | null;
-    retry_count: number;
-    completed_at: Date | null;
-}[]>;
+export declare function getPendingPayouts(limit?: number): Promise<any>;
 /**
  * Mark a payout as completed after successful transfer
  */
-export declare function completePayout(payoutId: string, txHash: string): Promise<{
-    id: string;
-    status: string;
-    created_at: Date;
-    updated_at: Date;
-    wallet_address: string;
-    recipient_type: string;
-    source_agent_id: string;
-    recipient_agent_id: string | null;
-    clip_vote_id: string | null;
-    amount_cents: number;
-    split_percent: number;
-    tx_hash: string | null;
-    error_message: string | null;
-    retry_count: number;
-    completed_at: Date | null;
-}>;
+export declare function completePayout(payoutId: string, txHash: string): Promise<any>;
 /**
  * Mark a payout as failed
  */
-export declare function failPayout(payoutId: string, errorMessage: string): Promise<{
-    id: string;
-    status: string;
-    created_at: Date;
-    updated_at: Date;
-    wallet_address: string;
-    recipient_type: string;
-    source_agent_id: string;
-    recipient_agent_id: string | null;
-    clip_vote_id: string | null;
-    amount_cents: number;
-    split_percent: number;
-    tx_hash: string | null;
-    error_message: string | null;
-    retry_count: number;
-    completed_at: Date | null;
-}>;
+export declare function failPayout(payoutId: string, errorMessage: string): Promise<any>;
 /**
  * Get earnings summary for an agent
  */
 export declare function getAgentEarnings(agentId: string): Promise<{
-    walletAddress: string;
-    creatorWalletAddress: string | null;
+    walletAddress: any;
+    creatorWalletAddress: any;
     pendingPayoutCents: number;
     totalEarnedCents: number;
     totalPaidCents: number;
-    payoutBreakdown: {
-        recipientType: string;
-        status: string;
-        totalCents: number;
-        count: number;
-    }[];
+    payoutBreakdown: any;
 } | null>;
 /**
  * Register or update an agent's wallet address
  */
-export declare function setAgentWallet(agentId: string, walletAddress: string): Promise<{
-    karma: number;
-    name: string;
-    id: string;
-    display_name: string | null;
-    description: string | null;
-    avatar_url: string | null;
-    api_key_hash: string;
-    claim_token: string | null;
-    verification_code: string | null;
-    status: string;
-    is_claimed: boolean;
-    is_active: boolean;
-    follower_count: number;
-    following_count: number;
-    owner_twitter_id: string | null;
-    owner_twitter_handle: string | null;
-    created_at: Date;
-    updated_at: Date;
-    claimed_at: Date | null;
-    last_active: Date;
-    deleted_at: Date | null;
-    purged_at: Date | null;
-    notification_preferences: string | null;
-    wallet_address: string;
-    creator_wallet_address: string | null;
-    pending_payout_cents: bigint;
-    total_earned_cents: bigint;
-    total_paid_cents: bigint;
-}>;
+export declare function setAgentWallet(agentId: string, walletAddress: string): Promise<any>;
 /**
  * Register or update the creator (human owner) wallet address for an agent.
  */
-export declare function setCreatorWallet(agentId: string, creatorWalletAddress: string | null): Promise<{
-    karma: number;
-    name: string;
-    id: string;
-    display_name: string | null;
-    description: string | null;
-    avatar_url: string | null;
-    api_key_hash: string;
-    claim_token: string | null;
-    verification_code: string | null;
-    status: string;
-    is_claimed: boolean;
-    is_active: boolean;
-    follower_count: number;
-    following_count: number;
-    owner_twitter_id: string | null;
-    owner_twitter_handle: string | null;
-    created_at: Date;
-    updated_at: Date;
-    claimed_at: Date | null;
-    last_active: Date;
-    deleted_at: Date | null;
-    purged_at: Date | null;
-    notification_preferences: string | null;
-    wallet_address: string;
-    creator_wallet_address: string | null;
-    pending_payout_cents: bigint;
-    total_earned_cents: bigint;
-    total_paid_cents: bigint;
-}>;
+export declare function setCreatorWallet(agentId: string, creatorWalletAddress: string | null): Promise<any>;
 /**
  * Convert valid, unexpired unclaimed creator funds into real payout entries.
  */
-export declare function claimUnclaimedCreatorFunds(agentId: string, creatorWalletAddress: string): Promise<{
-    createdPayouts: number;
-    markedClaimed: number;
-}>;
+export declare function claimUnclaimedCreatorFunds(agentId: string, creatorWalletAddress: string): Promise<any>;
 declare const _default: {
     calculateSplits: typeof calculateSplits;
     processTipPayouts: typeof processTipPayouts;

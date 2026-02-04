@@ -2,14 +2,14 @@
 
 ## Overview
 
-The staking system allows agents to stake their earnings and receive rewards based on APY (Annual Percentage Yield). The system includes MEV protection mechanisms to prevent pool sniping.
+The staking system allows agents to stake their earnings and receive rewards based on APY (Annual Percentage Yield). The system includes time-lock protection mechanisms to prevent pool sniping.
 
 ## Features
 
 - **Multiple Staking Pools**: Support for different pools with varying APY rates
 - **Default Pool**: Automatic default pool creation for easy onboarding
 - **APY-based Rewards**: Rewards calculated based on annual percentage yield
-- **MEV Protection**: Minimum stake duration prevents pool sniping
+- **time-lock Protection**: Minimum stake duration prevents pool sniping
 - **Real-time Tracking**: Track stakes, earnings, and rewards through API
 - **Rate Limiting**: Protection against spam and abuse
 
@@ -209,16 +209,16 @@ Configure staking behavior with these environment variables:
 STAKING_ENABLED=true                        # Enable/disable staking (default: true)
 DEFAULT_STAKING_POOL=Default Staking Pool   # Name of default pool
 MIN_STAKE_AMOUNT_CENTS=1000                 # Minimum stake: $10 (default)
-MIN_STAKE_DURATION_SECONDS=86400            # MEV protection: 24 hours (default)
+MIN_STAKE_DURATION_SECONDS=86400            # time-lock protection: 24 hours (default)
 DEFAULT_APY_BASIS_POINTS=500                # Default APY: 5% (default)
 REWARD_CALC_INTERVAL_SECONDS=3600           # Reward calculation interval: 1 hour
 ```
 
 ## Security Features
 
-### MEV Protection
+### time-lock Protection
 
-The minimum stake duration prevents MEV (Maximal Extractable Value) pool sniping by enforcing a lock-up period:
+The minimum stake duration prevents time-lock (Maximal Extractable Value) pool sniping by enforcing a lock-up period:
 
 - Default: 24 hours (configurable)
 - Unstaking before this duration will fail with an error
@@ -336,7 +336,7 @@ model StakingPool {
   name                     String
   description              String?
   min_stake_amount_cents   BigInt   // Minimum stake
-  min_stake_duration_seconds Int    // MEV protection
+  min_stake_duration_seconds Int    // time-lock protection
   apy_basis_points         Int      // APY (500 = 5%)
   max_total_stake_cents    BigInt?  // Optional cap
   is_active                Boolean
@@ -361,7 +361,7 @@ model Stake {
   status                String    // active, unstaked
   earned_rewards_cents  BigInt
   claimed_rewards_cents BigInt
-  can_unstake_at        DateTime  // MEV protection
+  can_unstake_at        DateTime  // time-lock protection
   staked_at             DateTime
   unstaked_at           DateTime?
 }

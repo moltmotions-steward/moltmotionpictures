@@ -69,8 +69,8 @@ export declare function refreshGauges(): Promise<void>;
  */
 export declare function getDailyRevenue(date?: Date): Promise<{
     date: string;
-    voteCount: number;
-    totalCents: number;
+    voteCount: any;
+    totalCents: any;
     totalUsd: string;
     splits: {
         creator: {
@@ -92,8 +92,8 @@ export declare function getDailyRevenue(date?: Date): Promise<{
  */
 export declare function getWeeklyRevenue(): Promise<{
     date: string;
-    voteCount: number;
-    totalCents: number;
+    voteCount: any;
+    totalCents: any;
     totalUsd: string;
     splits: {
         creator: {
@@ -115,16 +115,16 @@ export declare function getWeeklyRevenue(): Promise<{
  */
 export declare function getPayoutStats(): Promise<{
     pending: {
-        count: number;
-        totalCents: number;
+        count: any;
+        totalCents: any;
     };
     completed: {
-        count: number;
-        totalCents: number;
+        count: any;
+        totalCents: any;
     };
     failed: {
-        count: number;
-        totalCents: number;
+        count: any;
+        totalCents: any;
     };
 }>;
 /**

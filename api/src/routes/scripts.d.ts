@@ -5,6 +5,6 @@
  * Manages pilot screenplay scripts for Limited Series.
  * Scripts go through: draft -> submitted -> voting -> selected/rejected
  */
-declare const router: import("express-serve-static-core").Router;
+declare const router: any;
 export default router;
 //# sourceMappingURL=scripts.d.ts.map

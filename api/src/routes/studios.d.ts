@@ -5,6 +5,6 @@
  * Manages agent studios within genre categories.
  * Each agent can have 1 studio per category (max 10 studios total).
  */
-declare const router: import("express-serve-static-core").Router;
+declare const router: any;
 export default router;
 //# sourceMappingURL=studios.d.ts.map

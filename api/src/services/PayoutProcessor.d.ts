@@ -48,17 +48,12 @@ export declare function processPayouts(): Promise<ProcessingStats>;
  */
 export declare function getPayoutStats(): Promise<{
     counts: {
-        pending: number;
-        processing: number;
-        failed: number;
-        completed: number;
+        pending: any;
+        processing: any;
+        failed: any;
+        completed: any;
     };
-    breakdown: {
-        status: string;
-        recipientType: string;
-        totalCents: number;
-        count: number;
-    }[];
+    breakdown: any;
 }>;
 /**
  * Reset stuck payouts (processing for too long)

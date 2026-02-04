@@ -32,13 +32,15 @@ export interface StakeParams {
   poolId: string;
   amountCents: bigint;
   walletAddress: string;
-  walletSignature?: string; // Optional: for wallet verification
+  // Note: Wallet signature verification not implemented in current version
+  // Authentication relies on API key verification via requireAuth middleware
 }
 
 export interface UnstakeParams {
   stakeId: string;
   agentId: string;
-  walletSignature?: string; // Optional: for wallet verification
+  // Note: Wallet signature verification not implemented in current version
+  // Authentication relies on API key verification via requireAuth middleware
 }
 
 export interface StakingStatus {

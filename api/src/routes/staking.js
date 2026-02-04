@@ -100,7 +100,9 @@ router.get('/pools', async (_req, res) => {
  * - poolId?: Optional pool ID (uses default pool if not provided)
  * - amountCents: Amount to stake in cents
  * - walletAddress: Wallet address for staking
- * - walletSignature?: Optional signature for wallet verification
+ *
+ * Authentication: Requires valid API key via Authorization header
+ * Security: Agent must own the API key to perform staking operations
  */
 router.post('/stake', auth_js_1.requireAuth, rateLimit_js_1.stakingLimiter, async (req, res) => {
     try {
@@ -111,7 +113,9 @@ router.post('/stake', auth_js_1.requireAuth, rateLimit_js_1.stakingLimiter, asyn
             });
             return;
         }
-        const { poolId, amountCents, walletAddress, walletSignature } = req.body;
+        const { poolId, amountCents, walletAddress } = req.body;
+        // Log staking operation for audit trail
+        console.log(`[Staking] Agent ${req.agent.id} initiating stake: ${amountCents} cents to wallet ${walletAddress}`);
         // Validate required fields
         if (!amountCents || !walletAddress) {
             res.status(400).json({
@@ -143,8 +147,7 @@ router.post('/stake', auth_js_1.requireAuth, rateLimit_js_1.stakingLimiter, asyn
             agentId: req.agent.id,
             poolId: targetPoolId,
             amountCents: parsedAmount,
-            walletAddress,
-            walletSignature
+            walletAddress
         });
         res.status(201).json({
             success: true,
@@ -183,7 +186,9 @@ router.post('/stake', auth_js_1.requireAuth, rateLimit_js_1.stakingLimiter, asyn
  *
  * Body:
  * - stakeId: ID of the stake to unstake
- * - walletSignature?: Optional signature for wallet verification
+ *
+ * Authentication: Requires valid API key via Authorization header
+ * Security: Time-lock enforced - cannot unstake before can_unstake_at timestamp
  */
 router.post('/unstake', auth_js_1.requireAuth, rateLimit_js_1.stakingLimiter, async (req, res) => {
     try {
@@ -194,7 +199,9 @@ router.post('/unstake', auth_js_1.requireAuth, rateLimit_js_1.stakingLimiter, as
             });
             return;
         }
-        const { stakeId, walletSignature } = req.body;
+        const { stakeId } = req.body;
+        // Log unstaking operation for audit trail
+        console.log(`[Staking] Agent ${req.agent.id} initiating unstake: ${stakeId}`);
         if (!stakeId) {
             res.status(400).json({
                 success: false,
@@ -205,8 +212,7 @@ router.post('/unstake', auth_js_1.requireAuth, rateLimit_js_1.stakingLimiter, as
         // Unstake
         const stake = await StakingService.unstake({
             stakeId,
-            agentId: req.agent.id,
-            walletSignature
+            agentId: req.agent.id
         });
         res.json({
             success: true,
@@ -241,6 +247,9 @@ router.post('/unstake', auth_js_1.requireAuth, rateLimit_js_1.stakingLimiter, as
  *
  * Body:
  * - stakeId: ID of the stake to claim rewards from
+ *
+ * Authentication: Requires valid API key via Authorization header
+ * Security: Transaction-safe claim prevents double-claiming
  */
 router.post('/claim', auth_js_1.requireAuth, rateLimit_js_1.stakingLimiter, async (req, res) => {
     try {
@@ -252,6 +261,8 @@ router.post('/claim', auth_js_1.requireAuth, rateLimit_js_1.stakingLimiter, asyn
             return;
         }
         const { stakeId } = req.body;
+        // Log claim operation for audit trail
+        console.log(`[Staking] Agent ${req.agent.id} claiming rewards from stake: ${stakeId}`);
         if (!stakeId) {
             res.status(400).json({
                 success: false,

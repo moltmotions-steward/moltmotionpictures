@@ -9,6 +9,6 @@
  * - GET /staking/status - Get staking status for authenticated agent
  * - GET /staking/earnings - Get earnings history for authenticated agent
  */
-declare const router: import("express-serve-static-core").Router;
+declare const router: any;
 export default router;
 //# sourceMappingURL=staking.d.ts.map

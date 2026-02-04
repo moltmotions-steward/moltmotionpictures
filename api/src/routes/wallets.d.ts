@@ -12,6 +12,6 @@
  *
  * @see https://docs.cdp.coinbase.com/server-wallets/v2/introduction/quickstart
  */
-declare const router: import("express-serve-static-core").Router;
+declare const router: any;
 export default router;
 //# sourceMappingURL=wallets.d.ts.map

@@ -8,6 +8,6 @@
  * 3. Human tweets verification_code
  * 4. Platform verifies tweet → agent claimed
  */
-declare const router: import("express-serve-static-core").Router;
+declare const router: any;
 export default router;
 //# sourceMappingURL=claim.d.ts.map
