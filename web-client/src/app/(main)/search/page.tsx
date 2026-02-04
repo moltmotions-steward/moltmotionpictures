@@ -3,34 +3,51 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useSearch, useDebounce } from '@/hooks';
+import { useSearch, useDebounce, useScripts } from '@/hooks';
 import { PageContainer } from '@/components/layout';
 import { ScriptCard } from '@/components/post';
 import { Input, Card, CardHeader, CardTitle, CardContent, Avatar, AvatarImage, AvatarFallback, Skeleton, Badge, Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui';
-import { Search, Users, Hash, FileText, X } from 'lucide-react';
+import { Search, Users, Hash, FileText, X, Video } from 'lucide-react';
 import { cn, formatScore, getInitials, getAgentUrl, getStudioUrl } from '@/lib/utils';
 
 export default function SearchPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') || '';
+  const initialTab = searchParams.get('tab') || 'all';
   
   const [query, setQuery] = useState(initialQuery);
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const debouncedQuery = useDebounce(query, 300);
   const { data, isLoading, error } = useSearch(debouncedQuery);
   
+  // Fetch all scripts when tab=Scripts and no search query (Videos mode)
+  const isVideosMode = activeTab === 'Scripts' && debouncedQuery.length < 2;
+  const { data: scriptsData, isLoading: scriptsLoading } = useScripts({ sort: 'hot' });
+  
   useEffect(() => {
     if (debouncedQuery) {
-      router.replace(`/search?q=${encodeURIComponent(debouncedQuery)}`, { scroll: false });
+      router.replace(`/search?q=${encodeURIComponent(debouncedQuery)}${activeTab !== 'all' ? `&tab=${activeTab}` : ''}`, { scroll: false });
     }
-  }, [debouncedQuery, router]);
+  }, [debouncedQuery, activeTab, router]);
   
   const totalResults = (data?.Scripts?.length || 0) + (data?.agents?.length || 0) + (data?.studios?.length || 0);
+  const scriptsToShow = isVideosMode ? scriptsData?.data : data?.Scripts;
+  const showingResults = debouncedQuery.length >= 2 || isVideosMode;
   
   return (
     <PageContainer>
       <div className="max-w-4xl mx-auto">
+        {/* Header for Videos mode */}
+        {isVideosMode && (
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold flex items-center gap-3 mb-2">
+              <Video className="h-8 w-8" /> Videos
+            </h1>
+            <p className="text-muted-foreground">Browse all scripts with video content</p>
+          </div>
+        )}
+        
         {/* Search input */}
         <div className="mb-6">
           <div className="relative">
@@ -41,7 +58,7 @@ export default function SearchPage() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="w-full h-12 pl-12 pr-12 rounded-lg border bg-background text-lg focus:outline-none focus:ring-2 focus:ring-ring"
-              autoFocus
+              autoFocus={!isVideosMode}
             />
             {query && (
               <button onClick={() => setQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
@@ -52,9 +69,25 @@ export default function SearchPage() {
         </div>
         
         {/* Results */}
-        {debouncedQuery.length >= 2 ? (
+        {showingResults ? (
           <>
-            {/* Tabs */}
+            {/* Show scripts directly in Videos mode */}
+            {isVideosMode ? (
+              scriptsLoading ? (
+                <SearchSkeleton />
+              ) : scriptsToShow && scriptsToShow.length > 0 ? (
+                <div className="space-y-4">
+                  {scriptsToShow.map(script => <ScriptCard key={script.id} script={script} />)}
+                </div>
+              ) : (
+                <Card className="p-8 text-center">
+                  <Video className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+                  <h3 className="font-semibold mb-1">No videos yet</h3>
+                  <p className="text-sm text-muted-foreground">Check back later for new content</p>
+                </Card>
+              )
+            ) : (
+            /* Tabs for search results */
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <Card className="mb-4">
                 <TabsList className="flex border-b w-full justify-start bg-transparent p-0 rounded-none h-auto">
@@ -184,6 +217,7 @@ export default function SearchPage() {
                 </>
               )}
             </Tabs>
+            )}
           </>
         ) : (
           <div className="text-center py-12">

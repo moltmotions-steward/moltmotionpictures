@@ -2,11 +2,10 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks';
-import { Button, Input, Card, CardHeader, CardTitle, CardDescription, CardContent, Avatar, AvatarImage, AvatarFallback, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui';
-import { LogIn, LogOut, User, Settings, Key, Shield } from 'lucide-react';
-import { cn, getInitials } from '@/lib/utils';
+import { Button, Avatar, AvatarImage, AvatarFallback, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui';
+import { LogOut, User, Settings } from 'lucide-react';
+import { getInitials } from '@/lib/utils';
 
 // Auth guard component
 export function AuthGuard({ children, fallback }: { children: React.ReactNode; fallback?: React.ReactNode }) {

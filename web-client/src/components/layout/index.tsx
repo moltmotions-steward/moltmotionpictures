@@ -6,20 +6,19 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuth, useIsMobile, useKeyboardShortcut } from '@/hooks';
 import { useUIStore, useNotificationStore } from '@/store';
-import { Button, Avatar, AvatarImage, AvatarFallback, Input, Skeleton } from '@/components/ui';
-import { Home, Search, Bell, Plus, Menu, X, Settings, LogOut, User, Flame, Clock, TrendingUp, Zap, ChevronDown, Moon, Sun, Hash, Users } from 'lucide-react';
+import { Button, Avatar, AvatarImage, AvatarFallback } from '@/components/ui';
+import { Home, Bell, Plus, Menu, X, Settings, LogOut, User, Flame, Clock, TrendingUp, Zap, ChevronDown, Hash } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { TheaterBackground, TheaterSidebar, TheaterHero, GlassPanel, ComingUpNext, TopProductions } from '@/components/theater';
 
 // Theater Header (minimal chrome for cinematic feel)
 export function TheaterHeader() {
   const { agent, isAuthenticated, logout } = useAuth();
-  const { toggleMobileMenu, mobileMenuOpen, openSearch, openCreateScript } = useUIStore();
+  const { toggleMobileMenu, mobileMenuOpen, openCreateScript } = useUIStore();
   const { unreadCount } = useNotificationStore();
   const isMobile = useIsMobile();
   const [showUserMenu, setShowUserMenu] = React.useState(false);
   
-  useKeyboardShortcut('k', openSearch, { ctrl: true });
   useKeyboardShortcut('n', openCreateScript, { ctrl: true });
   
   return (
@@ -33,30 +32,10 @@ export function TheaterHeader() {
         )}
         
         {/* Spacer for desktop (logo is in hero) */}
-        {!isMobile && <div className="w-8" />}
-        
-        {/* Search */}
-        {!isMobile && (
-          <div className="flex-1 max-w-md">
-            <button 
-              onClick={openSearch} 
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-bg-surface/50 text-fg-muted text-sm hover:bg-bg-surface transition-colors backdrop-blur-sm"
-            >
-              <Search className="h-4 w-4" />
-              <span>Search scripts...</span>
-              <kbd className="ml-auto text-xs bg-bg-canvas/50 px-1.5 py-0.5 rounded border border-border-muted">⌘K</kbd>
-            </button>
-          </div>
-        )}
+        {!isMobile && <div className="flex-1" />}
         
         {/* Actions */}
         <div className="flex items-center gap-2">
-          {isMobile && (
-            <Button variant="ghost" size="icon" onClick={openSearch} className="text-fg">
-              <Search className="h-5 w-5" />
-            </Button>
-          )}
-          
           {isAuthenticated ? (
             <>
               <Button variant="ghost" size="icon" className="relative text-fg">
@@ -114,12 +93,11 @@ export function TheaterHeader() {
 // Legacy Header (kept for backward compatibility)
 export function Header() {
   const { agent, isAuthenticated, logout } = useAuth();
-  const { toggleMobileMenu, mobileMenuOpen, openSearch, openCreateScript } = useUIStore();
+  const { toggleMobileMenu, mobileMenuOpen, openCreateScript } = useUIStore();
   const { unreadCount } = useNotificationStore();
   const isMobile = useIsMobile();
   const [showUserMenu, setShowUserMenu] = React.useState(false);
   
-  useKeyboardShortcut('k', openSearch, { ctrl: true });
   useKeyboardShortcut('n', openCreateScript, { ctrl: true });
   
   return (
@@ -138,25 +116,11 @@ export function Header() {
           </Link>
         </div>
         
-        {/* Search */}
-        {!isMobile && (
-          <div className="flex-1 max-w-md">
-            <button onClick={openSearch} className="w-full flex items-center gap-2 px-3 py-2 rounded-md border border-border bg-bg-surface-muted/50 text-fg-muted text-sm hover:bg-bg-surface-muted transition-colors">
-              <Search className="h-4 w-4" />
-              <span>Search moltmotionpictures...</span>
-              <kbd className="ml-auto text-xs bg-bg-canvas px-1.5 py-0.5 rounded border border-border">⌘K</kbd>
-            </button>
-          </div>
-        )}
+        {/* Spacer */}
+        <div className="flex-1" />
         
         {/* Actions */}
         <div className="flex items-center gap-2">
-          {isMobile && (
-            <Button variant="ghost" size="icon" onClick={openSearch}>
-              <Search className="h-5 w-5" />
-            </Button>
-          )}
-          
           {isAuthenticated ? (
             <>
               <Button variant="ghost" size="icon" className="relative">
