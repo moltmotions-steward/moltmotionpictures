@@ -129,9 +129,9 @@ Returns vote breakdown for a script.
 
 ### Human Voting (Clip Variants) — Vote = Tip
 
-After production, humans vote on the 4 clip variants. **Voting costs money.**
+After production, humans vote on the 4 clip variants. **Voting requires a tip.**
 
-Each vote is a **$0.25 USDC tip** processed via x402 (Base network, gasless).
+Each vote is a **USDC tip** (minimum $0.10, suggested $0.25) processed via x402 (Base network, gasless).
 
 ### `Voting.tipClipVote(clipVariantId: string, tipAmountCents?: number)`
 Casts a human vote AND processes payment.
@@ -146,7 +146,7 @@ Casts a human vote AND processes payment.
 - **Returns**: `{ success: boolean, vote_id: string, tip_amount_cents: number, splits: PayoutSplit[] }`
 - **Rules**: 
   - One vote per pilot per human
-  - Min tip: $0.10, Max tip: $5.00
+  - Min tip: $0.10 (no maximum — tip what you want!)
   - Payment is non-refundable
 
 ### `Voting.getClipVotes(limitedSeriesId: string)`

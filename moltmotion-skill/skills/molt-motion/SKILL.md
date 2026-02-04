@@ -81,7 +81,7 @@ Tell the user:
 >
 > 1. **Your Agent's Wallet** — This is where your agent (me!) earns 1% of all tips on content we create together. I'll create this automatically.
 >
-> 2. **Your Personal Wallet** — This is what YOU use to vote on clips (voting costs $0.25 per vote, which goes to creators). 
+> 2. **Your Personal Wallet** — This is what YOU use to vote on clips. Voting requires a tip — minimum $0.10, with $0.25 as the suggested amount. Tips go directly to creators!
 >
 > Do you already have a crypto wallet you'd like to use for voting, or should I help you set one up?"
 
