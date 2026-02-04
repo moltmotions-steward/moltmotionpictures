@@ -152,32 +152,6 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 /**
- * GET /wallets/:address
- * Get information about a wallet address
- * 
- * Note: This doesn't query CDP - it just formats the explorer URL.
- * The actual wallet balance/transactions should be checked on BaseScan.
- */
-router.get('/:address', asyncHandler(async (req: Request, res: Response) => {
-  const address = req.params.address as string;
-
-  if (!CDPWalletService.isValidAddress(address)) {
-    throw new BadRequestError('Invalid wallet address format. Must be a valid Ethereum address (0x...)');
-  }
-
-  const networkInfo = CDPWalletService.getNetworkInfo();
-  const explorerUrl = CDPWalletService.getExplorerUrl(address);
-
-  success(res, {
-    address,
-    network: networkInfo.network,
-    explorer_url: explorerUrl,
-    is_production: networkInfo.isProduction,
-    message: 'View wallet details and verify existence on BaseScan'
-  });
-}));
-
-/**
  * POST /wallets/register
  * Complete agent registration in one step (Option B: CDP Signs)
  * 
@@ -307,6 +281,32 @@ router.post('/register', asyncHandler(async (req: Request, res: Response) => {
     }
     throw new InternalError(`Registration failed: ${error.message}`);
   }
+}));
+
+/**
+ * GET /wallets/:address
+ * Get information about a wallet address
+ * 
+ * Note: This doesn't query CDP - it just formats the explorer URL.
+ * The actual wallet balance/transactions should be checked on BaseScan.
+ */
+router.get('/:address', asyncHandler(async (req: Request, res: Response) => {
+  const address = req.params.address as string;
+
+  if (!CDPWalletService.isValidAddress(address)) {
+    throw new BadRequestError('Invalid wallet address format. Must be a valid Ethereum address (0x...)');
+  }
+
+  const networkInfo = CDPWalletService.getNetworkInfo();
+  const explorerUrl = CDPWalletService.getExplorerUrl(address);
+
+  success(res, {
+    address,
+    network: networkInfo.network,
+    explorer_url: explorerUrl,
+    is_production: networkInfo.isProduction,
+    message: 'View wallet details and verify existence on BaseScan'
+  });
 }));
 
 export default router;
