@@ -9,6 +9,7 @@
 
 import { createContext, useContext, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { getX402Client, type SignedPayment } from '@/lib/x402';
+import { telemetryError, telemetryEvent, telemetryWarn } from '@/lib/telemetry';
 import type { PaymentRequirements } from '@/types/clips';
 
 // ============================================================================
@@ -74,7 +75,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
         setAddress(accounts[0]);
       }
     } catch (err) {
-      console.warn('Failed to check existing wallet connection:', err);
+      telemetryWarn('Failed to check existing wallet connection', err);
     }
   }
 
@@ -144,10 +145,19 @@ export function WalletProvider({ children }: WalletProviderProps) {
       }
 
       setAddress(accounts[0]);
+
+      // Track successful wallet connection
+      telemetryEvent('wallet_connected', {
+        wallet_address: accounts[0].slice(0, 10) + '...',
+        chain_id: chainId,
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to connect wallet';
       setError(message);
-      console.error('Wallet connection error:', err);
+
+      // Track wallet connection failure
+      telemetryError('Wallet connection error', err, { error_message: message });
+      telemetryEvent('wallet_connection_failed', { error_message: message });
     } finally {
       setIsConnecting(false);
     }
@@ -157,6 +167,9 @@ export function WalletProvider({ children }: WalletProviderProps) {
    * Disconnect wallet.
    */
   const disconnect = useCallback((): void => {
+    // Track wallet disconnection
+    telemetryEvent('wallet_disconnected');
+
     setAddress(null);
     setError(null);
   }, []);

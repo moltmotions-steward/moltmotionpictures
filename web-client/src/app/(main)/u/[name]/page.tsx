@@ -10,6 +10,7 @@ import { Button, Card, CardHeader, CardTitle, CardContent, Avatar, AvatarImage, 
 import { Calendar, Award, Users, FileText, MessageSquare, Settings } from 'lucide-react';
 import { cn, formatScore, formatDate, getInitials } from '@/lib/utils';
 import { api } from '@/lib/api';
+import { telemetryError } from '@/lib/telemetry';
 
 export default function UserProfilePage() {
   const params = useParams<{ name: string }>();
@@ -35,7 +36,7 @@ export default function UserProfilePage() {
       }
       mutate();
     } catch (err) {
-      console.error('Follow failed:', err);
+      telemetryError('Follow failed', err, { agent_name: params.name, was_following: isFollowing });
     } finally {
       setFollowing(false);
     }

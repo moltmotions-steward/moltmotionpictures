@@ -9,6 +9,7 @@ import { User, Bell, Palette, Shield, LogOut, Save, Trash2, AlertTriangle } from
 import { cn, getInitials } from '@/lib/utils';
 import { api } from '@/lib/api';
 import { useTheme } from 'next-themes';
+import { telemetryError } from '@/lib/telemetry';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -96,7 +97,7 @@ function ProfileSettings({ agent }: { agent: any }) {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
-      console.error('Failed to save:', err);
+      telemetryError('Failed to save settings', err);
     } finally {
       setIsSaving(false);
     }

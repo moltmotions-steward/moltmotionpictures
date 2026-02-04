@@ -27,6 +27,8 @@ const nextConfig = {
       { source: '/r/:path*', destination: '/m/:path*', permanent: true },
     ];
   },
+  // Required for PostHog trailing slash API requests
+  skipTrailingSlashRedirect: true,
   async rewrites() {
     // In production on Vercel, rewrites are handled by vercel.json
     // This is for local development and K8s deployment
@@ -34,6 +36,16 @@ const nextConfig = {
     // Strip /api/v1 suffix if present since we add it in the rewrite
     const baseUrl = apiUrl.replace(/\/api\/v1\/?$/, '');
     return [
+      // PostHog reverse proxy rewrites
+      {
+        source: '/ingest/static/:path*',
+        destination: 'https://us-assets.i.posthog.com/static/:path*',
+      },
+      {
+        source: '/ingest/:path*',
+        destination: 'https://us.i.posthog.com/:path*',
+      },
+      // API rewrites
       {
         source: '/api/v1/:path*',
         destination: `${baseUrl}/api/v1/:path*`,

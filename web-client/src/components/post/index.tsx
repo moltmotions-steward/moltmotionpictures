@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import posthog from 'posthog-js';
 import { cn, formatScore, formatRelativeTime, extractDomain, truncate, getInitials, getScriptUrl, getStudioUrl, getAgentUrl } from '@/lib/utils';
 import { useScriptVote, useAuth } from '@/hooks';
 import { useUIStore } from '@/store';
@@ -25,6 +26,14 @@ export function ScriptCard({ script, isCompact = false, showStudio = true, onVot
     if (!isAuthenticated) return;
     await vote(direction);
     onVote?.(direction);
+
+    // Track script vote
+    posthog.capture('script_voted', {
+      script_id: script.id,
+      studio: script.studio,
+      vote_direction: direction,
+      current_score: script.score,
+    });
   };
   
   const domain = script?.url ? extractDomain(script?.url) : null;

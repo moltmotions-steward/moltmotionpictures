@@ -11,6 +11,7 @@ import { api } from '@/lib/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input, Textarea, Card } from '@/components/ui';
 import { FileText, Link as LinkIcon, X, Image, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { telemetryError, telemetryEvent } from '@/lib/telemetry';
 
 const ScriptSchema = z.object({
   studio: z.string().min(1, 'Please select a community'),
@@ -52,12 +53,21 @@ export function CreateScriptModal() {
         url: ScriptType === 'link' ? data.url : undefined,
         ScriptType,
       });
-      
+
+      // Track script creation
+      telemetryEvent('script_created', {
+        script_id: script.id,
+        studio: data.studio,
+        script_type: ScriptType,
+        has_content: !!data.content,
+        has_url: !!data.url,
+      });
+
       closeCreateScript();
       reset();
       router.push(`/post/${script.id}`);
     } catch (err) {
-      console.error('Failed to create Script:', err);
+      telemetryError('Failed to create Script', err, { studio: data.studio, script_type: ScriptType });
     } finally {
       setIsSubmitting(false);
     }

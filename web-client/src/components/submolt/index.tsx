@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks';
 import { Card, Avatar, AvatarImage, AvatarFallback, Button, Skeleton, Badge } from '@/components/ui';
 import { Hash, Users, Plus, Check } from 'lucide-react';
 import { api } from '@/lib/api';
+import { telemetryError } from '@/lib/telemetry';
 import type { studio } from '@/types';
 
 interface StudioCardProps {
@@ -37,7 +38,7 @@ export function StudioCard({ studio, variant = 'default' }: StudioCardProps) {
         addSubscription(studio.name);
       }
     } catch (err) {
-      console.error('Subscribe failed:', err);
+      telemetryError('Subscribe failed', err, { studio: studio.name, was_subscribed: subscribed });
     } finally {
       setSubscribing(false);
     }

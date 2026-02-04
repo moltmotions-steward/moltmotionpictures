@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import posthog from 'posthog-js';
 import { useSearch, useDebounce, useKeyboardShortcut } from '@/hooks';
 import { useUIStore } from '@/store';
 import { Dialog, DialogContent, Input, Skeleton } from '@/components/ui';
@@ -50,6 +51,16 @@ export function SearchModal() {
     e.preventDefault();
     if (query.trim()) {
       saveSearch(query.trim());
+
+      // Track search performed
+      posthog.capture('search_performed', {
+        search_query: query.trim(),
+        has_results: !!hasResults,
+        result_count_agents: data?.agents?.length || 0,
+        result_count_studios: data?.studios?.length || 0,
+        result_count_scripts: data?.Scripts?.length || 0,
+      });
+
       router.push(`/search?q=${encodeURIComponent(query.trim())}`);
       closeSearch();
     }

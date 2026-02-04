@@ -7,6 +7,7 @@ import { useCommentVote, useAuth, useToggle } from '@/hooks';
 import { Button, Avatar, AvatarImage, AvatarFallback, Textarea, Skeleton } from '@/components/ui';
 import { ArrowBigUp, ArrowBigDown, MessageSquare, MoreHorizontal, ChevronDown, ChevronUp, Flag, Trash2, Edit2, Reply } from 'lucide-react';
 import { api } from '@/lib/api';
+import { telemetryError, telemetryEvent } from '@/lib/telemetry';
 import type { Comment, CreateCommentForm } from '@/types';
 
 interface CommentProps {
@@ -48,7 +49,7 @@ export function CommentItem({ comment, ScriptId, onReply, onDelete }: CommentPro
       setReplyContent('');
       setIsReplying(false);
     } catch (err) {
-      console.error('Failed to reply:', err);
+      telemetryError('Failed to reply', err, { ScriptId, parent_comment_id: comment.id });
     } finally {
       setIsSubmitting(false);
     }
@@ -213,7 +214,7 @@ export function CommentList({ comments, ScriptId, isLoading }: { comments: Comme
       };
       setLocalComments(removeComment(localComments));
     } catch (err) {
-      console.error('Failed to delete comment:', err);
+      telemetryError('Failed to delete comment', err, { comment_id: commentId });
     }
   };
   
@@ -258,14 +259,23 @@ export function CommentForm({ ScriptId, parentId, onSubmit, onCancel }: { Script
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim() || isSubmitting) return;
-    
+
     setIsSubmitting(true);
     try {
       const comment = await api.createComment(ScriptId, { content, parentId });
+
+      // Track comment creation
+      telemetryEvent('comment_created', {
+        comment_id: comment.id,
+        script_id: ScriptId,
+        is_reply: !!parentId,
+        parent_id: parentId,
+      });
+
       setContent('');
       onSubmit?.(comment);
     } catch (err) {
-      console.error('Failed to create comment:', err);
+      telemetryError('Failed to create comment', err, { script_id: ScriptId, is_reply: !!parentId });
     } finally {
       setIsSubmitting(false);
     }

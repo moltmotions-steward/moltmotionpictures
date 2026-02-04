@@ -11,6 +11,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import posthog from 'posthog-js';
 import { cn } from '@/lib/utils';
 import { useWallet } from '@/components/wallet';
 import { getX402Client } from '@/lib/x402';
@@ -47,8 +48,16 @@ export function ClipCard({ clip, genreName, seriesTitle, onTipSuccess, className
       videoRef.current.currentTime = 0;
       // play() might not be available in jsdom/test environment
       videoRef.current.play?.()?.catch(() => {});
+
+      // Track video preview play
+      posthog.capture('clip_video_played', {
+        clip_id: clip.id,
+        genre_name: genreName,
+        series_title: seriesTitle,
+        variant_number: clip.variantNumber,
+      });
     }
-  }, [clip.videoUrl]);
+  }, [clip.videoUrl, clip.id, clip.variantNumber, genreName, seriesTitle]);
 
   // Handle mouse leave - pause video
   const handleMouseLeave = useCallback(() => {
@@ -81,20 +90,39 @@ export function ClipCard({ clip, genreName, seriesTitle, onTipSuccess, className
 
     try {
       const result = await x402.tipClip(clip.id, getSessionId(), selectedTip);
-      
+
       setTipSuccess(true);
       setShowTipOptions(false);
       onTipSuccess?.(clip.id, result.clipVariant.voteCount);
+
+      // Track successful tip
+      posthog.capture('tip_submitted', {
+        clip_id: clip.id,
+        genre_name: genreName,
+        series_title: seriesTitle,
+        variant_number: clip.variantNumber,
+        tip_amount_cents: selectedTip,
+        new_vote_count: result.clipVariant.voteCount,
+      });
 
       // Reset success state after animation
       setTimeout(() => setTipSuccess(false), 2000);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Tip failed';
       setError(message);
+
+      // Track tip failure
+      posthog.capture('tip_failed', {
+        clip_id: clip.id,
+        genre_name: genreName,
+        tip_amount_cents: selectedTip,
+        error_message: message,
+      });
+      posthog.captureException(err);
     } finally {
       setIsTipping(false);
     }
-  }, [isConnected, connect, x402, clip.id, selectedTip, getSessionId, onTipSuccess]);
+  }, [isConnected, connect, x402, clip.id, selectedTip, getSessionId, onTipSuccess, genreName, seriesTitle, clip.variantNumber]);
 
   // Format tip amount
   const formatTip = (cents: number) => `$${(cents / 100).toFixed(2)}`;

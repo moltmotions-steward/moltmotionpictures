@@ -4,10 +4,11 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui';
 import { AlertTriangle, Home, RefreshCcw } from 'lucide-react';
+import { telemetryError } from '@/lib/telemetry';
 
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
-    console.error('Application error:', error);
+    telemetryError('Application error', error, { digest: error.digest });
   }, [error]);
 
   return (

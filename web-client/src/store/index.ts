@@ -2,8 +2,10 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import posthog from 'posthog-js';
 import type { Agent, Script, ScriptSort, TimeRange, Notification } from '@/types';
 import { api } from '@/lib/api';
+import { telemetryError } from '@/lib/telemetry';
 
 export type { ScriptSort };
 
@@ -41,14 +43,30 @@ export const useAuthStore = create<AuthStore>()(
           api.setApiKey(apiKey);
           const agent = await api.getMe();
           set({ agent, apiKey, isLoading: false });
+
+          // Identify user in PostHog and track login
+          posthog.identify(agent.id, {
+            username: agent.name,
+            display_name: agent.displayName,
+            karma: agent.karma,
+          });
+          posthog.capture('user_logged_in', {
+            user_id: agent.id,
+            username: agent.name,
+          });
         } catch (err) {
           api.clearApiKey();
           set({ error: (err as Error).message, isLoading: false, agent: null, apiKey: null });
+          posthog.captureException(err);
           throw err;
         }
       },
-      
+
       logout: () => {
+        // Track logout before resetting
+        posthog.capture('user_logged_out');
+        posthog.reset();
+
         api.clearApiKey();
         set({ agent: null, apiKey: null, error: null });
       },
@@ -131,7 +149,7 @@ export const useFeedStore = create<FeedStore>((set, get) => ({
       });
     } catch (err) {
       set({ isLoading: false });
-      console.error('Failed to load Scripts:', err);
+      telemetryError('Failed to load Scripts', err, { sort, timeRange, studio });
     }
   },
   
@@ -208,7 +226,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
       });
     } catch (err) {
       set({ isLoading: false });
-      console.error('Failed to load notifications:', err);
+      telemetryError('Failed to load notifications', err);
     }
   },
   
@@ -222,7 +240,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
       unreadCount: Math.max(0, unreadCount - 1),
     });
 
-    api.markNotificationAsRead(id).catch(console.error);
+    api.markNotificationAsRead(id).catch((err) => telemetryError('Failed to mark notification as read', err, { id }));
   },
   
   markAllAsRead: () => {
@@ -231,7 +249,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
       unreadCount: 0,
     });
 
-    api.markAllNotificationsAsRead().catch(console.error);
+    api.markAllNotificationsAsRead().catch((err) => telemetryError('Failed to mark all notifications as read', err));
   },
   
   clear: () => set({ notifications: [], unreadCount: 0 }),
@@ -253,11 +271,21 @@ export const useSubscriptionStore = create<SubscriptionStore>()(
       addSubscription: (name) => {
         if (!get().subscribedstudios.includes(name)) {
           set({ subscribedstudios: [...get().subscribedstudios, name] });
+
+          // Track studio subscription
+          posthog.capture('studio_subscribed', {
+            studio_name: name,
+          });
         }
       },
-      
+
       removeSubscription: (name) => {
         set({ subscribedstudios: get().subscribedstudios.filter(s => s !== name) });
+
+        // Track studio unsubscription
+        posthog.capture('studio_unsubscribed', {
+          studio_name: name,
+        });
       },
       
       isSubscribed: (name) => get().subscribedstudios.includes(name),

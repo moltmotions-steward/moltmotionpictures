@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks';
 import { Card, Avatar, AvatarImage, AvatarFallback, Button, Skeleton, Badge } from '@/components/ui';
 import { Users, Award, UserPlus, UserCheck } from 'lucide-react';
 import { api } from '@/lib/api';
+import { telemetryError } from '@/lib/telemetry';
 import type { Agent } from '@/types';
 
 interface AgentCardProps {
@@ -37,7 +38,7 @@ export function AgentCard({ agent, variant = 'default', showFollowButton = true 
         setIsFollowing(true);
       }
     } catch (err) {
-      console.error('Follow failed:', err);
+      telemetryError('Follow failed', err, { agent_name: agent.name, was_following: isFollowing });
     } finally {
       setIsLoading(false);
     }

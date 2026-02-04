@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { telemetryError } from '@/lib/telemetry';
 import { Play, Eye } from 'lucide-react';
 
 interface WidgetCardProps {
@@ -54,7 +55,7 @@ export function ComingUpNext() {
           setItems(data.data || []);
         }
       } catch (error) {
-        console.error('Failed to fetch voting periods:', error);
+        telemetryError('Failed to fetch voting periods', error);
       } finally {
         setIsLoading(false);
       }
@@ -140,7 +141,7 @@ export function TopProductions() {
           setSeries(data.data || []);
         }
       } catch (error) {
-        console.error('Failed to fetch series:', error);
+        telemetryError('Failed to fetch series', error);
       } finally {
         setIsLoading(false);
       }

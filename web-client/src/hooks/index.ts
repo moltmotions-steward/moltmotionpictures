@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import useSWR, { SWRConfiguration } from 'swr';
 import { useInView } from 'react-intersection-observer';
 import { api, ApiError } from '@/lib/api';
+import { telemetryError } from '@/lib/telemetry';
 import { useAuthStore, useFeedStore, useUIStore } from '@/store';
 import type { Script, Comment, Agent, studio, ScriptSort, CommentSort } from '@/types';
 import { debounce } from '@/lib/utils';
@@ -44,7 +45,7 @@ export function useScriptVote(ScriptId: string) {
       const scoreDiff = result.action === 'upvoted' ? 1 : result.action === 'downvoted' ? -1 : 0;
       updateScriptVote(ScriptId, result.action === 'removed' ? null : direction, scoreDiff);
     } catch (err) {
-      console.error('Vote failed:', err);
+      telemetryError('Vote failed', err, { ScriptId, direction });
     } finally {
       setIsVoting(false);
     }
@@ -67,7 +68,7 @@ export function useCommentVote(commentId: string) {
     try {
       direction === 'up' ? await api.upvoteComment(commentId) : await api.downvoteComment(commentId);
     } catch (err) {
-      console.error('Vote failed:', err);
+      telemetryError('Vote failed', err, { commentId, direction });
     } finally {
       setIsVoting(false);
     }
