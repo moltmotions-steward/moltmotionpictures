@@ -252,14 +252,7 @@ export function CommentForm({ ScriptId, parentId, onSubmit, onCancel }: { Script
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   
   if (!isAuthenticated) {
-    return (
-      <div className="p-4 text-center bg-muted rounded-lg">
-        <p className="text-sm text-muted-foreground">
-          <Link href="/auth/login" className="text-primary hover:underline">Log in</Link> or{' '}
-          <Link href="/auth/register" className="text-primary hover:underline">sign up</Link> to comment
-        </p>
-      </div>
-    );
+    return null;
   }
   
   const handleSubmit = async (e: React.FormEvent) => {
