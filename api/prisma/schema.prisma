@@ -60,6 +60,7 @@ model Agent {
   received_notifications Notification[]   @relation("UserNotifications")
   sent_notifications   Notification[]     @relation("ActorNotifications")
   unclaimed_funds      UnclaimedFund[]    @relation("AgentUnclaimedFunds")
+  stakes               Stake[]
 
   @@index([name])
   @@index([api_key_hash])
@@ -672,4 +673,111 @@ model Refund {
   @@index([status])
   @@index([payer_address])
   @@map("refunds")
+}
+
+// =============================================================================
+// STAKING
+// =============================================================================
+
+// Staking pools for agents to stake tokens and earn rewards
+model StakingPool {
+  id                    String   @id @default(uuid()) @db.Uuid
+  name                  String   @db.VarChar(100)
+  description           String?  @db.Text
+  
+  // Pool configuration
+  min_stake_amount_cents BigInt  @default(1000) @map("min_stake_amount_cents") // Minimum stake: $10
+  min_stake_duration_seconds Int @default(86400) @map("min_stake_duration_seconds") // Minimum 24 hours (MEV protection)
+  apy_basis_points      Int      @default(500) @map("apy_basis_points") // 5% APY = 500 basis points
+  max_total_stake_cents BigInt?  @map("max_total_stake_cents") // Optional pool cap
+  
+  // Pool status
+  is_active             Boolean  @default(true) @map("is_active")
+  is_default            Boolean  @default(false) @map("is_default") // Default staking option
+  
+  // Pool statistics
+  total_staked_cents    BigInt   @default(0) @map("total_staked_cents")
+  total_stakes_count    Int      @default(0) @map("total_stakes_count")
+  total_rewards_paid_cents BigInt @default(0) @map("total_rewards_paid_cents")
+  
+  // Timestamps
+  created_at            DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updated_at            DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  
+  stakes                Stake[]
+  
+  @@index([is_active])
+  @@index([is_default])
+  @@map("staking_pools")
+}
+
+// Individual staking positions
+model Stake {
+  id                    String    @id @default(uuid()) @db.Uuid
+  agent_id              String    @map("agent_id") @db.Uuid
+  pool_id               String    @map("pool_id") @db.Uuid
+  
+  // Stake details
+  amount_cents          BigInt    @map("amount_cents")
+  wallet_address        String    @map("wallet_address") @db.VarChar(100) // Staking wallet
+  
+  // Status tracking
+  status                String    @default("active") @db.VarChar(20) // active, unstaking, unstaked
+  
+  // Reward tracking
+  earned_rewards_cents  BigInt    @default(0) @map("earned_rewards_cents")
+  claimed_rewards_cents BigInt    @default(0) @map("claimed_rewards_cents")
+  last_reward_calc_at   DateTime  @default(now()) @map("last_reward_calc_at") @db.Timestamptz
+  
+  // Transaction hashes
+  stake_tx_hash         String?   @map("stake_tx_hash") @db.VarChar(100)
+  unstake_tx_hash       String?   @map("unstake_tx_hash") @db.VarChar(100)
+  
+  // MEV protection: enforce minimum stake duration
+  can_unstake_at        DateTime  @map("can_unstake_at") @db.Timestamptz
+  
+  // Timestamps
+  staked_at             DateTime  @default(now()) @map("staked_at") @db.Timestamptz
+  unstaked_at           DateTime? @map("unstaked_at") @db.Timestamptz
+  created_at            DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updated_at            DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  
+  agent Agent        @relation(fields: [agent_id], references: [id], onDelete: Cascade)
+  pool  StakingPool  @relation(fields: [pool_id], references: [id], onDelete: Restrict)
+  rewards StakingReward[]
+  
+  @@index([agent_id])
+  @@index([pool_id])
+  @@index([status])
+  @@index([wallet_address])
+  @@index([can_unstake_at])
+  @@map("stakes")
+}
+
+// Staking reward distribution records
+model StakingReward {
+  id                String   @id @default(uuid()) @db.Uuid
+  stake_id          String   @map("stake_id") @db.Uuid
+  agent_id          String   @map("agent_id") @db.Uuid
+  
+  // Reward details
+  amount_cents      BigInt   @map("amount_cents")
+  period_start      DateTime @map("period_start") @db.Timestamptz
+  period_end        DateTime @map("period_end") @db.Timestamptz
+  
+  // Claim status
+  is_claimed        Boolean  @default(false) @map("is_claimed")
+  claimed_at        DateTime? @map("claimed_at") @db.Timestamptz
+  claim_tx_hash     String?  @map("claim_tx_hash") @db.VarChar(100)
+  
+  // Timestamps
+  created_at        DateTime @default(now()) @map("created_at") @db.Timestamptz
+  
+  stake Stake @relation(fields: [stake_id], references: [id], onDelete: Cascade)
+  
+  @@index([stake_id])
+  @@index([agent_id])
+  @@index([is_claimed])
+  @@index([period_end])
+  @@map("staking_rewards")
 }

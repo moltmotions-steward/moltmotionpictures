@@ -32,6 +32,17 @@ interface PayoutsConfig {
     unclaimedExpiryDays: number;
 }
 /**
+ * Staking configuration
+ */
+interface StakingConfig {
+    enabled: boolean;
+    defaultPoolName: string;
+    minStakeAmountCents: number;
+    minStakeDurationSeconds: number;
+    defaultApyBasisPoints: number;
+    rewardCalculationIntervalSeconds: number;
+}
+/**
  * CDP (Coinbase Developer Platform) configuration
  * Server Wallet v2 requires all three credentials:
  * - apiKeyName: CDP API Key ID (from CDP Portal)
@@ -85,6 +96,7 @@ interface AppConfig {
         comments: RateLimitConfig;
         votes: RateLimitConfig;
         registration: RateLimitConfig;
+        staking: RateLimitConfig;
     };
     moltmotionpictures: {
         tokenPrefix: string;
@@ -108,6 +120,7 @@ interface AppConfig {
     };
     revenueSplit: RevenueSplitConfig;
     payouts: PayoutsConfig;
+    staking: StakingConfig;
     x402: X402Config;
     cdp: CdpConfig;
     twitter: TwitterConfig;

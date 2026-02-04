@@ -16,6 +16,7 @@ import walletRoutes from './wallet';
 import walletsRoutes from './wallets';
 import internalRoutes from './internal';
 import claimRoutes from './claim';
+import stakingRoutes from './staking';
 import { requestLimiter } from '../middleware/rateLimit';
 
 const router = Router();
@@ -33,6 +34,7 @@ router.use('/series', seriesRoutes);
 router.use('/wallet', walletRoutes);
 router.use('/wallets', walletsRoutes);  // CDP wallet provisioning (public)
 router.use('/claim', claimRoutes);
+router.use('/staking', stakingRoutes);  // Staking operations
 
 // Internal routes (no rate limiting - protected by secret)
 router.use('/internal', internalRoutes);

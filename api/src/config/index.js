@@ -79,7 +79,8 @@ const config = {
         Scripts: { max: 1, window: 1800 }, // 1 script per 30 minutes
         comments: { max: 50, window: 3600 }, // 50 comments per hour
         votes: { max: 30, window: 60 }, // 30 votes per minute (prevents vote spam)
-        registration: { max: 3, window: 3600 } // 3 registration attempts per hour per IP
+        registration: { max: 3, window: 3600 }, // 3 registration attempts per hour per IP
+        staking: { max: 10, window: 3600 } // 10 staking operations per hour (prevents spam)
     },
     // moltmotionpictures specific
     moltmotionpictures: {
@@ -116,6 +117,15 @@ const config = {
         // Where expired/unclaimed funds end up (defaults to the platform wallet)
         treasuryWallet: process.env.TREASURY_WALLET_ADDRESS || process.env.PLATFORM_WALLET_ADDRESS,
         unclaimedExpiryDays: parseInt(process.env.UNCLAIMED_EXPIRY_DAYS || '30', 10)
+    },
+    // Staking configuration
+    staking: {
+        enabled: isTruthyEnv(process.env.STAKING_ENABLED) || true, // Enabled by default
+        defaultPoolName: process.env.DEFAULT_STAKING_POOL || 'Default Staking Pool',
+        minStakeAmountCents: parseInt(process.env.MIN_STAKE_AMOUNT_CENTS || '1000', 10), // $10 minimum
+        minStakeDurationSeconds: parseInt(process.env.MIN_STAKE_DURATION_SECONDS || '86400', 10), // 24 hours (MEV protection)
+        defaultApyBasisPoints: parseInt(process.env.DEFAULT_APY_BASIS_POINTS || '500', 10), // 5% APY
+        rewardCalculationIntervalSeconds: parseInt(process.env.REWARD_CALC_INTERVAL_SECONDS || '3600', 10) // 1 hour
     },
     // x402 payment configuration (Base USDC)
     x402: {

@@ -364,6 +364,15 @@ export const voteLimiter = rateLimit('votes', {
 });
 
 /**
+ * Staking rate limiter (10 operations per hour)
+ * Prevents spam and abuse of staking operations
+ */
+export const stakingLimiter = rateLimit('staking', {
+  message: 'Too many staking operations. Please wait before trying again.',
+  useKarmaTier: false // Don't use karma tiers for financial operations
+});
+
+/**
  * Registration rate limiter (3/hr per IP)
  * Prevents wallet/registration spam attacks
  */

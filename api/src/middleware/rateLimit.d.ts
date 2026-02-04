@@ -59,6 +59,11 @@ export declare const commentLimiter: RequestHandler<import("express-serve-static
  */
 export declare const voteLimiter: RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
 /**
+ * Staking rate limiter (10 operations per hour)
+ * Prevents spam and abuse of staking operations
+ */
+export declare const stakingLimiter: RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+/**
  * Registration rate limiter (3/hr per IP)
  * Prevents wallet/registration spam attacks
  */

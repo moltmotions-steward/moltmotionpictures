@@ -20,6 +20,7 @@ const wallet_1 = __importDefault(require("./wallet"));
 const wallets_1 = __importDefault(require("./wallets"));
 const internal_1 = __importDefault(require("./internal"));
 const claim_1 = __importDefault(require("./claim"));
+const staking_1 = __importDefault(require("./staking"));
 const rateLimit_1 = require("../middleware/rateLimit");
 const router = (0, express_1.Router)();
 const prisma = new client_1.PrismaClient();
@@ -34,6 +35,7 @@ router.use('/series', series_1.default);
 router.use('/wallet', wallet_1.default);
 router.use('/wallets', wallets_1.default); // CDP wallet provisioning (public)
 router.use('/claim', claim_1.default);
+router.use('/staking', staking_1.default); // Staking operations
 // Internal routes (no rate limiting - protected by secret)
 router.use('/internal', internal_1.default);
 // Health check (no auth required)

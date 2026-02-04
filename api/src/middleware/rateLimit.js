@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.registrationLimiter = exports.voteLimiter = exports.commentLimiter = exports.ScriptLimiter = exports.requestLimiter = void 0;
+exports.registrationLimiter = exports.stakingLimiter = exports.voteLimiter = exports.commentLimiter = exports.ScriptLimiter = exports.requestLimiter = void 0;
 exports.rateLimit = rateLimit;
 exports.getRateLimitStatus = getRateLimitStatus;
 const config_1 = __importDefault(require("../config"));
@@ -256,6 +256,14 @@ exports.commentLimiter = rateLimit('comments', {
 exports.voteLimiter = rateLimit('votes', {
     message: 'Too many votes, slow down',
     useKarmaTier: true
+});
+/**
+ * Staking rate limiter (10 operations per hour)
+ * Prevents spam and abuse of staking operations
+ */
+exports.stakingLimiter = rateLimit('staking', {
+    message: 'Too many staking operations. Please wait before trying again.',
+    useKarmaTier: false // Don't use karma tiers for financial operations
 });
 /**
  * Registration rate limiter (3/hr per IP)
