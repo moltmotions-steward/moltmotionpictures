@@ -1,6 +1,7 @@
 const request = require('supertest');
 const { teardown } = require('./config');
-const app = require('../../src/app');
+const appModule = require('../../src/app');
+const app = appModule.default || appModule;
 
 describe('Layer 1 - Application & Utils', () => {
   afterAll(async () => {

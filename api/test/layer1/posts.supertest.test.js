@@ -12,7 +12,8 @@
 
 const request = require('supertest');
 const { getDb } = require('./config');
-const app = require('../../src/app');
+const appModule = require('../../src/app');
+const app = appModule.default || appModule;
 
 describe('Scripts API (Layer 1 Integration)', () => {
   let db;

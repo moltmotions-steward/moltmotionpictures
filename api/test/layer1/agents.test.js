@@ -1,6 +1,7 @@
 const request = require('supertest');
 const { getDb, teardown } = require('./config');
-const app = require('../../src/app');
+const appModule = require('../../src/app');
+const app = appModule.default || appModule;
 
 describe('Layer 1 - Agent Profile (Supertest)', () => {
   let db;
