@@ -36,7 +36,7 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 # Install OpenSSL for Prisma
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl ffmpeg
 
 ENV NODE_ENV=production
 

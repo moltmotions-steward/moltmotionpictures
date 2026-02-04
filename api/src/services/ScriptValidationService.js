@@ -59,7 +59,7 @@ const pilotScriptSchema = {
             maxItems: 12,
             items: {
                 type: 'object',
-                required: ['prompt', 'gen_clip_seconds', 'duration_seconds', 'edit_extend_strategy'],
+                required: ['prompt', 'gen_clip_seconds', 'duration_seconds', 'edit_extend_strategy', 'audio'],
                 properties: {
                     prompt: {
                         type: 'object',
@@ -74,7 +74,25 @@ const pilotScriptSchema = {
                     gen_clip_seconds: { type: 'number', minimum: 3, maximum: 6 },
                     duration_seconds: { type: 'number', minimum: 3, maximum: 15 },
                     edit_extend_strategy: { type: 'string' },
-                    audio: { type: 'object' },
+                    audio: {
+                        type: 'object',
+                        required: ['type'],
+                        properties: {
+                            type: { type: 'string', enum: ['narration', 'voiceover', 'tts', 'dialogue', 'ambient', 'silent'] },
+                            description: { type: 'string', maxLength: 800 },
+                            voice_id: { type: 'string', maxLength: 200 },
+                            dialogue: {
+                                type: 'object',
+                                required: ['speaker', 'line'],
+                                properties: {
+                                    speaker: { type: 'string', maxLength: 100 },
+                                    line: { type: 'string', minLength: 1, maxLength: 500 },
+                                },
+                                additionalProperties: false,
+                            },
+                        },
+                        additionalProperties: false,
+                    },
                 },
             },
         },

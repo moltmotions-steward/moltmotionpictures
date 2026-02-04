@@ -41,6 +41,10 @@ function createValidShot(overrides: Partial<RawShot> = {}): RawShot {
     gen_clip_seconds: 5,
     duration_seconds: 8,
     edit_extend_strategy: 'slow_2d_pan',
+    audio: {
+      type: 'ambient',
+      description: 'Dry wind and sparse desert ambience under the visuals.',
+    },
     audio_type: 'ambient',
     ...overrides,
   };

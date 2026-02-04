@@ -94,7 +94,7 @@
     "series_bible": {
       "type": "object",
       "description": "Continuity anchors for consistent generation across episodes in a limited series",
-      "required": ["global_style_bible", "location_anchors", "character_anchors"],
+      "required": ["global_style_bible", "location_anchors", "character_anchors", "do_not_change"],
       "properties": {
         "global_style_bible": {
           "type": "string",
@@ -181,11 +181,11 @@
       "items": {
         "type": "object",
         "required": [
-          "sequence",
           "prompt",
           "gen_clip_seconds",
           "duration_seconds",
-          "audio_type"
+          "edit_extend_strategy",
+          "audio"
         ],
         "properties": {
           "sequence": {
@@ -195,10 +195,37 @@
             "description": "Shot order (1-12)"
           },
           "prompt": {
+            "type": "object",
+            "description": "Structured prompt parts used to compile video generation prompts.",
+            "required": ["camera", "scene"],
+            "properties": {
+              "camera": {
+                "type": "string",
+                "description": "Camera type/angle (used as a creative constraint)"
+              },
+              "scene": {
+                "type": "string",
+                "minLength": 10,
+                "maxLength": 500,
+                "description": "What is visibly happening in the shot"
+              },
+              "motion": {
+                "type": "string",
+                "maxLength": 100,
+                "description": "Subject/camera motion hint"
+              },
+              "details": {
+                "type": "string",
+                "maxLength": 500,
+                "description": "Optional extra visual detail"
+              }
+            },
+            "additionalProperties": false
+          },
+          "prompt_text": {
             "type": "string",
-            "minLength": 20,
-            "maxLength": 500,
-            "description": "Compiled prompt: [camera movement]: [establishing scene]. [additional details]. MUST include style_bible reference."
+            "maxLength": 800,
+            "description": "(Legacy/optional) Pre-compiled prompt string. Prefer prompt.{camera,scene,motion,details}."
           },
           "description": {
             "type": "string",
@@ -251,7 +278,7 @@
               "high_angle",
               "dutch_angle"
             ],
-            "description": "Camera movement/angle"
+            "description": "(Legacy/optional) Camera movement/angle. Prefer prompt.camera."
           },
           "motion": {
             "type": "string",
@@ -268,17 +295,57 @@
               "organic_sway",
               "particle_drift"
             ],
-            "description": "Subject motion in the shot"
+            "description": "(Legacy/optional) Subject motion. Prefer prompt.motion."
+          },
+          "audio": {
+            "type": "object",
+            "description": "Audio directive for the shot. REQUIRED.",
+            "required": ["type"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["narration", "voiceover", "tts", "dialogue", "ambient", "silent"],
+                "description": "Audio type. For TTS narration, use narration/voiceover/tts."
+              },
+              "description": {
+                "type": "string",
+                "maxLength": 800,
+                "description": "Text for narration/voiceover/tts, or a short sound design note for ambient."
+              },
+              "voice_id": {
+                "type": "string",
+                "maxLength": 200,
+                "description": "Optional provider voice id (if supported)."
+              },
+              "dialogue": {
+                "type": "object",
+                "properties": {
+                  "speaker": {
+                    "type": "string",
+                    "pattern": "^CHAR_[A-Z0-9_]+$",
+                    "description": "Must reference a character_anchor ID"
+                  },
+                  "line": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  }
+                },
+                "required": ["speaker", "line"],
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
           },
           "audio_type": {
             "type": "string",
             "enum": ["narration", "dialogue", "ambient", "silent"],
-            "description": "What audio accompanies this shot"
+            "description": "(Legacy/optional) What audio accompanies this shot. Prefer audio.type."
           },
           "narration": {
             "type": "string",
-            "maxLength": 300,
-            "description": "Voiceover text (if audio_type = narration)"
+            "maxLength": 800,
+            "description": "(Legacy/optional) Voiceover text (if audio_type = narration). Prefer audio.description."
           },
           "dialogue": {
             "type": "object",
@@ -291,12 +358,12 @@
               "line": {
                 "type": "string",
                 "minLength": 1,
-                "maxLength": 200
+                "maxLength": 500
               }
             },
             "required": ["speaker", "line"],
             "additionalProperties": false,
-            "description": "Character dialogue (if audio_type = dialogue)"
+            "description": "(Legacy/optional) Character dialogue (if audio_type = dialogue). Prefer audio.dialogue."
           },
           "anchors": {
             "type": "array",

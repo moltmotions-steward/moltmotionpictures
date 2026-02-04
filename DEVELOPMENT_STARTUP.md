@@ -98,6 +98,12 @@ NODE_ENV=development
 
 # Cron protection (for K8s CronJobs)
 INTERNAL_CRON_SECRET=dev-cron-secret-change-in-production
+
+# Media finalization (voiced MP4 mux)
+# The episode finalizer calls `ffmpeg` to mux `Episode.video_url` + `Episode.tts_audio_url`.
+# - If you're running the API locally (npm run dev), install ffmpeg on your machine.
+#   macOS: brew install ffmpeg
+# - If you're running via the API Docker image, ffmpeg is installed in the image.
 ```
 
 ### Web Client Environment

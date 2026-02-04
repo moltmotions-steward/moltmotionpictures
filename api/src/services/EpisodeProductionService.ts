@@ -42,7 +42,17 @@ export interface ScriptData {
     gen_clip_seconds: number;
     duration_seconds: number;
     edit_extend_strategy: string;
-    audio?: { type: string; description: string };
+    audio?: {
+      type: string;
+      description?: string;
+      voice_id?: string;
+      dialogue?: { speaker: string; line: string };
+    };
+
+    // Legacy fields (older agent schema)
+    audio_type?: string;
+    narration?: string;
+    dialogue?: { speaker: string; line: string };
   }>;
   poster_spec: {
     style: string;
@@ -81,6 +91,8 @@ export class EpisodeProductionService {
   private modalVideo: ModalVideoClient | null;
   private spaces: SpacesClient | null;
   private readonly isConfigured: boolean;
+
+  private readonly defaultTtsTimeoutMs = 120000; // TTS can take longer than prompt refinement
 
   constructor(gradient?: GradientClient, spaces?: SpacesClient, modalVideo?: ModalVideoClient) {
     // Gradient client for LLM calls (prompt refinement)
@@ -347,9 +359,97 @@ export class EpisodeProductionService {
         where: { id: episode.id },
         data: { status: successCount === VARIANT_COUNT ? 'clip_voting' : 'generating' },
       });
+
+      // Optional: generate episode-level TTS (narration/voiceover) if specified in the script
+      await this.maybeGenerateEpisodeTts(episode, series, scriptData);
     }
 
     return results;
+  }
+
+  private async maybeGenerateEpisodeTts(
+    episode: Episode,
+    series: LimitedSeries,
+    scriptData: ScriptData | null
+  ): Promise<void> {
+    // Only run when configured for both TTS generation and storage
+    if (!this.gradient || !this.spaces) return;
+    if (!scriptData) return;
+
+    // Avoid regenerating if already present
+    if ((episode as any).tts_audio_url || (episode as any).ttsAudioUrl) return;
+
+    const narrationText = this.extractNarrationText(scriptData, series);
+    if (!narrationText) return;
+
+    try {
+      const ttsResult = await this.gradient.generateTTSAndWait(narrationText, {
+        timeoutMs: this.defaultTtsTimeoutMs,
+      });
+
+      const audioResponse = await fetch(ttsResult.audio_url);
+      if (!audioResponse.ok) {
+        throw new Error(`Failed to download TTS audio: HTTP ${audioResponse.status}`);
+      }
+
+      const audioBuffer = Buffer.from(await audioResponse.arrayBuffer());
+      const contentType = ttsResult.content_type || audioResponse.headers.get('content-type') || 'audio/mpeg';
+      const ext = contentType.includes('wav') ? 'wav' : contentType.includes('mpeg') ? 'mp3' : 'mp3';
+
+      const upload = await this.spaces.upload({
+        key: `episodes/${episode.id}/tts.${ext}`,
+        body: audioBuffer,
+        contentType,
+        metadata: {
+          episodeId: String(episode.id),
+          seriesId: String(episode.series_id),
+          assetType: 'tts',
+          generatedBy: 'gradient-elevenlabs-tts',
+        },
+      });
+
+      await prisma.episode.update({
+        where: { id: episode.id },
+        data: { tts_audio_url: upload.url },
+      });
+
+      console.log(`[EpisodeProduction] TTS audio uploaded for episode ${episode.id}: ${upload.url}`);
+    } catch (error) {
+      console.warn('[EpisodeProduction] TTS generation failed (non-fatal):', error);
+    }
+  }
+
+  private extractNarrationText(scriptData: ScriptData, series: LimitedSeries): string | null {
+    const isTtsLike = (value: string) =>
+      ['tts', 'narration', 'voiceover', 'voice_over', 'voice'].includes(value);
+
+    // Preferred: structured audio directive (new schema)
+    const firstAudio = scriptData.shots?.[0]?.audio;
+    const firstAudioType = firstAudio?.type?.toLowerCase?.() ?? '';
+    if (firstAudio?.description && isTtsLike(firstAudioType)) {
+      return firstAudio.description.trim();
+    }
+
+    // Legacy: audio_type + narration
+    const firstLegacyType = scriptData.shots?.[0]?.audio_type?.toLowerCase?.() ?? '';
+    if (firstLegacyType === 'narration' && scriptData.shots?.[0]?.narration) {
+      return scriptData.shots[0].narration.trim();
+    }
+
+    // Fallback: scan for first available TTS-like directive
+    for (const shot of scriptData.shots || []) {
+      const shotAudioType = shot.audio?.type?.toLowerCase?.() ?? '';
+      if (shot.audio?.description && isTtsLike(shotAudioType)) {
+        return shot.audio.description.trim();
+      }
+
+      const legacyType = shot.audio_type?.toLowerCase?.() ?? '';
+      if (legacyType === 'narration' && shot.narration) {
+        return shot.narration.trim();
+      }
+    }
+
+    return null;
   }
 
   /**
