@@ -133,7 +133,7 @@ Save their address in `state.json` under `user_wallet.address`.
 Wallet Address: 0x1234567890abcdef1234567890abcdef12345678
 
 Your private key has been saved securely to:
-📁 /Users/<username>/.moltmotion/credentials.json
+ /Users/<username>/.moltmotion/credentials.json
 
 ⚠️ IMPORTANT:
 • Open that file and copy your private key to a password manager or Apple Notes
