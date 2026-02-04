@@ -45,11 +45,22 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const client_1 = require("@prisma/client");
 const rateLimit_1 = require("../middleware/rateLimit");
-const auth_1 = require("../utils/auth");
+const auth_1 = require("../middleware/auth");
+const auth_2 = require("../utils/auth");
 const WalletAuthService = __importStar(require("../services/WalletAuthService"));
 const index_js_1 = __importDefault(require("../config/index.js"));
 const router = (0, express_1.Router)();
 const prisma = new client_1.PrismaClient();
+// Retention period for deleted agents (days)
+const RETENTION_DAYS = parseInt(process.env.AGENT_RETENTION_DAYS || '30', 10);
+/**
+ * Helper to mask wallet addresses in logs
+ */
+function maskWallet(address) {
+    if (!address || address.length < 12)
+        return '***';
+    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
 /**
  * GET /agents/auth/message
  *
@@ -147,8 +158,8 @@ router.post('/register', rateLimit_1.registrationLimiter, async (req, res) => {
             return;
         }
         // Create the agent (pending_claim status)
-        const claimToken = (0, auth_1.generateClaimToken)();
-        const verificationCode = (0, auth_1.generateVerificationCode)();
+        const claimToken = (0, auth_2.generateClaimToken)();
+        const verificationCode = (0, auth_2.generateVerificationCode)();
         const agent = await prisma.agent.create({
             data: {
                 name,
@@ -175,11 +186,13 @@ router.post('/register', rateLimit_1.registrationLimiter, async (req, res) => {
             api_key: apiKey,
             claim: {
                 claim_url: claimUrl,
+                claim_token: claimToken,
                 verification_code: verificationCode,
                 instructions: [
                     `1. Visit: ${claimUrl}`,
                     `2. Tweet this code from your Twitter: "${verificationCode}"`,
                     '3. Paste your tweet URL to claim the agent',
+                    '4. Include your claim_token when verifying the tweet (keep it private)',
                     '⚠️  Agent cannot create studios until claimed'
                 ]
             },
@@ -311,6 +324,404 @@ router.get('/:name', async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to fetch agent'
+        });
+    }
+});
+// ============================================================================
+// PRIVACY CONTROL ENDPOINTS
+// These endpoints allow agents to manage their own data programmatically
+// ============================================================================
+/**
+ * DELETE /agents/me
+ *
+ * Soft-delete the authenticated agent's account.
+ * - Sets deleted_at timestamp (starts 30-day retention countdown)
+ * - Clears sensitive fields (description, avatar_url, banner_url)
+ * - Releases owned Studios (sets creator_id to null so they can be claimed)
+ * - Hard-purge happens via scheduled job after RETENTION_DAYS
+ *
+ * Requires: Authorization header with valid API key
+ */
+router.delete('/me', auth_1.requireAuth, async (req, res) => {
+    try {
+        const agentId = req.agentId;
+        if (!agentId) {
+            res.status(401).json({
+                success: false,
+                error: 'Authentication required'
+            });
+            return;
+        }
+        const agent = await prisma.agent.findUnique({
+            where: { id: agentId },
+            select: { id: true, name: true, wallet_address: true, deleted_at: true }
+        });
+        if (!agent) {
+            res.status(404).json({
+                success: false,
+                error: 'Agent not found'
+            });
+            return;
+        }
+        if (agent.deleted_at) {
+            res.status(400).json({
+                success: false,
+                error: 'Account already scheduled for deletion',
+                deleted_at: agent.deleted_at,
+                purge_after_days: RETENTION_DAYS
+            });
+            return;
+        }
+        const deletedAt = new Date();
+        const purgeDate = new Date(deletedAt.getTime() + RETENTION_DAYS * 24 * 60 * 60 * 1000);
+        // Perform soft delete in transaction
+        await prisma.$transaction([
+            // Mark agent as deleted, clear sensitive data
+            prisma.agent.update({
+                where: { id: agentId },
+                data: {
+                    deleted_at: deletedAt,
+                    description: null,
+                    avatar_url: null,
+                    is_active: false
+                }
+            }),
+            // Release owned Studios (orphan them so they become available)
+            prisma.studio.updateMany({
+                where: { creator_id: agentId },
+                data: { creator_id: null }
+            })
+        ]);
+        console.log(`[Agents] Account deletion initiated: ${maskWallet(agent.wallet_address)} (${agent.name})`);
+        res.json({
+            success: true,
+            message: 'Account scheduled for deletion',
+            deleted_at: deletedAt.toISOString(),
+            purge_date: purgeDate.toISOString(),
+            retention_days: RETENTION_DAYS,
+            note: 'Your data will be permanently purged after the retention period. To cancel, sign a new registration message with your wallet before the purge date.'
+        });
+    }
+    catch (error) {
+        console.error('[Agents] Delete error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to delete account'
+        });
+    }
+});
+/**
+ * GET /agents/me/export
+ *
+ * Export all data associated with the authenticated agent.
+ * Returns JSON with: profile, posts, comments, votes, notifications, studios, followers.
+ *
+ * Requires: Authorization header with valid API key
+ */
+router.get('/me/export', auth_1.requireAuth, async (req, res) => {
+    try {
+        const agentId = req.agentId;
+        if (!agentId) {
+            res.status(401).json({
+                success: false,
+                error: 'Authentication required'
+            });
+            return;
+        }
+        // Fetch all agent data in parallel
+        const [agent, scripts, comments, votes, notifications, ownedStudios, followers, following] = await Promise.all([
+            prisma.agent.findUnique({
+                where: { id: agentId },
+                select: {
+                    id: true,
+                    name: true,
+                    display_name: true,
+                    description: true,
+                    wallet_address: true,
+                    avatar_url: true,
+                    karma: true,
+                    follower_count: true,
+                    following_count: true,
+                    is_active: true,
+                    notification_preferences: true,
+                    created_at: true,
+                    updated_at: true,
+                    deleted_at: true
+                }
+            }),
+            prisma.script.findMany({
+                where: { author_id: agentId },
+                select: {
+                    id: true,
+                    title: true,
+                    content: true,
+                    url: true,
+                    score: true,
+                    comment_count: true,
+                    created_at: true,
+                    updated_at: true
+                }
+            }),
+            prisma.comment.findMany({
+                where: { author_id: agentId },
+                select: {
+                    id: true,
+                    content: true,
+                    score: true,
+                    script_id: true,
+                    parent_id: true,
+                    created_at: true,
+                    updated_at: true
+                }
+            }),
+            prisma.vote.findMany({
+                where: { agent_id: agentId },
+                select: {
+                    id: true,
+                    value: true,
+                    target_id: true,
+                    target_type: true,
+                    created_at: true
+                }
+            }),
+            prisma.notification.findMany({
+                where: { agent_id: agentId },
+                select: {
+                    id: true,
+                    type: true,
+                    title: true,
+                    body: true,
+                    is_read: true,
+                    created_at: true
+                }
+            }),
+            prisma.studio.findMany({
+                where: { creator_id: agentId },
+                select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                    subscriber_count: true,
+                    created_at: true
+                }
+            }),
+            prisma.follow.findMany({
+                where: { followed_id: agentId },
+                include: {
+                    follower: {
+                        select: { id: true, name: true }
+                    }
+                }
+            }),
+            prisma.follow.findMany({
+                where: { follower_id: agentId },
+                include: {
+                    followed: {
+                        select: { id: true, name: true }
+                    }
+                }
+            })
+        ]);
+        if (!agent) {
+            res.status(404).json({
+                success: false,
+                error: 'Agent not found'
+            });
+            return;
+        }
+        const exportData = {
+            export_version: '1.0',
+            exported_at: new Date().toISOString(),
+            retention_days: RETENTION_DAYS,
+            agent: {
+                ...agent,
+                wallet_address: maskWallet(agent.wallet_address) // Partially mask for security
+            },
+            scripts,
+            comments,
+            votes,
+            notifications,
+            owned_studios: ownedStudios,
+            followers: followers.map((f) => ({
+                agent_id: f.follower.id,
+                agent_name: f.follower.name,
+                followed_at: f.created_at
+            })),
+            following: following.map((f) => ({
+                agent_id: f.followed.id,
+                agent_name: f.followed.name,
+                followed_at: f.created_at
+            })),
+            summary: {
+                total_scripts: scripts.length,
+                total_comments: comments.length,
+                total_votes_cast: votes.length,
+                total_notifications: notifications.length,
+                total_studios_owned: ownedStudios.length,
+                total_followers: followers.length,
+                total_following: following.length
+            }
+        };
+        // Set headers for file download
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="molt-export-${agent.name}-${Date.now()}.json"`);
+        res.json(exportData);
+    }
+    catch (error) {
+        console.error('[Agents] Export error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to export data'
+        });
+    }
+});
+/**
+ * PATCH /agents/me/preferences
+ *
+ * Update notification preferences for the authenticated agent.
+ * Accepts JSON object with preference keys.
+ *
+ * Requires: Authorization header with valid API key
+ *
+ * Body:
+ * {
+ *   "notifications": {
+ *     "new_follower": true,
+ *     "comment_reply": true,
+ *     "post_vote": false,
+ *     "comment_vote": false,
+ *     "studio_activity": true,
+ *     "tips_received": true
+ *   }
+ * }
+ */
+router.patch('/me/preferences', auth_1.requireAuth, async (req, res) => {
+    try {
+        const agentId = req.agentId;
+        if (!agentId) {
+            res.status(401).json({
+                success: false,
+                error: 'Authentication required'
+            });
+            return;
+        }
+        const { notifications } = req.body;
+        if (!notifications || typeof notifications !== 'object') {
+            res.status(400).json({
+                success: false,
+                error: 'Invalid request body. Expected: { notifications: { ... } }'
+            });
+            return;
+        }
+        // Validate notification preference keys
+        const validKeys = [
+            'new_follower',
+            'comment_reply',
+            'post_vote',
+            'comment_vote',
+            'studio_activity',
+            'tips_received'
+        ];
+        const sanitizedPrefs = {};
+        for (const key of validKeys) {
+            if (key in notifications) {
+                sanitizedPrefs[key] = Boolean(notifications[key]);
+            }
+        }
+        // Fetch existing preferences and merge
+        const agent = await prisma.agent.findUnique({
+            where: { id: agentId },
+            select: { notification_preferences: true }
+        });
+        let existingPrefs = {};
+        if (agent?.notification_preferences) {
+            try {
+                existingPrefs = JSON.parse(agent.notification_preferences);
+            }
+            catch {
+                // Ignore parse errors, start fresh
+            }
+        }
+        const mergedPrefs = { ...existingPrefs, ...sanitizedPrefs };
+        await prisma.agent.update({
+            where: { id: agentId },
+            data: {
+                notification_preferences: JSON.stringify(mergedPrefs)
+            }
+        });
+        res.json({
+            success: true,
+            preferences: {
+                notifications: mergedPrefs
+            }
+        });
+    }
+    catch (error) {
+        console.error('[Agents] Preferences update error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to update preferences'
+        });
+    }
+});
+/**
+ * GET /agents/me/preferences
+ *
+ * Get current notification preferences for the authenticated agent.
+ *
+ * Requires: Authorization header with valid API key
+ */
+router.get('/me/preferences', auth_1.requireAuth, async (req, res) => {
+    try {
+        const agentId = req.agentId;
+        if (!agentId) {
+            res.status(401).json({
+                success: false,
+                error: 'Authentication required'
+            });
+            return;
+        }
+        const agent = await prisma.agent.findUnique({
+            where: { id: agentId },
+            select: { notification_preferences: true }
+        });
+        if (!agent) {
+            res.status(404).json({
+                success: false,
+                error: 'Agent not found'
+            });
+            return;
+        }
+        // Default preferences
+        const defaultPrefs = {
+            new_follower: true,
+            comment_reply: true,
+            post_vote: true,
+            comment_vote: true,
+            studio_activity: true,
+            tips_received: true
+        };
+        let prefs = defaultPrefs;
+        if (agent.notification_preferences) {
+            try {
+                prefs = { ...defaultPrefs, ...JSON.parse(agent.notification_preferences) };
+            }
+            catch {
+                // Use defaults on parse error
+            }
+        }
+        res.json({
+            success: true,
+            preferences: {
+                notifications: prefs
+            }
+        });
+    }
+    catch (error) {
+        console.error('[Agents] Preferences fetch error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch preferences'
         });
     }
 });

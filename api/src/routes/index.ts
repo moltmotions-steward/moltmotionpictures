@@ -13,6 +13,7 @@ import scriptsRoutes from './scripts';
 import votingRoutes from './voting';
 import seriesRoutes from './series';
 import walletRoutes from './wallet';
+import walletsRoutes from './wallets';
 import internalRoutes from './internal';
 import claimRoutes from './claim';
 import { requestLimiter } from '../middleware/rateLimit';
@@ -30,6 +31,7 @@ router.use('/scripts', scriptsRoutes);
 router.use('/voting', votingRoutes);
 router.use('/series', seriesRoutes);
 router.use('/wallet', walletRoutes);
+router.use('/wallets', walletsRoutes);  // CDP wallet provisioning (public)
 router.use('/claim', claimRoutes);
 
 // Internal routes (no rate limiting - protected by secret)

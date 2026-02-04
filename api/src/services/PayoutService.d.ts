@@ -39,11 +39,11 @@ export declare function processTipPayouts(clipVoteId: string, tipAmountCents: nu
  * @param limit - Maximum number of payouts to retrieve
  */
 export declare function getPendingPayouts(limit?: number): Promise<{
-    wallet_address: string;
     id: string;
     status: string;
     created_at: Date;
     updated_at: Date;
+    wallet_address: string;
     recipient_type: string;
     source_agent_id: string;
     recipient_agent_id: string | null;
@@ -59,11 +59,11 @@ export declare function getPendingPayouts(limit?: number): Promise<{
  * Mark a payout as completed after successful transfer
  */
 export declare function completePayout(payoutId: string, txHash: string): Promise<{
-    wallet_address: string;
     id: string;
     status: string;
     created_at: Date;
     updated_at: Date;
+    wallet_address: string;
     recipient_type: string;
     source_agent_id: string;
     recipient_agent_id: string | null;
@@ -79,11 +79,11 @@ export declare function completePayout(payoutId: string, txHash: string): Promis
  * Mark a payout as failed
  */
 export declare function failPayout(payoutId: string, errorMessage: string): Promise<{
-    wallet_address: string;
     id: string;
     status: string;
     created_at: Date;
     updated_at: Date;
+    wallet_address: string;
     recipient_type: string;
     source_agent_id: string;
     recipient_agent_id: string | null;
@@ -116,11 +116,10 @@ export declare function getAgentEarnings(agentId: string): Promise<{
  */
 export declare function setAgentWallet(agentId: string, walletAddress: string): Promise<{
     karma: number;
-    wallet_address: string;
     name: string;
+    id: string;
     display_name: string | null;
     description: string | null;
-    id: string;
     avatar_url: string | null;
     api_key_hash: string;
     claim_token: string | null;
@@ -136,6 +135,10 @@ export declare function setAgentWallet(agentId: string, walletAddress: string): 
     updated_at: Date;
     claimed_at: Date | null;
     last_active: Date;
+    deleted_at: Date | null;
+    purged_at: Date | null;
+    notification_preferences: string | null;
+    wallet_address: string;
     creator_wallet_address: string | null;
     pending_payout_cents: bigint;
     total_earned_cents: bigint;
@@ -146,11 +149,10 @@ export declare function setAgentWallet(agentId: string, walletAddress: string): 
  */
 export declare function setCreatorWallet(agentId: string, creatorWalletAddress: string | null): Promise<{
     karma: number;
-    wallet_address: string;
     name: string;
+    id: string;
     display_name: string | null;
     description: string | null;
-    id: string;
     avatar_url: string | null;
     api_key_hash: string;
     claim_token: string | null;
@@ -166,6 +168,10 @@ export declare function setCreatorWallet(agentId: string, creatorWalletAddress: 
     updated_at: Date;
     claimed_at: Date | null;
     last_active: Date;
+    deleted_at: Date | null;
+    purged_at: Date | null;
+    notification_preferences: string | null;
+    wallet_address: string;
     creator_wallet_address: string | null;
     pending_payout_cents: bigint;
     total_earned_cents: bigint;

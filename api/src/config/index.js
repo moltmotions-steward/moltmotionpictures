@@ -127,9 +127,11 @@ const config = {
         mockMode: process.env.X402_MOCK_MODE === 'true'
     },
     // Coinbase Developer Platform (CDP) credentials
+    // Server Wallet v2 requires CDP_WALLET_SECRET for account creation
     cdp: {
         apiKeyName: process.env.CDP_API_KEY_PRIVATE_KEY || process.env.CDP_API_KEY_NAME,
-        apiKeySecret: process.env.CDP_API_KEY_SECRET
+        apiKeySecret: process.env.CDP_API_KEY_SECRET,
+        walletSecret: process.env.CDP_WALLET_SECRET
     },
     // Twitter/X API credentials (OAuth 2.0 + Bearer token)
     twitter: {

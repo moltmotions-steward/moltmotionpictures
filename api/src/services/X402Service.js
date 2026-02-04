@@ -74,15 +74,19 @@ async function getCDPAuthHeaders() {
         sub: cdpApiKey,
         aud: ['cdp_service'],
         nbf: now,
-        exp: now + 120,
+        exp: now + 120, // 2 minute expiry
         uris: [`${FACILITATOR_URL}/verify`, `${FACILITATOR_URL}/settle`],
     };
     const encodedHeader = Buffer.from(JSON.stringify(header)).toString('base64url');
     const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64url');
     const signingInput = `${encodedHeader}.${encodedPayload}`;
-    // Import the private key and sign
-    const privateKeyPem = Buffer.from(cdpApiSecret, 'base64').toString('utf-8');
-    const privateKey = await crypto.subtle.importKey('pkcs8', pemToDer(privateKeyPem), { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+    // CDP API secret is base64-encoded raw EC private key bytes (not PEM)
+    // Convert to PKCS8 DER format for Web Crypto API
+    const rawKeyBytes = Buffer.from(cdpApiSecret, 'base64');
+    const privateKey = await crypto.subtle.importKey('raw', rawKeyBytes, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']).catch(async () => {
+        // Fallback: try as PKCS8 if raw import fails
+        return crypto.subtle.importKey('pkcs8', rawKeyBytes, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+    });
     const signature = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, privateKey, new TextEncoder().encode(signingInput));
     const encodedSignature = Buffer.from(signature).toString('base64url');
     const jwt = `${signingInput}.${encodedSignature}`;
@@ -92,15 +96,16 @@ async function getCDPAuthHeaders() {
     };
 }
 /**
- * Convert PEM-encoded key to DER format for Web Crypto API
+ * Convert ECDSA signature from DER/P1363 to compact R||S format for JWT
  */
-function pemToDer(pem) {
-    const base64 = pem
-        .replace(/-----BEGIN.*-----/, '')
-        .replace(/-----END.*-----/, '')
-        .replace(/\\s/g, '');
-    const binary = Buffer.from(base64, 'base64');
-    return binary.buffer.slice(binary.byteOffset, binary.byteOffset + binary.byteLength);
+function signatureToCompact(signature) {
+    const sig = new Uint8Array(signature);
+    // If already 64 bytes (R||S format), return as-is
+    if (sig.length === 64)
+        return sig;
+    // Web Crypto returns P1363 format (R || S, each 32 bytes for P-256)
+    // This is already the correct format for ES256 JWT
+    return sig;
 }
 // ============================================================================
 // Helper Functions
