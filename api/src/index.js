@@ -15,6 +15,7 @@ const server = app_js_1.default.listen(PORT, () => {
     console.log(`   Environment: ${index_js_1.default.nodeEnv}`);
     console.log(`   x402 Wallet: ${index_js_1.default.x402.platformWallet ? '✓ Configured' : '✗ Not set'}`);
     console.log(`   CDP API Key: ${index_js_1.default.cdp.apiKeyName ? '✓ Configured' : '✗ Not set'}`);
+    console.log(`   CDP Wallet Secret: ${index_js_1.default.cdp.walletSecret ? '✓ Configured' : '✗ Not set'}`);
 });
 let isShuttingDown = false;
 async function shutdown(signal) {

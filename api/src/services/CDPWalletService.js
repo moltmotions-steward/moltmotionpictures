@@ -23,7 +23,13 @@ exports.isValidAddress = isValidAddress;
 exports.isConfigured = isConfigured;
 exports.getNetworkInfo = getNetworkInfo;
 const cdp_sdk_1 = require("@coinbase/cdp-sdk");
+const uuid_1 = require("uuid");
 const index_js_1 = __importDefault(require("../config/index.js"));
+// ============================================================================
+// Constants
+// ============================================================================
+// Namespace UUID for generating deterministic short names from agent IDs
+const MOLT_NAMESPACE_UUID = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
 // ============================================================================
 // CDP Client Singleton
 // ============================================================================
@@ -76,22 +82,44 @@ const EXPLORER_BASE_URL = IS_PRODUCTION
  */
 async function createWalletForAgent(agentId) {
     const cdp = getCdpClient();
-    // Idempotency key ensures same agent always gets same wallet
-    const idempotencyKey = `molt-agent-${agentId}`;
+    // CDP account name requirements: alphanumeric + hyphens, 2-36 chars
+    // Generate a deterministic short name from agentId using UUID v5
+    // Then take first 32 chars (leaving room for "m-" prefix)
+    const deterministicUuid = (0, uuid_1.v5)(agentId, MOLT_NAMESPACE_UUID);
+    // Remove hyphens from UUID and prefix with "m-" for molt
+    const accountName = `m-${deterministicUuid.replace(/-/g, '').substring(0, 32)}`;
+    // Fresh UUID v4 for idempotency key (required by CDP API)
+    const idempotencyKey = (0, uuid_1.v4)();
     try {
-        // Create or retrieve EVM account
-        // getOrCreateAccount would be ideal, but createAccount with idempotencyKey
-        // achieves the same effect
+        // Try to get existing account by name first
+        try {
+            const existingAccount = await cdp.evm.getAccount({ name: accountName });
+            if (existingAccount) {
+                console.log(`[CDPWalletService] Retrieved existing wallet for agent ${agentId}: ${existingAccount.address}`);
+                return {
+                    address: existingAccount.address,
+                    network: NETWORK,
+                    explorerUrl: `${EXPLORER_BASE_URL}${existingAccount.address}`,
+                    isNew: false,
+                };
+            }
+        }
+        catch (getError) {
+            // Account doesn't exist, proceed to create
+            console.log(`[CDPWalletService] No existing wallet for agent ${agentId}, creating new one...`);
+        }
+        // Create new EVM account with name for determinism
         const account = await cdp.evm.createAccount({
+            name: accountName,
             idempotencyKey,
         });
         const address = account.address;
-        console.log(`[CDPWalletService] Created/retrieved wallet for agent ${agentId}: ${address}`);
+        console.log(`[CDPWalletService] Created wallet for agent ${agentId}: ${address}`);
         return {
             address,
             network: NETWORK,
             explorerUrl: `${EXPLORER_BASE_URL}${address}`,
-            isNew: true, // CDP doesn't tell us if it was newly created vs retrieved
+            isNew: true,
         };
     }
     catch (error) {

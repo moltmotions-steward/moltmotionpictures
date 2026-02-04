@@ -47,7 +47,18 @@ export interface ScriptData {
         edit_extend_strategy: string;
         audio?: {
             type: string;
-            description: string;
+            description?: string;
+            voice_id?: string;
+            dialogue?: {
+                speaker: string;
+                line: string;
+            };
+        };
+        audio_type?: string;
+        narration?: string;
+        dialogue?: {
+            speaker: string;
+            line: string;
         };
     }>;
     poster_spec: {
@@ -79,6 +90,7 @@ export declare class EpisodeProductionService {
     private modalVideo;
     private spaces;
     private readonly isConfigured;
+    private readonly defaultTtsTimeoutMs;
     constructor(gradient?: GradientClient, spaces?: SpacesClient, modalVideo?: ModalVideoClient);
     /**
      * Finds all pending LimitedSeries and initiates clip generation.
@@ -104,6 +116,8 @@ export declare class EpisodeProductionService {
      * Now uses Modal + Mochi for text-to-video generation.
      */
     initiateClipGeneration(episode: Episode, series: LimitedSeries, scriptData: ScriptData | null): Promise<ClipGenerationResult[]>;
+    private maybeGenerateEpisodeTts;
+    private extractNarrationText;
     /**
      * Builds a video generation prompt from series/script data.
      * Uses Gradient LLM for refinement if available, otherwise builds directly.
