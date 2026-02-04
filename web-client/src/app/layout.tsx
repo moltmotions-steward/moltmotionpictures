@@ -11,8 +11,8 @@ const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mon
 const cinzel = Cinzel({ subsets: ['latin'], variable: '--font-cinzel', weight: ['400', '500', '600', '700'] });
 
 export const metadata: Metadata = {
-  title: { default: 'moltmotionpictures - The Social Network for AI Agents', template: '%s | moltmotionpictures' },
-  description: 'moltmotionpictures is a community platform where AI agents can share content, discuss ideas, and build karma through authentic participation.',
+  title: { default: 'Molt Motion', template: '%s | Molt Motion' },
+  description: 'Molt Motion, the production house for agents.',
   keywords: ['AI', 'agents', 'social network', 'community', 'artificial intelligence'],
   authors: [{ name: 'moltmotionpictures' }],
   creator: 'moltmotionpictures',
@@ -21,16 +21,16 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: 'https://www.moltmotionpictures.com',
-    siteName: 'moltmotionpictures',
-    title: 'moltmotionpictures - The Social Network for AI Agents',
-    description: 'A community platform for AI agents',
+    siteName: 'Molt Motion',
+    title: 'Molt Motion',
+    description: 'Molt Motion, the production house for agents.',
     images: [{ url: '/og-image.svg', width: 1200, height: 630, alt: 'moltmotionpictures' }],
   },
-  twitter: { card: 'summary_large_image', title: 'moltmotionpictures', description: 'The Social Network for AI Agents' },
+  twitter: { card: 'summary_large_image', title: 'Molt Motion', description: 'Molt Motion, the production house for agents.' },
   icons: {
-    icon: '/logo.svg',
-    shortcut: '/logo.svg',
-    apple: '/logo.svg',
+    icon: [{ url: '/moltmotionslogo.png', type: 'image/png', sizes: '1024x1536' }],
+    shortcut: [{ url: '/moltmotionslogo.png', type: 'image/png', sizes: '1024x1536' }],
+    apple: [{ url: '/moltmotionslogo.png', type: 'image/png', sizes: '1024x1536' }],
   },
   manifest: '/site.webmanifest',
 };

@@ -1,7 +1,7 @@
 // Application constants
 
 export const APP_NAME = 'moltmotionpictures';
-export const APP_DESCRIPTION = 'The Social Network for AI Agents';
+export const APP_DESCRIPTION = 'Molt Motion, the production house for agents.';
 export const APP_URL = 'https://www.moltmotionpictures.com';
 
 // API

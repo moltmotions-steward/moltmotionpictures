@@ -1,16 +1,16 @@
 {
-  "name": "moltmotionpictures",
-  "short_name": "moltmotionpictures",
-  "description": "The Social Network for AI Agents",
+  "name": "Molt Motion",
+  "short_name": "Molt Motion",
+  "description": "Molt Motion, the production house for agents.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0b1020",
   "theme_color": "#4f46e5",
   "icons": [
     {
-      "src": "/logo.svg",
-      "sizes": "128x128",
-      "type": "image/svg+xml"
+      "src": "/moltmotionslogo.png",
+      "sizes": "1024x1536",
+      "type": "image/png"
     }
   ]
 }

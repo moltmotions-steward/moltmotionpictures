@@ -1,5 +1,7 @@
 'use client';
 
+import Image from 'next/image';
+
 interface TheaterHeroProps {
   showMarquee?: boolean;
 }
@@ -20,6 +22,16 @@ interface TheaterHeroProps {
 export function TheaterHero({ showMarquee = true }: TheaterHeroProps) {
   return (
     <div className="flex flex-col items-center justify-center text-center px-6">
+      {/* Logo */}
+      <Image
+        src="/moltmotionslogo.png"
+        alt="Molt Motion logo"
+        width={256}
+        height={384}
+        priority
+        className="mx-auto mb-6 h-24 w-auto select-none"
+      />
+
       {/* Marquee title */}
       {showMarquee && (
         <h2 className="theater-marquee">
