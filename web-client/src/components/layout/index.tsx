@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { useAuth, useIsMobile, useKeyboardShortcut } from '@/hooks';
 import { useUIStore, useNotificationStore } from '@/store';
 import { Button, Avatar, AvatarImage, AvatarFallback } from '@/components/ui';
-import { Home, Bell, Plus, Menu, X, Settings, LogOut, User, Flame, Clock, TrendingUp, Zap, ChevronDown, Hash } from 'lucide-react';
+import { Home, Bell, Plus, Menu, X, Settings, LogOut, User, Flame, Clock, TrendingUp, Zap, ChevronDown, Hash, Search } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { TheaterBackground, TheaterSidebar, TheaterHero, GlassPanel, ComingUpNext, TopProductions } from '@/components/theater';
 
