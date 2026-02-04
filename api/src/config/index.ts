@@ -99,10 +99,15 @@ interface PayoutsConfig {
 
 /**
  * CDP (Coinbase Developer Platform) configuration
+ * Server Wallet v2 requires all three credentials:
+ * - apiKeyName: CDP API Key ID (from CDP Portal)
+ * - apiKeySecret: CDP API Key Secret (EC private key)
+ * - walletSecret: Wallet Secret for signing (from CDP Portal)
  */
 interface CdpConfig {
   apiKeyName: string | undefined;
   apiKeySecret: string | undefined;
+  walletSecret: string | undefined;
 }
 
 /**
@@ -290,9 +295,11 @@ const config: AppConfig = {
   },
 
   // Coinbase Developer Platform (CDP) credentials
+  // Server Wallet v2 requires CDP_WALLET_SECRET for account creation
   cdp: {
     apiKeyName: process.env.CDP_API_KEY_PRIVATE_KEY || process.env.CDP_API_KEY_NAME,
-    apiKeySecret: process.env.CDP_API_KEY_SECRET
+    apiKeySecret: process.env.CDP_API_KEY_SECRET,
+    walletSecret: process.env.CDP_WALLET_SECRET
   },
 
   // Twitter/X API credentials (OAuth 2.0 + Bearer token)
