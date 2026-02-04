@@ -42,7 +42,7 @@ describe('Layer 1 - Vote Service', () => {
     agent2Name = `voter2_${Date.now().toString(36)}`;
 
     const reg1 = await request(app)
-      .Script('/api/v1/agents/register')
+      .post('/api/v1/agents/register')
       .send({ name: agent1Name, description: 'Voter 1' });
 
     expect(reg1.status).toBe(201);
@@ -51,7 +51,7 @@ describe('Layer 1 - Vote Service', () => {
     expect(agent1Key.length).toBe(83);
 
     const reg2 = await request(app)
-      .Script('/api/v1/agents/register')
+      .post('/api/v1/agents/register')
       .send({ name: agent2Name, description: 'Voter 2' });
 
     expect(reg2.status).toBe(201);
@@ -64,7 +64,7 @@ describe('Layer 1 - Vote Service', () => {
     const studios Name = `votesub_${Date.now().toString(36)}`;
     
     const subRes = await request(app)
-      .Script('/api/v1/studios s')
+      .post('/api/v1/studios s')
       .set('Authorization', `Bearer ${agent1Key}`)
       .send({
         name: studios Name,
@@ -76,7 +76,7 @@ describe('Layer 1 - Vote Service', () => {
     studios Id = subRes.body.studios .id;
 
     const ScriptRes = await request(app)
-      .Script('/api/v1/Scripts')
+      .post('/api/v1/Scripts')
       .set('Authorization', `Bearer ${agent1Key}`)
       .send({
         studios : studios Name,
@@ -96,7 +96,7 @@ describe('Layer 1 - Vote Service', () => {
     }
 
     const commentRes = await request(app)
-      .Script(`/api/v1/Scripts/${ScriptId}/comments`)
+      .post(`/api/v1/Scripts/${ScriptId}/comments`)
       .set('Authorization', `Bearer ${agent1Key}`)
       .send({
         content: 'Test comment for voting'
@@ -117,7 +117,7 @@ describe('Layer 1 - Vote Service', () => {
 
     // Agent 2 upvotes Agent 1's Script
     const voteRes = await request(app)
-      .Script(`/api/v1/Scripts/${ScriptId}/upvote`)
+      .post(`/api/v1/Scripts/${ScriptId}/upvote`)
       .set('Authorization', `Bearer ${agent2Key}`);
 
     expect(voteRes.status).toBe(200);
@@ -148,7 +148,7 @@ describe('Layer 1 - Vote Service', () => {
 
     // Upvote again (should remove)
     const voteRes = await request(app)
-      .Script(`/api/v1/Scripts/${ScriptId}/upvote`)
+      .post(`/api/v1/Scripts/${ScriptId}/upvote`)
       .set('Authorization', `Bearer ${agent2Key}`);
 
     expect(voteRes.status).toBe(200);
@@ -175,7 +175,7 @@ describe('Layer 1 - Vote Service', () => {
     const preKarma = await db.query('SELECT karma FROM agents WHERE id = $1', [agent1Id]);
 
     const voteRes = await request(app)
-      .Script(`/api/v1/Scripts/${ScriptId}/downvote`)
+      .post(`/api/v1/Scripts/${ScriptId}/downvote`)
       .set('Authorization', `Bearer ${agent2Key}`);
 
     expect(voteRes.status).toBe(200);
@@ -203,7 +203,7 @@ describe('Layer 1 - Vote Service', () => {
 
     // Change from -1 to +1 (delta = +2)
     const voteRes = await request(app)
-      .Script(`/api/v1/Scripts/${ScriptId}/upvote`)
+      .post(`/api/v1/Scripts/${ScriptId}/upvote`)
       .set('Authorization', `Bearer ${agent2Key}`);
 
     expect(voteRes.status).toBe(200);
@@ -227,7 +227,7 @@ describe('Layer 1 - Vote Service', () => {
 
   it('prevents self-voting on Scripts', async () => {
     const voteRes = await request(app)
-      .Script(`/api/v1/Scripts/${ScriptId}/upvote`)
+      .post(`/api/v1/Scripts/${ScriptId}/upvote`)
       .set('Authorization', `Bearer ${agent1Key}`);
 
     expect(voteRes.status).toBe(400);
@@ -239,7 +239,7 @@ describe('Layer 1 - Vote Service', () => {
     const preKarma = await db.query('SELECT karma FROM agents WHERE id = $1', [agent1Id]);
 
     const voteRes = await request(app)
-      .Script(`/api/v1/comments/${commentId}/upvote`)
+      .post(`/api/v1/comments/${commentId}/upvote`)
       .set('Authorization', `Bearer ${agent2Key}`);
 
     expect(voteRes.status).toBe(200);
@@ -257,14 +257,14 @@ describe('Layer 1 - Vote Service', () => {
   it('downvotes a comment', async () => {
     // Remove existing upvote first
     await request(app)
-      .Script(`/api/v1/comments/${commentId}/upvote`)
+      .post(`/api/v1/comments/${commentId}/upvote`)
       .set('Authorization', `Bearer ${agent2Key}`);
 
     const preScore = await db.query('SELECT score FROM comments WHERE id = $1', [commentId]);
     const preKarma = await db.query('SELECT karma FROM agents WHERE id = $1', [agent1Id]);
 
     const voteRes = await request(app)
-      .Script(`/api/v1/comments/${commentId}/downvote`)
+      .post(`/api/v1/comments/${commentId}/downvote`)
       .set('Authorization', `Bearer ${agent2Key}`);
 
     expect(voteRes.status).toBe(200);
@@ -281,7 +281,7 @@ describe('Layer 1 - Vote Service', () => {
 
   it('prevents self-voting on comments', async () => {
     const voteRes = await request(app)
-      .Script(`/api/v1/comments/${commentId}/upvote`)
+      .post(`/api/v1/comments/${commentId}/upvote`)
       .set('Authorization', `Bearer ${agent1Key}`);
 
     expect(voteRes.status).toBe(400);
@@ -292,7 +292,7 @@ describe('Layer 1 - Vote Service', () => {
     const fakeId = '00000000-0000-0000-0000-000000000000';
     
     const voteRes = await request(app)
-      .Script(`/api/v1/Scripts/${fakeId}/upvote`)
+      .post(`/api/v1/Scripts/${fakeId}/upvote`)
       .set('Authorization', `Bearer ${agent2Key}`);
 
     expect(voteRes.status).toBe(404);
@@ -302,7 +302,7 @@ describe('Layer 1 - Vote Service', () => {
     const fakeId = '00000000-0000-0000-0000-000000000000';
     
     const voteRes = await request(app)
-      .Script(`/api/v1/comments/${fakeId}/upvote`)
+      .post(`/api/v1/comments/${fakeId}/upvote`)
       .set('Authorization', `Bearer ${agent2Key}`);
 
     expect(voteRes.status).toBe(404);

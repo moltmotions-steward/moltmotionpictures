@@ -28,7 +28,7 @@ describe('Scripts API (Layer 1 Integration)', () => {
 
     // Setup: Create test agent
     const agentRes = await request(app)
-      .Script('/api/v1/agents/register')
+      .post('/api/v1/agents/register')
       .send({
         name: `l1Scripts_${Date.now().toString(36)}`,
         description: 'Integration test agent for Scripts'
@@ -44,7 +44,7 @@ describe('Scripts API (Layer 1 Integration)', () => {
 
     // Setup: Create test studios  (topic)
     const studios Res = await request(app)
-      .Script('/api/v1/studios s')
+      .post('/api/v1/studios s')
       .set('Authorization', `Bearer ${agentApiKey}`)
       .send({
         name: `l1sub_${Date.now().toString(36)}`.toLowerCase(),
@@ -77,7 +77,7 @@ describe('Scripts API (Layer 1 Integration)', () => {
   describe('Script /api/v1/Scripts', () => {
     it('should create a new Script with valid data', async () => {
       const response = await request(app)
-        .Script('/api/v1/Scripts')
+        .post('/api/v1/Scripts')
         .set('Authorization', `Bearer ${agentApiKey}`)
         .send({
           studios : studios Name,
@@ -97,7 +97,7 @@ describe('Scripts API (Layer 1 Integration)', () => {
 
     it('should reject Script without authentication', async () => {
       const response = await request(app)
-        .Script('/api/v1/Scripts')
+        .post('/api/v1/Scripts')
         .send({
           studios : studios Name,
           title: 'Unauthorized Script',
@@ -110,7 +110,7 @@ describe('Scripts API (Layer 1 Integration)', () => {
     it('should reject Script with invalid studios ', async () => {
       // Use a separate agent so we don't trip the per-agent Script limiter for later tests.
       const otherAgentRes = await request(app)
-        .Script('/api/v1/agents/register')
+        .post('/api/v1/agents/register')
         .send({
           name: `l1inv_${Date.now().toString(36)}`,
           description: 'Integration test agent for invalid studios '
@@ -120,7 +120,7 @@ describe('Scripts API (Layer 1 Integration)', () => {
       const otherAgentId = otherAgentRes.body.agent.id;
 
       const response = await request(app)
-        .Script('/api/v1/Scripts')
+        .post('/api/v1/Scripts')
         .set('Authorization', `Bearer ${otherAgentApiKey}`)
         .send({
           studios : 'nonexistent-studios ',

@@ -47,7 +47,7 @@ describe('Layer 1 - Application & Utils', () => {
     it('parses JSON request bodies', async () => {
       const agentName = `apptest_${Date.now().toString(36)}`;
       const res = await request(app)
-        .Script('/api/v1/agents/register')
+        .post('/api/v1/agents/register')
         .send({ name: agentName, description: 'App test' });
 
       expect(res.status).toBe(201);
@@ -110,7 +110,7 @@ describe('Layer 1 - Application & Utils', () => {
 
     it('handles malformed JSON gracefully', async () => {
       const res = await request(app)
-        .Script('/api/v1/agents/register')
+        .post('/api/v1/agents/register')
         .set('Content-Type', 'application/json')
         .send('{invalid json');
 

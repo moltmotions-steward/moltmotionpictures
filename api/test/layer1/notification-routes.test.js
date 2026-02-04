@@ -19,7 +19,7 @@ describe('Layer 1 - Notification Routes', () => {
     // Create test agent (receiver of notifications)
     testAgentName = `notify_${Date.now().toString(36)}`;
     const res1 = await request(app)
-      .Script('/api/v1/agents/register')
+      .post('/api/v1/agents/register')
       .send({ name: testAgentName, description: 'Notification test agent' });
     
     testAgentId = res1.body.agent.id;
@@ -28,7 +28,7 @@ describe('Layer 1 - Notification Routes', () => {
     // Create actor agent (triggers notifications)
     actorAgentName = `actor_${Date.now().toString(36)}`;
     const res2 = await request(app)
-      .Script('/api/v1/agents/register')
+      .post('/api/v1/agents/register')
       .send({ name: actorAgentName, description: 'Actor agent' });
     
     actorAgentId = res2.body.agent.id;
@@ -105,7 +105,7 @@ describe('Layer 1 - Notification Routes', () => {
   describe('Script /notifications/:id/read', () => {
     it('marks notification as read', async () => {
       const res = await request(app)
-        .Script(`/api/v1/notifications/${notificationId}/read`)
+        .post(`/api/v1/notifications/${notificationId}/read`)
         .set('Authorization', `Bearer ${testApiKey}`);
 
       expect(res.status).toBe(200);
@@ -121,7 +121,7 @@ describe('Layer 1 - Notification Routes', () => {
 
     it('returns 401 without auth', async () => {
       const res = await request(app)
-        .Script(`/api/v1/notifications/${notificationId}/read`);
+        .post(`/api/v1/notifications/${notificationId}/read`);
 
       expect(res.status).toBe(401);
     });
@@ -139,7 +139,7 @@ describe('Layer 1 - Notification Routes', () => {
 
     it('marks all notifications as read', async () => {
       const res = await request(app)
-        .Script('/api/v1/notifications/read-all')
+        .post('/api/v1/notifications/read-all')
         .set('Authorization', `Bearer ${testApiKey}`);
 
       expect(res.status).toBe(200);
@@ -155,7 +155,7 @@ describe('Layer 1 - Notification Routes', () => {
 
     it('returns 401 without auth', async () => {
       const res = await request(app)
-        .Script('/api/v1/notifications/read-all');
+        .post('/api/v1/notifications/read-all');
 
       expect(res.status).toBe(401);
     });
@@ -165,7 +165,7 @@ describe('Layer 1 - Notification Routes', () => {
     it('creates notification when someone follows', async () => {
       // Actor follows test agent
       await request(app)
-        .Script(`/api/v1/agents/${testAgentName}/follow`)
+        .post(`/api/v1/agents/${testAgentName}/follow`)
         .set('Authorization', `Bearer ${actorApiKey}`);
 
       // Check for follow notification

@@ -20,7 +20,7 @@ describe('Layer 1 - studios  Routes Extended', () => {
     // Create studios  creator
     creatorName = `creator_${Date.now().toString(36)}`;
     const res1 = await request(app)
-      .Script('/api/v1/agents/register')
+      .post('/api/v1/agents/register')
       .send({ name: creatorName, description: 'studios  creator' });
     
     creatorId = res1.body.agent.id;
@@ -29,7 +29,7 @@ describe('Layer 1 - studios  Routes Extended', () => {
     // Create member agent
     memberName = `member_${Date.now().toString(36)}`;
     const res2 = await request(app)
-      .Script('/api/v1/agents/register')
+      .post('/api/v1/agents/register')
       .send({ name: memberName, description: 'studios  member' });
     
     memberId = res2.body.agent.id;
@@ -38,7 +38,7 @@ describe('Layer 1 - studios  Routes Extended', () => {
     // Create test studios 
     teststudios Name = `subext${Date.now().toString(36)}`;
     const subRes = await request(app)
-      .Script('/api/v1/studios s')
+      .post('/api/v1/studios s')
       .set('Authorization', `Bearer ${creatorApiKey}`)
       .send({ name: teststudios Name, description: 'Extended test studios ' });
     
@@ -132,7 +132,7 @@ describe('Layer 1 - studios  Routes Extended', () => {
   describe('Script /studios s/:name/subscribe', () => {
     it('subscribes to studios ', async () => {
       const res = await request(app)
-        .Script(`/api/v1/studios s/${teststudios Name}/subscribe`)
+        .post(`/api/v1/studios s/${teststudios Name}/subscribe`)
         .set('Authorization', `Bearer ${memberApiKey}`);
 
       expect(res.status).toBe(200);
@@ -150,7 +150,7 @@ describe('Layer 1 - studios  Routes Extended', () => {
     it('unsubscribes from studios ', async () => {
       // First ensure subscribed
       await request(app)
-        .Script(`/api/v1/studios s/${teststudios Name}/subscribe`)
+        .post(`/api/v1/studios s/${teststudios Name}/subscribe`)
         .set('Authorization', `Bearer ${memberApiKey}`);
 
       const res = await request(app)
@@ -185,7 +185,7 @@ describe('Layer 1 - studios  Routes Extended', () => {
   describe('Script /studios s/:name/moderators', () => {
     it('adds moderator successfully', async () => {
       const res = await request(app)
-        .Script(`/api/v1/studios s/${teststudios Name}/moderators`)
+        .post(`/api/v1/studios s/${teststudios Name}/moderators`)
         .set('Authorization', `Bearer ${creatorApiKey}`)
         .send({ agent_name: memberName, role: 'moderator' });
 
@@ -204,7 +204,7 @@ describe('Layer 1 - studios  Routes Extended', () => {
     it('removes moderator successfully', async () => {
       // Ensure member is moderator first
       await request(app)
-        .Script(`/api/v1/studios s/${teststudios Name}/moderators`)
+        .post(`/api/v1/studios s/${teststudios Name}/moderators`)
         .set('Authorization', `Bearer ${creatorApiKey}`)
         .send({ agent_name: memberName, role: 'moderator' });
 

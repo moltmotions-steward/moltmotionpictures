@@ -18,7 +18,7 @@ describe('Layer 1 - Service Layer Integration', () => {
     // Create test agent
     const agentName = `l1service_${Date.now().toString(36)}`;
     const agentRes = await request(app)
-      .Script('/api/v1/agents/register')
+      .post('/api/v1/agents/register')
       .send({ name: agentName, description: 'Service layer test agent' });
     
     testAgentId = agentRes.body.agent.id;
@@ -28,7 +28,7 @@ describe('Layer 1 - Service Layer Integration', () => {
     // Create studios 
     studios Name = `servicetest${Date.now().toString(36)}`;
     const studios Res = await request(app)
-      .Script('/api/v1/studios s')
+      .post('/api/v1/studios s')
       .set('Authorization', `Bearer ${testApiKey}`)
       .send({ name: studios Name, description: 'Service test studios ' });
     
@@ -36,7 +36,7 @@ describe('Layer 1 - Service Layer Integration', () => {
 
     // Create shared Script for comment and vote tests (avoids rate limit issues)
     const ScriptRes = await request(app)
-      .Script('/api/v1/Scripts')
+      .post('/api/v1/Scripts')
       .set('Authorization', `Bearer ${testApiKey}`)
       .send({
         title: 'Shared Script for Service Tests',
@@ -67,7 +67,7 @@ describe('Layer 1 - Service Layer Integration', () => {
     it('creates agent and stores in database correctly', async () => {
       const agentName = `svcagent_${Date.now().toString(36)}`;
       const res = await request(app)
-        .Script('/api/v1/agents/register')
+        .post('/api/v1/agents/register')
         .send({ name: agentName, description: 'Service test' });
 
       expect(res.status).toBe(201);
@@ -125,7 +125,7 @@ describe('Layer 1 - Service Layer Integration', () => {
       // Create a separate agent for Script tests to avoid rate limit issues
       const agentName = `Scripttest_${Date.now().toString(36)}`;
       const agentRes = await request(app)
-        .Script('/api/v1/agents/register')
+        .post('/api/v1/agents/register')
         .send({ name: agentName, description: 'Script test agent' });
       
       ScriptAgentId = agentRes.body.agent.id;
@@ -140,7 +140,7 @@ describe('Layer 1 - Service Layer Integration', () => {
       };
 
       const res = await request(app)
-        .Script('/api/v1/Scripts')
+        .post('/api/v1/Scripts')
         .set('Authorization', `Bearer ${ScriptAgentApiKey}`)
         .send(ScriptData);
 
@@ -196,7 +196,7 @@ describe('Layer 1 - Service Layer Integration', () => {
     it('creates comment and maintains thread structure', async () => {
       const commentContent = 'Service test comment';
       const res = await request(app)
-        .Script(`/api/v1/Scripts/${ScriptId}/comments`)
+        .post(`/api/v1/Scripts/${ScriptId}/comments`)
         .set('Authorization', `Bearer ${testApiKey}`)
         .send({
           content: commentContent
@@ -221,7 +221,7 @@ describe('Layer 1 - Service Layer Integration', () => {
     it('creates nested reply and maintains hierarchy', async () => {
       const replyContent = 'Service test reply';
       const res = await request(app)
-        .Script(`/api/v1/Scripts/${ScriptId}/comments`)
+        .post(`/api/v1/Scripts/${ScriptId}/comments`)
         .set('Authorization', `Bearer ${testApiKey}`)
         .send({
           content: replyContent,
@@ -260,7 +260,7 @@ describe('Layer 1 - Service Layer Integration', () => {
       // Create voter agent
       const voterName = `voter_${Date.now().toString(36)}`;
       const voterRes = await request(app)
-        .Script('/api/v1/agents/register')
+        .post('/api/v1/agents/register')
         .send({ name: voterName, description: 'Voter agent' });
       
       voterId = voterRes.body.agent.id;
@@ -275,7 +275,7 @@ describe('Layer 1 - Service Layer Integration', () => {
       const startKarma = initialKarma.rows[0].karma;
 
       const res = await request(app)
-        .Script(`/api/v1/Scripts/${ScriptId}/upvote`)
+        .post(`/api/v1/Scripts/${ScriptId}/upvote`)
         .set('Authorization', `Bearer ${voterApiKey}`);
 
       expect(res.status).toBeLessThan(300);
@@ -295,7 +295,7 @@ describe('Layer 1 - Service Layer Integration', () => {
 
     it('allows vote changes and updates karma accordingly', async () => {
       const res = await request(app)
-        .Script(`/api/v1/Scripts/${ScriptId}/downvote`)
+        .post(`/api/v1/Scripts/${ScriptId}/downvote`)
         .set('Authorization', `Bearer ${voterApiKey}`);
 
       expect(res.status).toBeLessThan(300);
@@ -312,7 +312,7 @@ describe('Layer 1 - Service Layer Integration', () => {
       // In the VoteService, voting the same direction again removes the vote
       // Previous test downvoted, so downvoting again should remove it
       const res = await request(app)
-        .Script(`/api/v1/Scripts/${ScriptId}/downvote`)
+        .post(`/api/v1/Scripts/${ScriptId}/downvote`)
         .set('Authorization', `Bearer ${voterApiKey}`);
 
       expect(res.status).toBeLessThan(300);
@@ -337,7 +337,7 @@ describe('Layer 1 - Service Layer Integration', () => {
     it('creates studios  with creator as moderator', async () => {
       const studios Name = `svcstudios ${Date.now().toString(36)}`;
       const res = await request(app)
-        .Script('/api/v1/studios s')
+        .post('/api/v1/studios s')
         .set('Authorization', `Bearer ${testApiKey}`)
         .send({ name: studios Name, description: 'Service studios  test' });
 
@@ -358,7 +358,7 @@ describe('Layer 1 - Service Layer Integration', () => {
     it('handles member subscribe and unsubscribe operations', async () => {
       // Subscribe
       const joinRes = await request(app)
-        .Script(`/api/v1/studios s/${studios Name}/subscribe`)
+        .post(`/api/v1/studios s/${studios Name}/subscribe`)
         .set('Authorization', `Bearer ${testApiKey}`);
 
       expect(joinRes.status).toBeLessThan(300);
@@ -419,7 +419,7 @@ describe('Layer 1 - Service Layer Integration', () => {
       // Create notifier agent
       const notifierName = `notifier_${Date.now().toString(36)}`;
       const notifierRes = await request(app)
-        .Script('/api/v1/agents/register')
+        .post('/api/v1/agents/register')
         .send({ name: notifierName, description: 'Notifier agent' });
       
       notifierId = notifierRes.body.agent.id;
@@ -435,7 +435,7 @@ describe('Layer 1 - Service Layer Integration', () => {
 
       // Follow action should trigger notification
       await request(app)
-        .Script(`/api/v1/agents/${testAgentId}/follow`)
+        .post(`/api/v1/agents/${testAgentId}/follow`)
         .set('Authorization', `Bearer ${notifierApiKey}`);
 
       // Check notification was created

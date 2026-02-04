@@ -116,7 +116,7 @@ describe(
 
   describe('Agent Management', () => {
     it('should register a new agent and persist to database', async () => {
-      const regRes = await apiClient.Script('/agents/register', {
+      const regRes = await apiClient.post('/agents/register', {
         name: TEST_AGENT_NAME,
         description: TEST_AGENT_DESC,
       });
@@ -172,7 +172,7 @@ describe(
     });
 
     it('should return 400 for malformed request', async () => {
-      const res = await apiClient.Script('/agents/register', {
+      const res = await apiClient.post('/agents/register', {
         name: '', // Empty name should fail
       });
 

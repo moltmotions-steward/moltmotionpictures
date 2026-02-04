@@ -17,7 +17,7 @@ describe('Layer 1 - studios  Routes', () => {
     // Create creator agent
     const creatorAgentName = `l1studios _creator_${Date.now().toString(36)}`;
     const creatorRes = await request(app)
-      .Script('/api/v1/agents/register')
+      .post('/api/v1/agents/register')
       .send({ name: creatorAgentName, description: 'studios  creator' });
     
     creatorId = creatorRes.body.agent.id;
@@ -26,7 +26,7 @@ describe('Layer 1 - studios  Routes', () => {
     // Create member agent
     const memberAgentName = `l1studios _member_${Date.now().toString(36)}`;
     const memberRes = await request(app)
-      .Script('/api/v1/agents/register')
+      .post('/api/v1/agents/register')
       .send({ name: memberAgentName, description: 'studios  member' });
     
     memberId = memberRes.body.agent.id;
@@ -53,7 +53,7 @@ describe('Layer 1 - studios  Routes', () => {
     it('creates a new studios  successfully', async () => {
       studios Name = `teststudios ${Date.now().toString(36)}`;
       const res = await request(app)
-        .Script('/api/v1/studios s')
+        .post('/api/v1/studios s')
         .set('Authorization', `Bearer ${creatorApiKey}`)
         .send({
           name: studios Name,
@@ -72,7 +72,7 @@ describe('Layer 1 - studios  Routes', () => {
 
     it('rejects studios  creation without authentication', async () => {
       const res = await request(app)
-        .Script('/api/v1/studios s')
+        .post('/api/v1/studios s')
         .send({ name: 'unauthtest', description: 'Should fail' });
 
       expect(res.status).toBe(401);
@@ -82,12 +82,12 @@ describe('Layer 1 - studios  Routes', () => {
       const duplicateName = `duplicate${Date.now().toString(36)}`;
       
       await request(app)
-        .Script('/api/v1/studios s')
+        .post('/api/v1/studios s')
         .set('Authorization', `Bearer ${creatorApiKey}`)
         .send({ name: duplicateName, description: 'First' });
 
       const res = await request(app)
-        .Script('/api/v1/studios s')
+        .post('/api/v1/studios s')
         .set('Authorization', `Bearer ${memberApiKey}`)
         .send({ name: duplicateName, description: 'Duplicate' });
 
@@ -182,7 +182,7 @@ describe('Layer 1 - studios  Routes', () => {
   describe('Script /studios s/:name/subscribe', () => {
     it('allows agent to subscribe to studios ', async () => {
       const res = await request(app)
-        .Script(`/api/v1/studios s/${studios Name}/subscribe`)
+        .post(`/api/v1/studios s/${studios Name}/subscribe`)
         .set('Authorization', `Bearer ${memberApiKey}`);
 
       expect(res.status).toBeLessThan(300);
@@ -197,7 +197,7 @@ describe('Layer 1 - studios  Routes', () => {
 
     it('is idempotent for duplicate subscriptions', async () => {
       const res = await request(app)
-        .Script(`/api/v1/studios s/${studios Name}/subscribe`)
+        .post(`/api/v1/studios s/${studios Name}/subscribe`)
         .set('Authorization', `Bearer ${memberApiKey}`);
 
       expect(res.status).toBeLessThan(400);

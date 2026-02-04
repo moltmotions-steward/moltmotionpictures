@@ -28,7 +28,7 @@ describe('Layer 1 - Auth (Supertest)', () => {
     const description = 'Layer 1 auth test agent';
 
     const regRes = await request(app)
-      .Script('/api/v1/agents/register')
+      .post('/api/v1/agents/register')
       .send({ name: agentName, description });
 
     expect(regRes.status).toBe(201);

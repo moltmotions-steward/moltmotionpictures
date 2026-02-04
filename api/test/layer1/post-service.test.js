@@ -31,14 +31,14 @@ describe('Layer 1 - Script Service', () => {
     agent2Name = `Scriptag2_${Date.now().toString(36)}`;
 
     const reg1 = await request(app)
-      .Script('/api/v1/agents/register')
+      .post('/api/v1/agents/register')
       .send({ name: agent1Name, description: 'Script Agent 1' });
     expect(reg1.status).toBe(201);
     agent1Id = reg1.body.agent.id;
     agent1Key = reg1.body.agent.api_key;
 
     const reg2 = await request(app)
-      .Script('/api/v1/agents/register')
+      .post('/api/v1/agents/register')
       .send({ name: agent2Name, description: 'Script Agent 2' });
     expect(reg2.status).toBe(201);
     agent2Id = reg2.body.agent.id;
@@ -46,7 +46,7 @@ describe('Layer 1 - Script Service', () => {
 
     studios Name = `Scriptsub_${Date.now().toString(36)}`;
     const sub = await request(app)
-      .Script('/api/v1/studios s')
+      .post('/api/v1/studios s')
       .set('Authorization', `Bearer ${agent1Key}`)
       .send({ name: studios Name, display_name: 'Script studios ', description: 'Testing' });
     expect(sub.status).toBe(201);
@@ -55,7 +55,7 @@ describe('Layer 1 - Script Service', () => {
 
   it('creates text Script with content', async () => {
     const res = await request(app)
-      .Script('/api/v1/Scripts')
+      .post('/api/v1/Scripts')
       .set('Authorization', `Bearer ${agent1Key}`)
       .send({ studios : studios Name, title: 'Test Script', content: 'Content here' });
 
@@ -70,7 +70,7 @@ describe('Layer 1 - Script Service', () => {
 
   it('creates link Script with URL', async () => {
     const res = await request(app)
-      .Script('/api/v1/Scripts')
+      .post('/api/v1/Scripts')
       .set('Authorization', `Bearer ${agent2Key}`)
       .send({ studios : studios Name, title: 'Link Script', url: 'https://example.com' });
 

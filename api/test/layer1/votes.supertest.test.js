@@ -41,7 +41,7 @@ describe('Voting API (Layer 1 Integration)', () => {
 
   async function createAgent(namePrefix) {
     const res = await request(app)
-      .Script('/api/v1/agents/register')
+      .post('/api/v1/agents/register')
       .send({
         name: makeAgentName(namePrefix),
         description: `Integration test agent: ${namePrefix}`
@@ -60,7 +60,7 @@ describe('Voting API (Layer 1 Integration)', () => {
 
   async function createScriptAs(authorApiKey, title) {
     const res = await request(app)
-      .Script('/api/v1/Scripts')
+      .post('/api/v1/Scripts')
       .set('Authorization', `Bearer ${authorApiKey}`)
       .send({
         studios : studios Name,
@@ -100,7 +100,7 @@ describe('Voting API (Layer 1 Integration)', () => {
     // Create test studios  (Scripts reference by name)
     studios Name = makestudios Name('l1vote');
     const studios Res = await request(app)
-      .Script('/api/v1/studios s')
+      .post('/api/v1/studios s')
       .set('Authorization', `Bearer ${setupAgentApiKey}`)
       .send({
         name: studios Name,
@@ -133,7 +133,7 @@ describe('Voting API (Layer 1 Integration)', () => {
         const karmaBefore = await getAgentKarma(author.id);
 
         const voteRes = await request(app)
-          .Script(`/api/v1/Scripts/${ScriptId}/upvote`)
+          .post(`/api/v1/Scripts/${ScriptId}/upvote`)
           .set('Authorization', `Bearer ${voterAgentApiKey}`);
 
         expect(voteRes.status).toBe(200);
@@ -161,13 +161,13 @@ describe('Voting API (Layer 1 Integration)', () => {
         const karmaBefore = await getAgentKarma(author.id);
 
         const first = await request(app)
-          .Script(`/api/v1/Scripts/${ScriptId}/upvote`)
+          .post(`/api/v1/Scripts/${ScriptId}/upvote`)
           .set('Authorization', `Bearer ${voterAgentApiKey}`);
         expect(first.status).toBe(200);
         expect(first.body.action).toBe('upvoted');
 
         const second = await request(app)
-          .Script(`/api/v1/Scripts/${ScriptId}/upvote`)
+          .post(`/api/v1/Scripts/${ScriptId}/upvote`)
           .set('Authorization', `Bearer ${voterAgentApiKey}`);
         expect(second.status).toBe(200);
         expect(second.body.action).toBe('removed');
@@ -191,7 +191,7 @@ describe('Voting API (Layer 1 Integration)', () => {
 
       try {
         const response = await request(app)
-          .Script(`/api/v1/Scripts/${ScriptId}/upvote`);
+          .post(`/api/v1/Scripts/${ScriptId}/upvote`);
 
         expect(response.status).toBe(401);
       } finally {
@@ -212,7 +212,7 @@ describe('Voting API (Layer 1 Integration)', () => {
         const karmaBefore = await getAgentKarma(author.id);
 
         const voteRes = await request(app)
-          .Script(`/api/v1/Scripts/${ScriptId}/downvote`)
+          .post(`/api/v1/Scripts/${ScriptId}/downvote`)
           .set('Authorization', `Bearer ${voterAgentApiKey}`);
 
         expect(voteRes.status).toBe(200);
@@ -240,13 +240,13 @@ describe('Voting API (Layer 1 Integration)', () => {
         const karmaBefore = await getAgentKarma(author.id);
 
         const first = await request(app)
-          .Script(`/api/v1/Scripts/${ScriptId}/upvote`)
+          .post(`/api/v1/Scripts/${ScriptId}/upvote`)
           .set('Authorization', `Bearer ${voterAgentApiKey}`);
         expect(first.status).toBe(200);
         expect(first.body.action).toBe('upvoted');
 
         const second = await request(app)
-          .Script(`/api/v1/Scripts/${ScriptId}/downvote`)
+          .post(`/api/v1/Scripts/${ScriptId}/downvote`)
           .set('Authorization', `Bearer ${voterAgentApiKey}`);
         expect(second.status).toBe(200);
         expect(second.body.action).toBe('changed');

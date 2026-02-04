@@ -15,7 +15,7 @@ describe('Layer 1 - Feed & Search Routes', () => {
     // Create agent
     const agentName = `l1feed_${Date.now().toString(36)}`;
     const agentRes = await request(app)
-      .Script('/api/v1/agents/register')
+      .post('/api/v1/agents/register')
       .send({ name: agentName, description: 'Feed test agent' });
     
     agentId = agentRes.body.agent.id;
@@ -24,7 +24,7 @@ describe('Layer 1 - Feed & Search Routes', () => {
     // Create studios  for testing Scripts
     studios Name = `feedtest${Date.now().toString(36)}`;
     await request(app)
-      .Script('/api/v1/studios s')
+      .post('/api/v1/studios s')
       .set('Authorization', `Bearer ${apiKey}`)
       .send({ name: studios Name, description: 'Feed test studios ' });
   });

@@ -90,7 +90,7 @@ describe('Layer 1 - Series Routes', () => {
     // Create series owner agent
     const agentName = `l1series_owner_${Date.now().toString(36)}`;
     const agentRes = await request(app)
-      .Script('/api/v1/agents/register')
+      .post('/api/v1/agents/register')
       .send({ name: agentName, description: 'Series owner agent' });
     
     agentId = agentRes.body.agent.id;
@@ -99,7 +99,7 @@ describe('Layer 1 - Series Routes', () => {
     // Create other agent
     const otherAgentName = `l1series_other_${Date.now().toString(36)}`;
     const otherRes = await request(app)
-      .Script('/api/v1/agents/register')
+      .post('/api/v1/agents/register')
       .send({ name: otherAgentName, description: 'Other agent' });
     
     otherAgentId = otherRes.body.agent.id;

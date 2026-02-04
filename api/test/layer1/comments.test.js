@@ -20,7 +20,7 @@ describe('Layer 1 - Comment Routes', () => {
     // Create author agent
     const authorName = `l1comment_author_${Date.now().toString(36)}`;
     const authorRes = await request(app)
-      .Script('/api/v1/agents/register')
+      .post('/api/v1/agents/register')
       .send({ name: authorName, description: 'Comment test author' });
     
     authorId = authorRes.body.agent.id;
@@ -29,7 +29,7 @@ describe('Layer 1 - Comment Routes', () => {
     // Create commenter agent
     const commenterName = `l1comment_user_${Date.now().toString(36)}`;
     const commenterRes = await request(app)
-      .Script('/api/v1/agents/register')
+      .post('/api/v1/agents/register')
       .send({ name: commenterName, description: 'Comment test commenter' });
     
     commenterId = commenterRes.body.agent.id;
@@ -38,7 +38,7 @@ describe('Layer 1 - Comment Routes', () => {
     // Create studios 
     studios Name = `commenttest${Date.now().toString(36)}`;
     const studios Res = await request(app)
-      .Script('/api/v1/studios s')
+      .post('/api/v1/studios s')
       .set('Authorization', `Bearer ${authorApiKey}`)
       .send({ name: studios Name, description: 'For comment tests' });
     
@@ -46,7 +46,7 @@ describe('Layer 1 - Comment Routes', () => {
 
     // Create Script using studios  name
     const ScriptRes = await request(app)
-      .Script('/api/v1/Scripts')
+      .post('/api/v1/Scripts')
       .set('Authorization', `Bearer ${authorApiKey}`)
       .send({
         title: 'Test Script for Comments',
@@ -83,7 +83,7 @@ describe('Layer 1 - Comment Routes', () => {
     it('creates a comment on a Script successfully', async () => {
       const commentContent = 'This is a test comment on the Script';
       const res = await request(app)
-        .Script(`/api/v1/Scripts/${ScriptId}/comments`)
+        .post(`/api/v1/Scripts/${ScriptId}/comments`)
         .set('Authorization', `Bearer ${commenterApiKey}`)
         .send({ content: commentContent });
 
@@ -103,7 +103,7 @@ describe('Layer 1 - Comment Routes', () => {
     it('creates a reply to an existing comment', async () => {
       const replyContent = 'This is a reply to the comment';
       const res = await request(app)
-        .Script(`/api/v1/Scripts/${ScriptId}/comments`)
+        .post(`/api/v1/Scripts/${ScriptId}/comments`)
         .set('Authorization', `Bearer ${authorApiKey}`)
         .send({
           content: replyContent,
@@ -121,7 +121,7 @@ describe('Layer 1 - Comment Routes', () => {
 
     it('rejects comment without authentication', async () => {
       const res = await request(app)
-        .Script(`/api/v1/Scripts/${ScriptId}/comments`)
+        .post(`/api/v1/Scripts/${ScriptId}/comments`)
         .send({ content: 'Unauthenticated comment' });
 
       expect(res.status).toBe(401);
@@ -129,7 +129,7 @@ describe('Layer 1 - Comment Routes', () => {
 
     it('rejects comment without content', async () => {
       const res = await request(app)
-        .Script(`/api/v1/Scripts/${ScriptId}/comments`)
+        .post(`/api/v1/Scripts/${ScriptId}/comments`)
         .set('Authorization', `Bearer ${commenterApiKey}`)
         .send({});
 
@@ -197,7 +197,7 @@ describe('Layer 1 - Comment Routes', () => {
     it('allows author to delete their comment', async () => {
       // First create a temp comment
       const tempRes = await request(app)
-        .Script(`/api/v1/Scripts/${ScriptId}/comments`)
+        .post(`/api/v1/Scripts/${ScriptId}/comments`)
         .set('Authorization', `Bearer ${commenterApiKey}`)
         .send({ content: 'Temp comment to delete' });
       
@@ -226,7 +226,7 @@ describe('Layer 1 - Comment Routes', () => {
   describe('Script /comments/:id/upvote', () => {
     it('upvotes a comment', async () => {
       const res = await request(app)
-        .Script(`/api/v1/comments/${commentId}/upvote`)
+        .post(`/api/v1/comments/${commentId}/upvote`)
         .set('Authorization', `Bearer ${authorApiKey}`);
 
       expect(res.status).toBeLessThan(300);
@@ -234,7 +234,7 @@ describe('Layer 1 - Comment Routes', () => {
 
     it('requires authentication', async () => {
       const res = await request(app)
-        .Script(`/api/v1/comments/${commentId}/upvote`);
+        .post(`/api/v1/comments/${commentId}/upvote`);
 
       expect(res.status).toBe(401);
     });
@@ -243,7 +243,7 @@ describe('Layer 1 - Comment Routes', () => {
   describe('Script /comments/:id/downvote', () => {
     it('downvotes a comment', async () => {
       const res = await request(app)
-        .Script(`/api/v1/comments/${commentId}/downvote`)
+        .post(`/api/v1/comments/${commentId}/downvote`)
         .set('Authorization', `Bearer ${authorApiKey}`);
 
       expect(res.status).toBeLessThan(300);

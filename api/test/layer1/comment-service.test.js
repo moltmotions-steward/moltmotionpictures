@@ -34,14 +34,14 @@ describe('Layer 1 - Comment Service', () => {
     agent2Name = `comag2_${Date.now().toString(36)}`;
 
     const reg1 = await request(app)
-      .Script('/api/v1/agents/register')
+      .post('/api/v1/agents/register')
       .send({ name: agentName, description: 'Comment Agent 1' });
     expect(reg1.status).toBe(201);
     agentId = reg1.body.agent.id;
     agentKey = reg1.body.agent.api_key;
 
     const reg2 = await request(app)
-      .Script('/api/v1/agents/register')
+      .post('/api/v1/agents/register')
       .send({ name: agent2Name, description: 'Comment Agent 2' });
     expect(reg2.status).toBe(201);
     agent2Id = reg2.body.agent.id;
@@ -49,14 +49,14 @@ describe('Layer 1 - Comment Service', () => {
 
     studios Name = `comsub_${Date.now().toString(36)}`;
     const sub = await request(app)
-      .Script('/api/v1/studios s')
+      .post('/api/v1/studios s')
       .set('Authorization', `Bearer ${agentKey}`)
       .send({ name: studios Name, display_name: 'Comment studios ', description: 'Testing' });
     expect(sub.status).toBe(201);
     studios Id = sub.body.studios .id;
 
     const Script = await request(app)
-      .Script('/api/v1/Scripts')
+      .post('/api/v1/Scripts')
       .set('Authorization', `Bearer ${agentKey}`)
       .send({ studios : studios Name, title: 'Script for Comments', content: 'Discuss here' });
     expect(Script.status).toBe(201);
@@ -65,7 +65,7 @@ describe('Layer 1 - Comment Service', () => {
 
   it('creates a top-level comment', async () => {
     const res = await request(app)
-      .Script(`/api/v1/Scripts/${ScriptId}/comments`)
+      .post(`/api/v1/Scripts/${ScriptId}/comments`)
       .set('Authorization', `Bearer ${agentKey}`)
       .send({ content: 'This is a comment' });
 
@@ -80,7 +80,7 @@ describe('Layer 1 - Comment Service', () => {
 
   it('creates a second top-level comment', async () => {
     const res = await request(app)
-      .Script(`/api/v1/Scripts/${ScriptId}/comments`)
+      .post(`/api/v1/Scripts/${ScriptId}/comments`)
       .set('Authorization', `Bearer ${agent2Key}`)
       .send({ content: 'Another comment' });
 
@@ -93,7 +93,7 @@ describe('Layer 1 - Comment Service', () => {
 
   it('creates a nested reply to comment', async () => {
     const res = await request(app)
-      .Script(`/api/v1/Scripts/${ScriptId}/comments`)
+      .post(`/api/v1/Scripts/${ScriptId}/comments`)
       .set('Authorization', `Bearer ${agent2Key}`)
       .send({ content: 'Reply to first comment', parent_id: comment1Id });
 
@@ -140,7 +140,7 @@ describe('Layer 1 - Comment Service', () => {
 
   it('validates content is required', async () => {
     const res = await request(app)
-      .Script(`/api/v1/Scripts/${ScriptId}/comments`)
+      .post(`/api/v1/Scripts/${ScriptId}/comments`)
       .set('Authorization', `Bearer ${agentKey}`)
       .send({ content: '' });
 
@@ -152,7 +152,7 @@ describe('Layer 1 - Comment Service', () => {
     const longContent = 'A'.repeat(10001);
 
     const res = await request(app)
-      .Script(`/api/v1/Scripts/${ScriptId}/comments`)
+      .post(`/api/v1/Scripts/${ScriptId}/comments`)
       .set('Authorization', `Bearer ${agentKey}`)
       .send({ content: longContent });
 
@@ -162,7 +162,7 @@ describe('Layer 1 - Comment Service', () => {
 
   it('returns 404 for comment on non-existent Script', async () => {
     const res = await request(app)
-      .Script('/api/v1/Scripts/00000000-0000-0000-0000-000000000000/comments')
+      .post('/api/v1/Scripts/00000000-0000-0000-0000-000000000000/comments')
       .set('Authorization', `Bearer ${agentKey}`)
       .send({ content: 'Comment on nothing' });
 

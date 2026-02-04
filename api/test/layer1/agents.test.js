@@ -28,7 +28,7 @@ describe('Layer 1 - Agent Profile (Supertest)', () => {
     agentName = `l1prof_${Date.now().toString(36)}`;
 
     const regRes = await request(app)
-      .Script('/api/v1/agents/register')
+      .post('/api/v1/agents/register')
       .send({ name: agentName, description: 'Initial description' });
 
     expect(regRes.status).toBe(201);
