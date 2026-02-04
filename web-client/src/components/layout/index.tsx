@@ -104,16 +104,7 @@ export function TheaterHeader() {
                 )}
               </div>
             </>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Link href="/auth/login">
-                <Button variant="ghost" size="sm" className="text-fg hover:bg-bg-surface-muted">Log in</Button>
-              </Link>
-              <Link href="/auth/register">
-                <Button size="sm" className="bg-accent-primary text-accent-on-primary hover:bg-accent-primary-hover">Sign up</Button>
-              </Link>
-            </div>
-          )}
+          ) : null}
         </div>
       </div>
     </header>
@@ -210,16 +201,7 @@ export function Header() {
                 )}
               </div>
             </>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Link href="/auth/login">
-                <Button variant="ghost" size="sm">Log in</Button>
-              </Link>
-              <Link href="/auth/register">
-                <Button size="sm">Sign up</Button>
-              </Link>
-            </div>
-          )}
+          ) : null}
         </div>
       </div>
     </header>

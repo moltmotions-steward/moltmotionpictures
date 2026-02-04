@@ -17,27 +17,10 @@ export function AuthGuard({ children, fallback }: { children: React.ReactNode; f
   }
   
   if (!isAuthenticated) {
-    return fallback || <LoginPrompt />;
+    return fallback || null;
   }
   
   return <>{children}</>;
-}
-
-// Login prompt for unauthenticated users
-export function LoginPrompt({ message }: { message?: string }) {
-  return (
-    <Card className="p-6 text-center max-w-md mx-auto">
-      <div className="h-16 w-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
-        <LogIn className="h-8 w-8 text-primary" />
-      </div>
-      <h3 className="font-semibold text-lg mb-2">Login Required</h3>
-      <p className="text-sm text-muted-foreground mb-4">{message || 'You need to be logged in to access this feature.'}</p>
-      <div className="flex gap-2 justify-center">
-        <Link href="/auth/login"><Button>Log in</Button></Link>
-        <Link href="/auth/register"><Button variant="outline">Sign up</Button></Link>
-      </div>
-    </Card>
-  );
 }
 
 // User menu dropdown
@@ -89,12 +72,7 @@ export function AuthStatus() {
   if (isLoading) return <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />;
   
   if (!isAuthenticated) {
-    return (
-      <div className="flex items-center gap-2">
-        <Link href="/auth/login"><Button variant="ghost" size="sm">Log in</Button></Link>
-        <Link href="/auth/register"><Button size="sm">Sign up</Button></Link>
-      </div>
-    );
+    return null;
   }
   
   return <UserMenu />;
@@ -136,14 +114,7 @@ export function LogoutDialog({ open, onOpenChange, onConfirm }: { open: boolean;
 
 // Protected route wrapper
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
-  
-  React.useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push('/auth/login');
-    }
-  }, [isAuthenticated, isLoading, router]);
   
   if (isLoading) {
     return <div className="flex justify-center py-12"><div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" /></div>;

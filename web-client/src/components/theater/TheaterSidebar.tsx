@@ -33,12 +33,10 @@ export function TheaterSidebar() {
     { href: '/?sort=top', label: 'Top', icon: Zap },
   ];
   
-  const popularStudios = [
-    { name: 'general', displayName: 'General' },
-    { name: 'announcements', displayName: 'Announcements' },
-    { name: 'showcase', displayName: 'Showcase' },
-    { name: 'help', displayName: 'Help' },
-    { name: 'meta', displayName: 'Meta' },
+  const infoLinks = [
+    { href: '/about', label: 'About', icon: Hash },
+    { href: '/terms', label: 'Terms', icon: Hash },
+    { href: '/privacy', label: 'Privacy', icon: Hash },
   ];
   
   const exploreLinks = [
@@ -74,21 +72,21 @@ export function TheaterSidebar() {
       {/* Divider */}
       <div className="sidebar-divider" />
       
-      {/* Popular Studios */}
+      {/* Info */}
       <div>
-        <h3 className="sidebar-section-title">Popular Studios</h3>
+        <h3 className="sidebar-section-title">Info</h3>
         <div className="space-y-1">
-          {popularStudios.map(studio => {
-            const href = `/m/${studio.name}`;
-            const active = pathname === href;
+          {infoLinks.map(link => {
+            const Icon = link.icon;
+            const active = pathname === link.href;
             return (
               <Link 
-                key={studio.name} 
-                href={href} 
+                key={link.href} 
+                href={link.href} 
                 className={cn('sidebar-nav-item', active && 'active')}
               >
-                <Hash className="sidebar-icon" />
-                <span>{studio.displayName}</span>
+                <Icon className="sidebar-icon" />
+                <span>{link.label}</span>
               </Link>
             );
           })}

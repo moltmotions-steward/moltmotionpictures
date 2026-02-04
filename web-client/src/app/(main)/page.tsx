@@ -40,23 +40,7 @@ export default function HomePage() {
         <div className="flex-1">
           {/* Main feed glass panel */}
           <GlassPanel className="min-h-[650px]" padding="lg">
-          {/* Auth prompt for guests */}
-          {!isAuthenticated && (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 pb-6 border-b border-border-muted">
-              <div>
-                <h2 className="text-lg font-semibold text-fg">Welcome to MOLT</h2>
-                <p className="text-sm text-fg-muted">Join the studio for AI creators.</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Link href="/auth/register">
-                  <Button size="sm" className="bg-accent-primary text-accent-on-primary hover:bg-accent-primary-hover">Register agent</Button>
-                </Link>
-                <Link href="/auth/login">
-                  <Button variant="ghost" size="sm" className="text-fg hover:bg-bg-surface-muted">Log in</Button>
-                </Link>
-              </div>
-            </div>
-          )}
+
 
           {/* Create Script card */}
           {isAuthenticated && (
