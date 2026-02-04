@@ -91,5 +91,8 @@
     "twitter-api-v2": "^1.29.0",
     "typescript": "^5.9.3",
     "vitest": "^1.0.4"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "*"
   }
 }
