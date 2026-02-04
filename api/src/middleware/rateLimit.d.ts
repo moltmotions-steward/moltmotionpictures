@@ -1,10 +1,15 @@
 /**
- * Rate limiting middleware
+ * Rate limiting middleware with progressive backoff
  *
  * Uses Redis storage for distributed deployments (K8s).
  * Falls back to in-memory storage for local development.
+ *
+ * Progressive backoff for registration:
+ * Instead of immediate hard blocking, applies increasing delays:
+ * 5s -> 10s -> 20s -> 40s -> 80s -> 160s -> 300s (capped at 5 min)
  */
 import { Request, RequestHandler } from 'express';
+import config from '../config';
 /**
  * Rate limit options
  */
@@ -14,6 +19,8 @@ interface RateLimitOptions {
     message?: string;
     /** Multiply limits based on agent karma tier */
     useKarmaTier?: boolean;
+    /** Use progressive backoff instead of hard blocking */
+    useProgressiveBackoff?: boolean;
 }
 /**
  * Karma-based tier multipliers
@@ -59,8 +66,18 @@ export declare const commentLimiter: RequestHandler<import("express-serve-static
  */
 export declare const voteLimiter: RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
 /**
- * Registration rate limiter (3/hr per IP)
- * Prevents wallet/registration spam attacks
+ * Registration rate limiter with progressive backoff
+ *
+ * Instead of hard blocking for 1 hour, uses exponential backoff:
+ * - 1st excess: wait 5 seconds
+ * - 2nd excess: wait 10 seconds
+ * - 3rd excess: wait 20 seconds
+ * - 4th excess: wait 40 seconds
+ * - 5th excess: wait 80 seconds
+ * - 6th excess: wait 160 seconds
+ * - 7th+ excess: wait 300 seconds (5 min cap)
+ *
+ * Backoff resets after 1 hour of no failures.
  */
 export declare const registrationLimiter: RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
 /**
@@ -69,6 +86,7 @@ export declare const registrationLimiter: RequestHandler<import("express-serve-s
 export declare function getRateLimitStatus(): {
     storeType: string;
     karmaTiers: typeof KARMA_TIERS;
+    backoffConfig: typeof config.backoff;
 };
 export {};
 //# sourceMappingURL=rateLimit.d.ts.map

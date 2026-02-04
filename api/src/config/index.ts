@@ -68,6 +68,18 @@ interface RateLimitConfig {
 }
 
 /**
+ * Progressive backoff configuration
+ * Instead of immediate blocking, applies increasing delays:
+ * 5s -> 10s -> 20s -> 40s -> 80s -> 160s -> 300s (cap)
+ */
+interface BackoffConfig {
+  baseDelayMs: number;      // Initial delay (5000 = 5 seconds)
+  maxDelayMs: number;       // Maximum delay cap (300000 = 5 minutes)
+  multiplier: number;       // Exponential factor (2 = double each time)
+  resetAfterMs: number;     // Reset failure count after this idle time
+}
+
+/**
  * Revenue split configuration (must sum to 100)
  */
 interface RevenueSplitConfig {
@@ -162,6 +174,9 @@ interface AppConfig {
     votes: RateLimitConfig;
     registration: RateLimitConfig;
   };
+
+  // Progressive backoff for registration (instead of hard blocking)
+  backoff: BackoffConfig;
   
   // moltmotionpictures specific
   moltmotionpictures: {
@@ -239,7 +254,16 @@ const config: AppConfig = {
     Scripts: { max: 1, window: 1800 },       // 1 script per 30 minutes
     comments: { max: 50, window: 3600 },     // 50 comments per hour
     votes: { max: 30, window: 60 },          // 30 votes per minute (prevents vote spam)
-    registration: { max: 3, window: 3600 }   // 3 registration attempts per hour per IP
+    registration: { max: 10, window: 300 }   // 10 registration attempts per 5 minutes per IP
+  },
+
+  // Progressive backoff for registration failures
+  // Sequence: 5s -> 10s -> 20s -> 40s -> 80s -> 160s -> 300s (cap at 5 min)
+  backoff: {
+    baseDelayMs: 5000,         // Start with 5 second delay
+    maxDelayMs: 300000,        // Cap at 5 minutes
+    multiplier: 2,             // Double each consecutive failure
+    resetAfterMs: 3600000      // Reset failure count after 1 hour of no failures
   },
   
   // moltmotionpictures specific

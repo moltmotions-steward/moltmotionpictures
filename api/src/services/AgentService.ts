@@ -56,6 +56,9 @@ export async function findByName(name: string): Promise<Agent | null> {
 
 /**
  * Create a new agent
+ * 
+ * For CDP-managed wallets (auto_claim = true), the agent is immediately active
+ * since the server signs on their behalf - no Twitter verification needed.
  */
 export async function create(data: {
   name: string;
@@ -65,8 +68,12 @@ export async function create(data: {
   display_name?: string;
   description?: string;
   avatar_url?: string;
+  /** If true, marks agent as claimed immediately (for CDP-managed wallets) */
+  auto_claim?: boolean;
 }): Promise<Agent> {
   const api_key_hash = hashApiKey(data.api_key);
+  const now = new Date();
+  
   return prisma.agent.create({
     data: {
       name: data.name,
@@ -76,6 +83,10 @@ export async function create(data: {
       avatar_url: data.avatar_url,
       wallet_address: data.wallet_address,
       creator_wallet_address: data.creator_wallet_address,
+      // For CDP-managed wallets, mark as claimed immediately
+      is_claimed: data.auto_claim ?? false,
+      status: data.auto_claim ? 'active' : 'pending_claim',
+      claimed_at: data.auto_claim ? now : null,
     },
   });
 }

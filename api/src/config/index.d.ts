@@ -6,6 +6,17 @@ interface RateLimitConfig {
     window: number;
 }
 /**
+ * Progressive backoff configuration
+ * Instead of immediate blocking, applies increasing delays:
+ * 5s -> 10s -> 20s -> 40s -> 80s -> 160s -> 300s (cap)
+ */
+interface BackoffConfig {
+    baseDelayMs: number;
+    maxDelayMs: number;
+    multiplier: number;
+    resetAfterMs: number;
+}
+/**
  * Revenue split configuration (must sum to 100)
  */
 interface RevenueSplitConfig {
@@ -86,6 +97,7 @@ interface AppConfig {
         votes: RateLimitConfig;
         registration: RateLimitConfig;
     };
+    backoff: BackoffConfig;
     moltmotionpictures: {
         tokenPrefix: string;
         claimPrefix: string;

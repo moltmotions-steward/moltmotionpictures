@@ -54,6 +54,7 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const errorHandler_js_1 = require("../middleware/errorHandler.js");
+const rateLimit_js_1 = require("../middleware/rateLimit.js");
 const response_js_1 = require("../utils/response.js");
 const errors_js_1 = require("../utils/errors.js");
 const CDPWalletService = __importStar(require("../services/CDPWalletService.js"));
@@ -62,35 +63,14 @@ const AgentService = __importStar(require("../services/AgentService.js"));
 const uuid_1 = require("uuid");
 const router = (0, express_1.Router)();
 // ============================================================================
-// Rate Limiting
+// Rate Limiting (uses centralized rate limiter with progressive backoff)
 // ============================================================================
-// Simple in-memory rate limiter for wallet creation
-// Production should use Redis-backed rate limiting
-const walletCreationAttempts = new Map();
-const WALLET_RATE_LIMIT = 3; // 3 wallets per hour per IP
-const WALLET_RATE_WINDOW = 60 * 60 * 1000; // 1 hour
-function checkRateLimit(ip) {
-    const now = Date.now();
-    const record = walletCreationAttempts.get(ip);
-    if (!record || now > record.resetAt) {
-        walletCreationAttempts.set(ip, { count: 1, resetAt: now + WALLET_RATE_WINDOW });
-        return true;
-    }
-    if (record.count >= WALLET_RATE_LIMIT) {
-        return false;
-    }
-    record.count++;
-    return true;
-}
-// Clean up old entries periodically
-setInterval(() => {
-    const now = Date.now();
-    for (const [ip, record] of walletCreationAttempts.entries()) {
-        if (now > record.resetAt) {
-            walletCreationAttempts.delete(ip);
-        }
-    }
-}, 60 * 1000); // Every minute
+// Import the centralized registration limiter which has progressive backoff
+// The registrationLimiter is applied to routes that need it
+// See middleware/rateLimit.ts for backoff config:
+// - 10 attempts per 5 minute window
+// - Progressive backoff: 5s -> 10s -> 20s -> 40s -> 80s -> 160s -> 300s cap
+// - Resets after 1 hour of no failures
 // ============================================================================
 // Routes
 // ============================================================================
@@ -127,19 +107,9 @@ router.get('/status', (0, errorHandler_js_1.asyncHandler)(async (_req, res) => {
  * - explorer_url: Link to verify wallet on BaseScan
  * - agent_id: The agent ID used (for registration)
  *
- * Rate limited: 3 wallets per hour per IP
+ * Rate limited with progressive backoff (5s -> 10s -> 20s -> ... -> 5min cap)
  */
-router.post('/', (0, errorHandler_js_1.asyncHandler)(async (req, res) => {
-    // Rate limiting
-    const clientIp = (Array.isArray(req.ip) ? req.ip[0] : req.ip) || req.socket.remoteAddress || 'unknown';
-    if (!checkRateLimit(clientIp)) {
-        res.status(429).json({
-            success: false,
-            error: 'Rate limit exceeded. Maximum 3 wallet creations per hour.',
-            retry_after_seconds: 3600
-        });
-        return;
-    }
+router.post('/', rateLimit_js_1.registrationLimiter, (0, errorHandler_js_1.asyncHandler)(async (req, res) => {
     // Check if CDP is configured
     if (!CDPWalletService.isConfigured()) {
         throw new errors_js_1.InternalError('CDP wallet creation is not configured');
@@ -152,7 +122,7 @@ router.post('/', (0, errorHandler_js_1.asyncHandler)(async (req, res) => {
     }
     try {
         const result = await CDPWalletService.createWalletForAgent(agentId);
-        console.log(`[WalletsRoute] Created wallet ${result.address} for agent_id ${agentId} from IP ${clientIp}`);
+        console.log(`[WalletsRoute] Created wallet ${result.address} for agent_id ${agentId} from IP ${req.ip || 'unknown'}`);
         (0, response_js_1.created)(res, {
             address: result.address,
             network: result.network,
@@ -190,19 +160,9 @@ router.post('/', (0, errorHandler_js_1.asyncHandler)(async (req, res) => {
  * - creator_wallet: { address, network, explorer_url } - 80% share wallet
  * - api_key: The agent's API key (save this - cannot be recovered without wallet signing)
  *
- * Rate limited: 3 registrations per hour per IP
+ * Rate limited with progressive backoff (5s -> 10s -> 20s -> ... -> 5min cap)
  */
-router.post('/register', (0, errorHandler_js_1.asyncHandler)(async (req, res) => {
-    // Rate limiting (same pool as wallet creation)
-    const clientIp = (Array.isArray(req.ip) ? req.ip[0] : req.ip) || req.socket.remoteAddress || 'unknown';
-    if (!checkRateLimit(clientIp)) {
-        res.status(429).json({
-            success: false,
-            error: 'Rate limit exceeded. Maximum 3 registrations per hour.',
-            retry_after_seconds: 3600
-        });
-        return;
-    }
+router.post('/register', rateLimit_js_1.registrationLimiter, (0, errorHandler_js_1.asyncHandler)(async (req, res) => {
     // Check if CDP is configured
     if (!CDPWalletService.isConfigured()) {
         throw new errors_js_1.InternalError('CDP wallet creation is not configured');
@@ -235,7 +195,7 @@ router.post('/register', (0, errorHandler_js_1.asyncHandler)(async (req, res) =>
         const creatorWalletResult = await CDPWalletService.createWalletForAgent(creatorWalletId);
         // Process registration (verifies signature, derives API key)
         const { apiKey, apiKeyHash, normalizedAddress } = WalletAuthService.processRegistration(agentWalletResult.address, agentWalletResult.signature);
-        // Create the agent in database
+        // Create the agent in database (auto_claim since CDP signs for us)
         const agent = await AgentService.create({
             name,
             api_key: apiKey,
@@ -244,6 +204,7 @@ router.post('/register', (0, errorHandler_js_1.asyncHandler)(async (req, res) =>
             display_name: display_name || name,
             description,
             avatar_url,
+            auto_claim: true, // CDP-managed wallets are immediately active - no Twitter verification needed
         });
         console.log(`[WalletsRoute] Registered agent ${name} (${agent.id}) with wallets:`);
         console.log(`  - Agent wallet: ${agentWalletResult.address}`);

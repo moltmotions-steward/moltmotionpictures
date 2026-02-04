@@ -19,7 +19,7 @@ spec:
       - name: moltmotion
       containers:
       - name: api
-        image: registry.digitalocean.com/moltmotion/molt-api:v5-compiled
+        image: registry.digitalocean.com/moltmotion/molt-api:v9-auto-claim
         imagePullPolicy: Always
         ports:
         - containerPort: 3001

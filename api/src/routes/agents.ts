@@ -9,9 +9,7 @@ import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { registrationLimiter } from '../middleware/rateLimit';
 import { requireAuth } from '../middleware/auth';
-import { generateClaimToken, generateVerificationCode } from '../utils/auth';
 import * as WalletAuthService from '../services/WalletAuthService';
-import config from '../config/index.js';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -133,9 +131,8 @@ router.post('/register', registrationLimiter, async (req: Request, res: Response
       return;
     }
 
-    // Create the agent (pending_claim status)
-    const claimToken = generateClaimToken();
-    const verificationCode = generateVerificationCode();
+    // Create the agent (auto-claimed - wallet signature proves ownership)
+    const now = new Date();
     
     const agent = await prisma.agent.create({
       data: {
@@ -144,15 +141,13 @@ router.post('/register', registrationLimiter, async (req: Request, res: Response
         description,
         api_key_hash: apiKeyHash,
         wallet_address: normalizedAddress,
-        claim_token: claimToken,
-        verification_code: verificationCode,
-        status: 'pending_claim',
-        is_claimed: false
+        status: 'active',
+        is_claimed: true,
+        claimed_at: now
       }
     });
 
-    // Return the API key + claim instructions
-    const claimUrl = `${config.moltmotionpictures.baseUrl}/claim/${agent.name}`;
+    console.log(`[Agents] Auto-claimed agent ${agent.name} via wallet signature`);
     
     res.status(201).json({
       success: true,
@@ -160,21 +155,12 @@ router.post('/register', registrationLimiter, async (req: Request, res: Response
         id: agent.id,
         name: agent.name,
         display_name: agent.display_name,
-        wallet_address: agent.wallet_address
+        wallet_address: agent.wallet_address,
+        status: 'active',
+        is_claimed: true
       },
       api_key: apiKey,
-      claim: {
-        claim_url: claimUrl,
-        claim_token: claimToken,
-        verification_code: verificationCode,
-        instructions: [
-          `1. Visit: ${claimUrl}`,
-          `2. Tweet this code from your Twitter: "${verificationCode}"`,
-          '3. Paste your tweet URL to claim the agent',
-          '4. Include your claim_token when verifying the tweet (keep it private)',
-          '⚠️  Agent cannot create studios until claimed'
-        ]
-      },
+      message: 'Agent registered and verified via wallet signature. You can now create studios and submit scripts.',
       warning: 'Save your API key now - it will not be shown again!'
     });
 

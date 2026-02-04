@@ -1,8 +1,12 @@
 /**
- * Rate limiting middleware
+ * Rate limiting middleware with progressive backoff
  * 
  * Uses Redis storage for distributed deployments (K8s).
  * Falls back to in-memory storage for local development.
+ * 
+ * Progressive backoff for registration:
+ * Instead of immediate hard blocking, applies increasing delays:
+ * 5s -> 10s -> 20s -> 40s -> 80s -> 160s -> 300s (capped at 5 min)
  */
 import { Request, Response, NextFunction, RequestHandler } from 'express';
 import config from '../config';
@@ -35,6 +39,15 @@ interface RateLimitResult {
 }
 
 /**
+ * Progressive backoff tracking
+ */
+interface BackoffEntry {
+  failures: number;
+  lastFailureAt: number;
+  backoffUntil: number;
+}
+
+/**
  * Rate limit options
  */
 interface RateLimitOptions {
@@ -43,6 +56,8 @@ interface RateLimitOptions {
   message?: string;
   /** Multiply limits based on agent karma tier */
   useKarmaTier?: boolean;
+  /** Use progressive backoff instead of hard blocking */
+  useProgressiveBackoff?: boolean;
 }
 
 /**
@@ -91,6 +106,10 @@ interface RateLimitStore {
   add(key: string, timestamp: number): Promise<void>;
   count(key: string, windowStart: number): Promise<number>;
   oldest(key: string, windowStart: number): Promise<number | null>;
+  // Progressive backoff methods
+  getBackoff(key: string): Promise<BackoffEntry | null>;
+  setBackoff(key: string, entry: BackoffEntry, ttlMs: number): Promise<void>;
+  clearBackoff(key: string): Promise<void>;
 }
 
 // =============================================================================
@@ -98,6 +117,7 @@ interface RateLimitStore {
 // =============================================================================
 class MemoryStore implements RateLimitStore {
   private storage = new Map<string, RateLimitEntry[]>();
+  private backoffStorage = new Map<string, BackoffEntry>();
   
   constructor() {
     // Cleanup old entries every 5 minutes
@@ -111,6 +131,13 @@ class MemoryStore implements RateLimitStore {
           this.storage.delete(key);
         } else {
           this.storage.set(key, filtered);
+        }
+      }
+      
+      // Cleanup expired backoff entries
+      for (const [key, entry] of this.backoffStorage.entries()) {
+        if (now > entry.lastFailureAt + config.backoff.resetAfterMs) {
+          this.backoffStorage.delete(key);
         }
       }
     }, 300000);
@@ -132,6 +159,25 @@ class MemoryStore implements RateLimitStore {
     const valid = entries.filter(e => e.timestamp >= windowStart);
     if (valid.length === 0) return null;
     return Math.min(...valid.map(e => e.timestamp));
+  }
+
+  async getBackoff(key: string): Promise<BackoffEntry | null> {
+    const entry = this.backoffStorage.get(key);
+    if (!entry) return null;
+    // Check if backoff has expired (reset after idle time)
+    if (Date.now() > entry.lastFailureAt + config.backoff.resetAfterMs) {
+      this.backoffStorage.delete(key);
+      return null;
+    }
+    return entry;
+  }
+
+  async setBackoff(key: string, entry: BackoffEntry, _ttlMs: number): Promise<void> {
+    this.backoffStorage.set(key, entry);
+  }
+
+  async clearBackoff(key: string): Promise<void> {
+    this.backoffStorage.delete(key);
   }
 }
 
@@ -167,6 +213,35 @@ class RedisStore implements RateLimitStore {
     const result = await this.client.zrangebyscore(key, windowStart, '+inf', 'WITHSCORES', 'LIMIT', 0, 1);
     if (!result || result.length < 2) return null;
     return parseInt(result[1], 10);
+  }
+
+  async getBackoff(key: string): Promise<BackoffEntry | null> {
+    const data = await this.client.get(`backoff:${key}`);
+    if (!data) return null;
+    try {
+      const entry = JSON.parse(data) as BackoffEntry;
+      // Check if backoff has expired (reset after idle time)
+      if (Date.now() > entry.lastFailureAt + config.backoff.resetAfterMs) {
+        await this.clearBackoff(key);
+        return null;
+      }
+      return entry;
+    } catch {
+      return null;
+    }
+  }
+
+  async setBackoff(key: string, entry: BackoffEntry, ttlMs: number): Promise<void> {
+    await this.client.set(
+      `backoff:${key}`,
+      JSON.stringify(entry),
+      'PX',
+      ttlMs
+    );
+  }
+
+  async clearBackoff(key: string): Promise<void> {
+    await this.client.del(`backoff:${key}`);
   }
 }
 
@@ -226,6 +301,76 @@ function getKey(req: RateLimitRequest, limitType: string): string {
   // Prefer agent ID if auth middleware has run
   const identifier = req.agent?.id || req.token || req.ip || 'anonymous';
   return `rl:${limitType}:${identifier}`;
+}
+
+/**
+ * Calculate progressive backoff delay
+ * Sequence: 5s -> 10s -> 20s -> 40s -> 80s -> 160s -> 300s (capped)
+ */
+function calculateBackoffDelay(failures: number): number {
+  const { baseDelayMs, maxDelayMs, multiplier } = config.backoff;
+  const delay = baseDelayMs * Math.pow(multiplier, failures - 1);
+  return Math.min(delay, maxDelayMs);
+}
+
+/**
+ * Check progressive backoff status
+ * Returns: { blocked: true, retryAfter: seconds } if in backoff period
+ * Returns: { blocked: false } if allowed to proceed
+ */
+async function checkBackoff(key: string): Promise<{ blocked: boolean; retryAfter: number; failures: number }> {
+  const currentStore = getStore();
+  const entry = await currentStore.getBackoff(key);
+  
+  if (!entry) {
+    return { blocked: false, retryAfter: 0, failures: 0 };
+  }
+  
+  const now = Date.now();
+  
+  // Check if still in backoff period
+  if (now < entry.backoffUntil) {
+    const retryAfter = Math.ceil((entry.backoffUntil - now) / 1000);
+    return { blocked: true, retryAfter, failures: entry.failures };
+  }
+  
+  // Backoff period has passed, allow the attempt
+  return { blocked: false, retryAfter: 0, failures: entry.failures };
+}
+
+/**
+ * Record a failure and apply progressive backoff
+ */
+async function recordFailure(key: string): Promise<{ retryAfter: number; failures: number }> {
+  const currentStore = getStore();
+  const now = Date.now();
+  
+  // Get existing backoff entry
+  const existing = await currentStore.getBackoff(key);
+  const failures = (existing?.failures || 0) + 1;
+  
+  // Calculate delay for this failure count
+  const delayMs = calculateBackoffDelay(failures);
+  const backoffUntil = now + delayMs;
+  
+  // Store the backoff entry
+  const entry: BackoffEntry = {
+    failures,
+    lastFailureAt: now,
+    backoffUntil
+  };
+  
+  await currentStore.setBackoff(key, entry, config.backoff.resetAfterMs);
+  
+  return { retryAfter: Math.ceil(delayMs / 1000), failures };
+}
+
+/**
+ * Clear backoff on successful request
+ */
+async function clearBackoffOnSuccess(key: string): Promise<void> {
+  const currentStore = getStore();
+  await currentStore.clearBackoff(key);
 }
 
 /**
@@ -289,7 +434,8 @@ export function rateLimit(
     skip = () => false,
     keyGenerator = (req: Request) => getKey(req as RateLimitRequest, limitType),
     message = `Rate limit exceeded`,
-    useKarmaTier = false
+    useKarmaTier = false,
+    useProgressiveBackoff = false
   } = options;
   
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -301,6 +447,17 @@ export function rateLimit(
       }
       
       const key = await Promise.resolve(keyGenerator(req));
+
+      // If using progressive backoff, check backoff status first
+      if (useProgressiveBackoff) {
+        const backoffStatus = await checkBackoff(key);
+        if (backoffStatus.blocked) {
+          res.setHeader('Retry-After', backoffStatus.retryAfter);
+          res.setHeader('X-Backoff-Failures', backoffStatus.failures);
+          const backoffMessage = `Too many attempts. Please wait ${backoffStatus.retryAfter} seconds before trying again.`;
+          throw new RateLimitError(backoffMessage, backoffStatus.retryAfter);
+        }
+      }
       
       // Apply karma tier multiplier if enabled and agent exists
       let limit = { ...baseLimit };
@@ -320,8 +477,21 @@ export function rateLimit(
       res.setHeader('X-RateLimit-Reset', Math.floor(result.resetAt.getTime() / 1000));
       
       if (!result.allowed) {
+        // If using progressive backoff, record this failure and return backoff time
+        if (useProgressiveBackoff) {
+          const { retryAfter: backoffRetry, failures } = await recordFailure(key);
+          res.setHeader('Retry-After', backoffRetry);
+          res.setHeader('X-Backoff-Failures', failures);
+          const backoffMessage = `Too many attempts (${failures}). Please wait ${backoffRetry} seconds before trying again.`;
+          throw new RateLimitError(backoffMessage, backoffRetry);
+        }
         res.setHeader('Retry-After', result.retryAfter);
         throw new RateLimitError(message, result.retryAfter);
+      }
+
+      // Clear backoff on successful request (if using progressive backoff)
+      if (useProgressiveBackoff) {
+        await clearBackoffOnSuccess(key);
       }
       
       // Attach rate limit info to request
@@ -364,18 +534,34 @@ export const voteLimiter = rateLimit('votes', {
 });
 
 /**
- * Registration rate limiter (3/hr per IP)
- * Prevents wallet/registration spam attacks
+ * Registration rate limiter with progressive backoff
+ * 
+ * Instead of hard blocking for 1 hour, uses exponential backoff:
+ * - 1st excess: wait 5 seconds
+ * - 2nd excess: wait 10 seconds
+ * - 3rd excess: wait 20 seconds
+ * - 4th excess: wait 40 seconds
+ * - 5th excess: wait 80 seconds
+ * - 6th excess: wait 160 seconds
+ * - 7th+ excess: wait 300 seconds (5 min cap)
+ * 
+ * Backoff resets after 1 hour of no failures.
  */
 export const registrationLimiter = rateLimit('registration', {
-  message: 'Too many registration attempts. Try again later.',
+  message: 'Too many registration attempts.',
   // Force IP-based keying for registration (no auth yet)
-  keyGenerator: (req: Request) => `rl:registration:${req.ip || 'anonymous'}`
+  keyGenerator: (req: Request) => `rl:registration:${req.ip || 'anonymous'}`,
+  // Use progressive backoff instead of hard blocking
+  useProgressiveBackoff: true
 });
 
 /**
  * Get current rate limit store type (for monitoring)
  */
-export function getRateLimitStatus(): { storeType: string; karmaTiers: typeof KARMA_TIERS } {
-  return { storeType, karmaTiers: KARMA_TIERS };
+export function getRateLimitStatus(): { 
+  storeType: string; 
+  karmaTiers: typeof KARMA_TIERS;
+  backoffConfig: typeof config.backoff;
+} {
+  return { storeType, karmaTiers: KARMA_TIERS, backoffConfig: config.backoff };
 }

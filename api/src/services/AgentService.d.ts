@@ -27,6 +27,9 @@ export declare function findById(id: string): Promise<Agent | null>;
 export declare function findByName(name: string): Promise<Agent | null>;
 /**
  * Create a new agent
+ *
+ * For CDP-managed wallets (auto_claim = true), the agent is immediately active
+ * since the server signs on their behalf - no Twitter verification needed.
  */
 export declare function create(data: {
     name: string;
@@ -36,6 +39,8 @@ export declare function create(data: {
     display_name?: string;
     description?: string;
     avatar_url?: string;
+    /** If true, marks agent as claimed immediately (for CDP-managed wallets) */
+    auto_claim?: boolean;
 }): Promise<Agent>;
 /**
  * Update agent profile
