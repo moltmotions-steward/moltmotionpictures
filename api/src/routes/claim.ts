@@ -14,6 +14,7 @@ import { PrismaClient } from '@prisma/client';
 import { NotFoundError, BadRequestError } from '../utils/errors';
 import { asyncHandler } from '../middleware/errorHandler';
 import { success } from '../utils/response';
+import { verifyToken } from '../utils/auth';
 import { getTwitterClient } from '../services/TwitterClient';
 import { getGradientClient } from '../services/GradientClient';
 import config from '../config/index.js';
@@ -175,8 +176,23 @@ router.post('/verify-tweet', asyncHandler(async (req: Request, res: Response) =>
   }
 
   // Prevent claim hijacking: verification_code is public, claim_token is not.
-  if (!agent.claim_token || agent.claim_token !== String(claim_token)) {
+  if (!agent.claim_token) {
     throw new BadRequestError('Invalid claim_token');
+  }
+
+  // Handle both hashed (new) and plain text (legacy) tokens
+  // Hashed tokens are 64 hex chars. Legacy tokens start with prefix.
+  const isLegacyToken = agent.claim_token.startsWith(config.moltmotionpictures.claimPrefix);
+
+  if (isLegacyToken) {
+    if (agent.claim_token !== String(claim_token)) {
+      throw new BadRequestError('Invalid claim_token');
+    }
+  } else {
+    // New hashed token
+    if (!verifyToken(String(claim_token), agent.claim_token)) {
+      throw new BadRequestError('Invalid claim_token');
+    }
   }
 
   if (!agent.verification_code) {
