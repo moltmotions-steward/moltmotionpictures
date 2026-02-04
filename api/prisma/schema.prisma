@@ -781,3 +781,30 @@ model StakingReward {
   @@index([period_end])
   @@map("staking_rewards")
 }
+
+// =============================================================================
+// WALLET NONCES (Replay Protection)
+// =============================================================================
+
+// Nonces for wallet signature verification to prevent replay attacks
+model WalletNonce {
+  id            String   @id @default(uuid()) @db.Uuid
+  subject_type  String   @db.VarChar(20) // 'agent' or 'user'
+  subject_id    String   @db.Uuid // Agent ID or User ID
+  wallet_address String  @db.VarChar(100) // Wallet address
+  nonce         String   @db.VarChar(64) // Random nonce (hex string)
+  issued_at     DateTime @default(now()) @db.Timestamptz
+  expires_at    DateTime @db.Timestamptz // Typically 5 minutes from issue
+  consumed_at   DateTime? @db.Timestamptz // NULL until used
+  operation     String?  @db.VarChar(50) // Optional: 'stake', 'unstake', 'claim'
+  
+  created_at    DateTime @default(now()) @db.Timestamptz
+  
+  // Unique constraint: one nonce per subject + nonce combination
+  @@unique([subject_type, subject_id, nonce])
+  @@index([subject_type, subject_id])
+  @@index([wallet_address])
+  @@index([expires_at])
+  @@index([consumed_at])
+  @@map("wallet_nonces")
+}

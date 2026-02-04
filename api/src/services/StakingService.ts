@@ -6,13 +6,13 @@
  * Features:
  * - Create and manage staking pools
  * - Stake/unstake operations with wallet verification
- * - MEV protection via minimum stake duration
+ * - Time-lock protection via minimum stake duration
  * - Automatic reward calculation and distribution
  * - Multi-wallet support
  * 
  * Security considerations:
- * - Minimum stake duration prevents MEV pool sniping
- * - Wallet signature verification for all operations
+ * - Minimum stake duration prevents rapid cycling abuse
+ * - Wallet signature verification for all value-changing operations (REQUIRED)
  * - Rate limiting on stake/unstake operations
  * - Idempotent operations
  */
@@ -20,6 +20,7 @@
 import { PrismaClient } from '@prisma/client';
 import config from '../config/index.js';
 import * as CDPWalletService from './CDPWalletService.js';
+import * as WalletSignatureService from './WalletSignatureService.js';
 
 const prisma = new PrismaClient();
 
@@ -32,15 +33,25 @@ export interface StakeParams {
   poolId: string;
   amountCents: bigint;
   walletAddress: string;
-  // Note: Wallet signature verification not implemented in current version
-  // Authentication relies on API key verification via requireAuth middleware
+  // Wallet signature verification (REQUIRED)
+  signature: string;
+  message: WalletSignatureService.SignatureMessage;
 }
 
 export interface UnstakeParams {
   stakeId: string;
   agentId: string;
-  // Note: Wallet signature verification not implemented in current version
-  // Authentication relies on API key verification via requireAuth middleware
+  // Wallet signature verification (REQUIRED)
+  signature: string;
+  message: WalletSignatureService.SignatureMessage;
+}
+
+export interface ClaimParams {
+  stakeId: string;
+  agentId: string;
+  // Wallet signature verification (REQUIRED)
+  signature: string;
+  message: WalletSignatureService.SignatureMessage;
 }
 
 export interface StakingStatus {
@@ -140,9 +151,20 @@ export async function getPoolById(poolId: string) {
  * @returns Created stake record
  */
 export async function stake(params: StakeParams) {
-  const { agentId, poolId, amountCents, walletAddress } = params;
+  const { agentId, poolId, amountCents, walletAddress, signature, message } = params;
 
-  // Validate pool exists and is active
+  // 1. Verify wallet signature (REQUIRED)
+  const signatureVerification = await WalletSignatureService.verifyAgentWalletOwnership({
+    agentId,
+    signature,
+    message
+  });
+  
+  if (!signatureVerification.valid) {
+    throw new Error(`Wallet signature verification failed: ${signatureVerification.error}`);
+  }
+
+  // 2. Validate pool exists and is active
   const pool = await prisma.stakingPool.findUnique({
     where: { id: poolId }
   });
@@ -155,19 +177,19 @@ export async function stake(params: StakeParams) {
     throw new Error('Staking pool is not active');
   }
 
-  // Validate minimum stake amount
+  // 3. Validate minimum stake amount
   if (amountCents < pool.min_stake_amount_cents) {
     throw new Error(
       `Stake amount must be at least $${Number(pool.min_stake_amount_cents) / 100}`
     );
   }
 
-  // Validate wallet address format
+  // 4. Validate wallet address format
   if (!CDPWalletService.isValidAddress(walletAddress)) {
     throw new Error('Invalid wallet address format');
   }
 
-  // Check pool capacity if max is set
+  // 5. Check pool capacity if max is set
   if (pool.max_total_stake_cents) {
     const totalAfterStake = pool.total_staked_cents + amountCents;
     if (totalAfterStake > pool.max_total_stake_cents) {
@@ -175,11 +197,11 @@ export async function stake(params: StakeParams) {
     }
   }
 
-  // Calculate when the stake can be unstaked (MEV protection)
+  // 6. Calculate when the stake can be unstaked (time-lock protection)
   const canUnstakeAt = new Date();
   canUnstakeAt.setSeconds(canUnstakeAt.getSeconds() + pool.min_stake_duration_seconds);
 
-  // Create stake in a transaction
+  // 7. Create stake in a transaction
   const result = await prisma.$transaction(async (tx) => {
     // Create stake
     const newStake = await tx.stake.create({
