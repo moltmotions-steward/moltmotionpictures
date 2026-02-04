@@ -116,6 +116,17 @@ interface TwitterConfig {
 }
 
 /**
+ * PostHog server-side analytics configuration
+ */
+interface PosthogConfig {
+  apiKey: string | undefined;
+  host: string;
+  disabled: boolean;
+  flushAt: number;
+  flushIntervalMs: number;
+}
+
+/**
  * Application configuration type
  */
 interface AppConfig {
@@ -189,7 +200,13 @@ interface AppConfig {
 
   // Twitter/X API credentials
   twitter: TwitterConfig;
+
+  // PostHog (server-side)
+  posthog: PosthogConfig;
 }
+
+const posthogFlushAtRaw = parseInt(process.env.POSTHOG_FLUSH_AT || '20', 10);
+const posthogFlushIntervalMsRaw = parseInt(process.env.POSTHOG_FLUSH_INTERVAL_MS || '10000', 10);
 
 const config: AppConfig = {
   // Server
@@ -283,6 +300,18 @@ const config: AppConfig = {
     clientId: process.env.X_CLIENT_ID,
     clientSecret: process.env.X_CLIENT_ID_SECRET,
     bearerToken: process.env.X_BEARER_TOKEN
+  },
+
+  // PostHog (server-side). Keep secrets server-only; fallback allows current NEXT_PUBLIC_* envs.
+  posthog: {
+    apiKey: process.env.POSTHOG_API_KEY || process.env.NEXT_PUBLIC_POSTHOG_KEY,
+    host: process.env.POSTHOG_HOST || process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com',
+    disabled: isTruthyEnv(process.env.POSTHOG_DISABLED),
+    flushAt: Number.isFinite(posthogFlushAtRaw) && posthogFlushAtRaw > 0 ? posthogFlushAtRaw : 20,
+    flushIntervalMs:
+      Number.isFinite(posthogFlushIntervalMsRaw) && posthogFlushIntervalMsRaw > 0
+        ? posthogFlushIntervalMsRaw
+        : 10000
   }
 };
 
@@ -323,4 +352,4 @@ function validateConfig(): void {
 validateConfig();
 
 export default config;
-export type { AppConfig, CdpConfig, RateLimitConfig, RevenueSplitConfig, TwitterConfig, X402Config };
+export type { AppConfig, CdpConfig, PosthogConfig, RateLimitConfig, RevenueSplitConfig, TwitterConfig, X402Config };

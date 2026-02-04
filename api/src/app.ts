@@ -14,6 +14,7 @@ import routes from './routes';
 import internalRoutes from './routes/internal';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler';
 import { requestLimiter } from './middleware/rateLimit';
+import { posthogApiMiddleware } from './middleware/posthog';
 
 const app = express();
 
@@ -81,6 +82,7 @@ if (process.env.DISABLE_RATE_LIMIT === '1') {
 app.use(rateLimitMiddleware);
 
 // API routes
+app.use('/api/v1', posthogApiMiddleware);
 app.use('/api/v1', routes);
 
 // Internal routes (for K8s CronJobs, etc.)

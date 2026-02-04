@@ -24,6 +24,8 @@ function composeManagedPostgresUrlFromDoEnv() {
     const auth = `${encodeURIComponent(user)}:${encodeURIComponent(password)}`;
     const db = encodeURIComponent(dbName);
     const base = `postgresql://${auth}@${host}:${port}/${db}`;
+    // DigitalOcean Managed Postgres requires TLS.
+    // Prisma/pg will respect sslmode=require embedded in the connection string.
     const params = new URLSearchParams();
     params.set('sslmode', 'require');
     return `${base}?${params.toString()}`;
@@ -35,20 +37,26 @@ function composeManagedRedisUrlFromDoEnv() {
     const port = process.env.DO_REDIS_PORT;
     if (!password || !host || !port)
         return undefined;
+    // DO Managed Redis uses TLS. ioredis supports this via rediss://
     const username = user ?? 'default';
     const auth = `${encodeURIComponent(username)}:${encodeURIComponent(password)}`;
     return `rediss://${auth}@${host}:${port}`;
 }
+// If you want to use DO managed services without manually crafting DATABASE_URL/REDIS_URL,
+// set USE_MANAGED_SERVICES=1 (or MOLT_PREFER_MANAGED_SERVICES=1).
 const preferManagedServices = isTruthyEnv(process.env.USE_MANAGED_SERVICES) ||
     isTruthyEnv(process.env.MOLT_PREFER_MANAGED_SERVICES);
 const managedDatabaseUrl = composeManagedPostgresUrlFromDoEnv();
 const managedRedisUrl = composeManagedRedisUrlFromDoEnv();
+// Populate process.env early so Prisma (and other modules) can read it.
 if (preferManagedServices) {
     if (managedDatabaseUrl)
         process.env.DATABASE_URL ||= managedDatabaseUrl;
     if (managedRedisUrl)
         process.env.REDIS_URL ||= managedRedisUrl;
 }
+const posthogFlushAtRaw = parseInt(process.env.POSTHOG_FLUSH_AT || '20', 10);
+const posthogFlushIntervalMsRaw = parseInt(process.env.POSTHOG_FLUSH_INTERVAL_MS || '10000', 10);
 const config = {
     // Server
     port: parseInt(process.env.PORT || '3000', 10),
@@ -120,7 +128,7 @@ const config = {
     },
     // Coinbase Developer Platform (CDP) credentials
     cdp: {
-        apiKeyName: process.env.CDP_API_KEY_NAME,
+        apiKeyName: process.env.CDP_API_KEY_PRIVATE_KEY || process.env.CDP_API_KEY_NAME,
         apiKeySecret: process.env.CDP_API_KEY_SECRET
     },
     // Twitter/X API credentials (OAuth 2.0 + Bearer token)
@@ -128,12 +136,23 @@ const config = {
         clientId: process.env.X_CLIENT_ID,
         clientSecret: process.env.X_CLIENT_ID_SECRET,
         bearerToken: process.env.X_BEARER_TOKEN
+    },
+    // PostHog (server-side). Keep secrets server-only; fallback allows current NEXT_PUBLIC_* envs.
+    posthog: {
+        apiKey: process.env.POSTHOG_API_KEY || process.env.NEXT_PUBLIC_POSTHOG_KEY,
+        host: process.env.POSTHOG_HOST || process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://app.posthog.com',
+        disabled: isTruthyEnv(process.env.POSTHOG_DISABLED),
+        flushAt: Number.isFinite(posthogFlushAtRaw) && posthogFlushAtRaw > 0 ? posthogFlushAtRaw : 20,
+        flushIntervalMs: Number.isFinite(posthogFlushIntervalMsRaw) && posthogFlushIntervalMsRaw > 0
+            ? posthogFlushIntervalMsRaw
+            : 10000
     }
 };
 // Validate required config
 function validateConfig() {
     const required = [];
     if (config.isProduction) {
+        // Allow either DATABASE_URL directly, or managed Postgres env vars when opting into managed.
         const hasDatabaseUrl = Boolean(config.database.url);
         const hasManagedPgVars = Boolean(process.env.DO_PG_USER &&
             process.env.DO_PG_PASSWORD &&

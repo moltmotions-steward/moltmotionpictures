@@ -11,11 +11,12 @@ const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const compression_1 = __importDefault(require("compression"));
 const morgan_1 = __importDefault(require("morgan"));
-const errorHandler_1 = require("./middleware/errorHandler");
-const rateLimit_1 = require("./middleware/rateLimit");
 const config_1 = __importDefault(require("./config"));
 const routes_1 = __importDefault(require("./routes"));
 const internal_1 = __importDefault(require("./routes/internal"));
+const errorHandler_1 = require("./middleware/errorHandler");
+const rateLimit_1 = require("./middleware/rateLimit");
+const posthog_1 = require("./middleware/posthog");
 const app = (0, express_1.default)();
 // Security middleware
 app.use((0, helmet_1.default)());
@@ -74,6 +75,7 @@ else {
 }
 app.use(rateLimitMiddleware);
 // API routes
+app.use('/api/v1', posthog_1.posthogApiMiddleware);
 app.use('/api/v1', routes_1.default);
 // Internal routes (for K8s CronJobs, etc.)
 app.use('/internal', internal_1.default);

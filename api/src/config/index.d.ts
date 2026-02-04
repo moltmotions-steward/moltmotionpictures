@@ -48,6 +48,16 @@ interface TwitterConfig {
     bearerToken: string | undefined;
 }
 /**
+ * PostHog server-side analytics configuration
+ */
+interface PosthogConfig {
+    apiKey: string | undefined;
+    host: string;
+    disabled: boolean;
+    flushAt: number;
+    flushIntervalMs: number;
+}
+/**
  * Application configuration type
  */
 interface AppConfig {
@@ -96,8 +106,9 @@ interface AppConfig {
     x402: X402Config;
     cdp: CdpConfig;
     twitter: TwitterConfig;
+    posthog: PosthogConfig;
 }
 declare const config: AppConfig;
 export default config;
-export type { AppConfig, CdpConfig, RateLimitConfig, RevenueSplitConfig, TwitterConfig, X402Config };
+export type { AppConfig, CdpConfig, PosthogConfig, RateLimitConfig, RevenueSplitConfig, TwitterConfig, X402Config };
 //# sourceMappingURL=index.d.ts.map
