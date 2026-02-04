@@ -12,6 +12,7 @@ const server = app.listen(PORT, () => {
   console.log(`   Environment: ${config.nodeEnv}`);
   console.log(`   x402 Wallet: ${config.x402.platformWallet ? '✓ Configured' : '✗ Not set'}`);
   console.log(`   CDP API Key: ${config.cdp.apiKeyName ? '✓ Configured' : '✗ Not set'}`);
+  console.log(`   CDP Wallet Secret: ${config.cdp.walletSecret ? '✓ Configured' : '✗ Not set'}`);
 });
 
 let isShuttingDown = false;
