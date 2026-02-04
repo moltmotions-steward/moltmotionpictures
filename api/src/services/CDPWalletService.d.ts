@@ -36,6 +36,36 @@ export interface CDPWalletServiceConfig {
  */
 export declare function createWalletForAgent(agentId: string): Promise<WalletCreationResult>;
 /**
+ * Sign a message using CDP-managed account.
+ *
+ * CDP holds the private keys in TEE, so we call their API to sign.
+ * This is used during registration to prove wallet ownership server-side.
+ *
+ * @param accountName - The CDP account name (deterministic from agentId)
+ * @param message - The message to sign
+ * @returns Hex-encoded signature
+ */
+export declare function signMessage(accountName: string, message: string): Promise<string>;
+/**
+ * Create a wallet and sign a message in one flow.
+ *
+ * This is the core function for Option B registration:
+ * 1. Create (or retrieve) CDP wallet for agent
+ * 2. Sign the registration message server-side
+ * 3. Return both wallet address and signature
+ *
+ * @param agentId - Unique identifier for the agent
+ * @param message - The registration message to sign
+ * @returns Wallet address and signature
+ */
+export declare function createWalletWithSignature(agentId: string, message: string): Promise<{
+    address: string;
+    signature: string;
+    network: string;
+    explorerUrl: string;
+    isNew: boolean;
+}>;
+/**
  * Get the explorer URL for a wallet address.
  *
  * @param address - EVM wallet address

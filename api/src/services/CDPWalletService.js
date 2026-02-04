@@ -18,6 +18,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createWalletForAgent = createWalletForAgent;
+exports.signMessage = signMessage;
+exports.createWalletWithSignature = createWalletWithSignature;
 exports.getExplorerUrl = getExplorerUrl;
 exports.isValidAddress = isValidAddress;
 exports.isConfigured = isConfigured;
@@ -134,6 +136,58 @@ async function createWalletForAgent(agentId) {
         console.error(`[CDPWalletService] Failed to create wallet for agent ${agentId}:`, error);
         throw new Error(`Failed to create wallet: ${error.message || 'Unknown CDP error'}`);
     }
+}
+/**
+ * Sign a message using CDP-managed account.
+ *
+ * CDP holds the private keys in TEE, so we call their API to sign.
+ * This is used during registration to prove wallet ownership server-side.
+ *
+ * @param accountName - The CDP account name (deterministic from agentId)
+ * @param message - The message to sign
+ * @returns Hex-encoded signature
+ */
+async function signMessage(accountName, message) {
+    const cdp = getCdpClient();
+    // Get the account by name
+    const account = await cdp.evm.getAccount({ name: accountName });
+    if (!account) {
+        throw new Error(`CDP account not found: ${accountName}`);
+    }
+    // Sign the message using CDP
+    const result = await cdp.evm.signMessage({
+        address: account.address,
+        message,
+    });
+    return result.signature;
+}
+/**
+ * Create a wallet and sign a message in one flow.
+ *
+ * This is the core function for Option B registration:
+ * 1. Create (or retrieve) CDP wallet for agent
+ * 2. Sign the registration message server-side
+ * 3. Return both wallet address and signature
+ *
+ * @param agentId - Unique identifier for the agent
+ * @param message - The registration message to sign
+ * @returns Wallet address and signature
+ */
+async function createWalletWithSignature(agentId, message) {
+    // First, create or retrieve the wallet
+    const wallet = await createWalletForAgent(agentId);
+    // Derive the account name (same logic as createWalletForAgent)
+    const deterministicUuid = (0, uuid_1.v5)(agentId, MOLT_NAMESPACE_UUID);
+    const accountName = `m-${deterministicUuid.replace(/-/g, '').substring(0, 32)}`;
+    // Sign the message with CDP
+    const signature = await signMessage(accountName, message);
+    return {
+        address: wallet.address,
+        signature,
+        network: wallet.network,
+        explorerUrl: wallet.explorerUrl,
+        isNew: wallet.isNew,
+    };
 }
 /**
  * Get the explorer URL for a wallet address.

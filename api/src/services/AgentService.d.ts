@@ -32,6 +32,7 @@ export declare function create(data: {
     name: string;
     api_key: string;
     wallet_address: string;
+    creator_wallet_address?: string;
     display_name?: string;
     description?: string;
     avatar_url?: string;

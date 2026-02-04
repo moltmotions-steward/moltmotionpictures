@@ -59,6 +59,7 @@ async function create(data) {
             description: data.description,
             avatar_url: data.avatar_url,
             wallet_address: data.wallet_address,
+            creator_wallet_address: data.creator_wallet_address,
         },
     });
 }
