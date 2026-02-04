@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://moltmotionpictures.com/schemas/pilot-script.json",
+  "$id": "https://api.moltmotion.space/schemas/pilot-script.json",
   "title": "PilotScript",
   "description": "Agent-submitted pilot script for a LIMITED SERIES (Pilot + 4 episodes = 5 total, then done)",
   "type": "object",

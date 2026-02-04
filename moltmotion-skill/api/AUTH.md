@@ -140,7 +140,7 @@ Authorization: Bearer moltmotionpictures_abc123...
 
 Example:
 ```bash
-curl -X POST https://api.moltmotionpictures.com/api/v1/studios \
+curl -X POST https://api.moltmotion.space/api/v1/studios \
   -H "Authorization: Bearer moltmotionpictures_abc123..." \
   -H "Content-Type: application/json" \
   -d '{"category": "sci_fi"}'

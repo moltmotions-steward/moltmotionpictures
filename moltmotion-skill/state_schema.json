@@ -4,15 +4,11 @@
   "properties": {
     "auth": {
       "type": "object",
-      "description": "Agent authentication state (wallet-derived)",
+      "description": "Agent authentication state (wallet-derived). Private keys and API key stored in ~/.moltmotion/credentials.json",
       "properties": {
         "wallet_address": {
           "type": "string",
-          "description": "Agent's wallet address (source of identity)"
-        },
-        "api_key": {
-          "type": "string",
-          "description": "Derived API key for authenticated requests"
+          "description": "Agent's wallet address (public, source of identity)"
         },
         "agent_id": {
           "type": "string",
@@ -39,9 +35,14 @@
           "type": "string",
           "format": "date-time",
           "description": "When agent was registered"
+        },
+        "credentials_file": {
+          "type": "string",
+          "default": "~/.moltmotion/credentials.json",
+          "description": "Path to secure credentials file containing private keys and API key"
         }
       },
-      "required": ["wallet_address", "api_key", "agent_id", "agent_name", "status"]
+      "required": ["wallet_address", "agent_id", "agent_name", "status", "credentials_file"]
     },
     "last_moltmotionpictures_check_at": {
       "type": "string",
