@@ -1,13 +1,126 @@
 import type { Config } from 'tailwindcss';
 import tailwindcssAnimate from 'tailwindcss-animate';
 
+// MOLT Motion Pictures Design Tokens
+const moltTokens = {
+  colors: {
+    // Background colors
+    bg: {
+      canvas: 'var(--color-bg-canvas)',
+      surface: 'var(--color-bg-surface)',
+      'surface-elevated': 'var(--color-bg-surface-elevated)',
+      'surface-muted': 'var(--color-bg-surface-muted)',
+      overlay: 'var(--color-bg-overlay)',
+      'overlay-heavy': 'var(--color-bg-overlay-heavy)',
+    },
+    // Foreground colors
+    fg: {
+      DEFAULT: 'var(--color-fg-default)',
+      muted: 'var(--color-fg-muted)',
+      subtle: 'var(--color-fg-subtle)',
+      disabled: 'var(--color-fg-disabled)',
+      inverse: 'var(--color-fg-inverse)',
+    },
+    // Border colors
+    border: {
+      DEFAULT: 'var(--color-border-default)',
+      muted: 'var(--color-border-muted)',
+      emphasis: 'var(--color-border-emphasis)',
+    },
+    // Accent colors
+    accent: {
+      primary: 'var(--color-accent-primary)',
+      'primary-hover': 'var(--color-accent-primary-hover)',
+      'primary-active': 'var(--color-accent-primary-active)',
+      'on-primary': 'var(--color-accent-on-primary)',
+      secondary: 'var(--color-accent-secondary)',
+      'secondary-hover': 'var(--color-accent-secondary-hover)',
+      tertiary: 'var(--color-accent-tertiary)',
+    },
+    // State colors
+    state: {
+      'focus-ring': 'var(--color-state-focus-ring)',
+      success: 'var(--color-state-success)',
+      warning: 'var(--color-state-warning)',
+      error: 'var(--color-state-error)',
+      info: 'var(--color-state-info)',
+    },
+    // Core palette (use sparingly)
+    core: {
+      neutral: {
+        950: 'var(--color-core-neutral-950)',
+        900: 'var(--color-core-neutral-900)',
+        850: 'var(--color-core-neutral-850)',
+        800: 'var(--color-core-neutral-800)',
+        700: 'var(--color-core-neutral-700)',
+        600: 'var(--color-core-neutral-600)',
+        500: 'var(--color-core-neutral-500)',
+        300: 'var(--color-core-neutral-300)',
+        200: 'var(--color-core-neutral-200)',
+        100: 'var(--color-core-neutral-100)',
+      },
+      amber: {
+        700: 'var(--color-core-amber-700)',
+        600: 'var(--color-core-amber-600)',
+        500: 'var(--color-core-amber-500)',
+        400: 'var(--color-core-amber-400)',
+        300: 'var(--color-core-amber-300)',
+        200: 'var(--color-core-amber-200)',
+      },
+      copper: {
+        700: 'var(--color-core-copper-700)',
+        600: 'var(--color-core-copper-600)',
+        500: 'var(--color-core-copper-500)',
+        400: 'var(--color-core-copper-400)',
+        300: 'var(--color-core-copper-300)',
+      },
+      velvet: {
+        800: 'var(--color-core-velvet-800)',
+        700: 'var(--color-core-velvet-700)',
+        600: 'var(--color-core-velvet-600)',
+        500: 'var(--color-core-velvet-500)',
+      },
+    },
+  },
+  fontFamily: {
+    display: ['var(--font-cinzel)', 'Cinzel', 'Trajan Pro', 'Times New Roman', 'serif'],
+    body: ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
+  },
+  borderRadius: {
+    none: 'var(--radius-none)',
+    sm: 'var(--radius-sm)',
+    md: 'var(--radius-md)',
+    lg: 'var(--radius-lg)',
+    xl: 'var(--radius-xl)',
+    '2xl': 'var(--radius-2xl)',
+    full: 'var(--radius-full)',
+  },
+  boxShadow: {
+    surface: 'var(--shadow-surface)',
+    raised: 'var(--shadow-raised)',
+    glow: 'var(--shadow-glow)',
+    inset: 'var(--shadow-inset)',
+  },
+  backdropBlur: {
+    none: 'var(--blur-none)',
+    sm: 'var(--blur-sm)',
+    surface: 'var(--blur-surface)',
+    popover: 'var(--blur-popover)',
+    lg: 'var(--blur-lg)',
+  },
+};
+
 const config: Config = {
   darkMode: 'class',
   content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
 
   theme: {
     extend: {
+      // MOLT Design System tokens
+      ...moltTokens,
       colors: {
+        ...moltTokens.colors,
+        // Legacy colors (for backward compatibility)
         moltmotionpictures: {
           50: '#eef2ff',
           100: '#e0e7ff',
@@ -21,29 +134,32 @@ const config: Config = {
           900: '#312e81',
           950: '#1e1b4b',
         },
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
-        card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' },
-        popover: { DEFAULT: 'hsl(var(--popover))', foreground: 'hsl(var(--popover-foreground))' },
-        primary: { DEFAULT: 'hsl(var(--primary))', foreground: 'hsl(var(--primary-foreground))' },
-        secondary: { DEFAULT: 'hsl(var(--secondary))', foreground: 'hsl(var(--secondary-foreground))' },
-        muted: { DEFAULT: 'hsl(var(--muted))', foreground: 'hsl(var(--muted-foreground))' },
-        accent: { DEFAULT: 'hsl(var(--accent))', foreground: 'hsl(var(--accent-foreground))' },
-        destructive: { DEFAULT: 'hsl(var(--destructive))', foreground: 'hsl(var(--destructive-foreground))' },
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
+        background: 'var(--color-bg-canvas)',
+        foreground: 'var(--color-fg-default)',
+        card: { DEFAULT: 'var(--color-bg-surface)', foreground: 'var(--color-fg-default)' },
+        popover: { DEFAULT: 'var(--color-bg-surface-elevated)', foreground: 'var(--color-fg-default)' },
+        primary: { DEFAULT: 'var(--color-accent-primary)', foreground: 'var(--color-accent-on-primary)' },
+        secondary: { DEFAULT: 'var(--color-accent-secondary)', foreground: 'var(--color-fg-default)' },
+        muted: { DEFAULT: 'var(--color-bg-surface-muted)', foreground: 'var(--color-fg-muted)' },
+        destructive: { DEFAULT: 'var(--color-state-error)', foreground: 'var(--color-fg-default)' },
+        input: 'var(--color-border-default)',
+        ring: 'var(--color-state-focus-ring)',
         upvote: '#ff4500',
         downvote: '#7193ff',
       },
       fontFamily: {
+        ...moltTokens.fontFamily,
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-mono)', 'monospace'],
       },
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        ...moltTokens.borderRadius,
+      },
+      boxShadow: {
+        ...moltTokens.boxShadow,
+      },
+      backdropBlur: {
+        ...moltTokens.backdropBlur,
       },
       keyframes: {
         'accordion-down': { from: { height: '0' }, to: { height: 'var(--radix-accordion-content-height)' } },

@@ -1,0 +1,354 @@
+{
+  "$description": "Component-level tokens - reference semantic tokens only",
+
+  "component": {
+    "card": {
+      "bg": { 
+        "$type": "color", 
+        "$value": "{color.bg.surface}",
+        "$description": "Card background"
+      },
+      "bgHover": { 
+        "$type": "color", 
+        "$value": "{color.bg.surfaceElevated}",
+        "$description": "Card hover state"
+      },
+      "border": { 
+        "$type": "color", 
+        "$value": "{color.border.default}",
+        "$description": "Card border"
+      },
+      "shadow": { 
+        "$type": "shadow", 
+        "$value": "{effect.shadow.surface}",
+        "$description": "Card shadow"
+      },
+      "radius": { 
+        "$type": "dimension", 
+        "$value": "{radius.2xl}",
+        "$description": "Card border radius"
+      },
+      "blur": { 
+        "$type": "dimension", 
+        "$value": "{effect.blur.surface}",
+        "$description": "Card backdrop blur"
+      },
+      "padding": { 
+        "$type": "dimension", 
+        "$value": "{space.6}",
+        "$description": "Card inner padding"
+      }
+    },
+
+    "button": {
+      "primary": {
+        "bg": { 
+          "$type": "color", 
+          "$value": "{color.accent.primary}",
+          "$description": "Primary button background"
+        },
+        "bgHover": { 
+          "$type": "color", 
+          "$value": "{color.accent.primaryHover}",
+          "$description": "Primary button hover"
+        },
+        "bgActive": { 
+          "$type": "color", 
+          "$value": "{color.accent.primaryActive}",
+          "$description": "Primary button pressed"
+        },
+        "fg": { 
+          "$type": "color", 
+          "$value": "{color.accent.onPrimary}",
+          "$description": "Primary button text"
+        },
+        "radius": { 
+          "$type": "dimension", 
+          "$value": "{radius.xl}",
+          "$description": "Primary button radius"
+        }
+      },
+      "secondary": {
+        "bg": { 
+          "$type": "color", 
+          "$value": "{color.bg.surfaceMuted}",
+          "$description": "Secondary button background"
+        },
+        "bgHover": { 
+          "$type": "color", 
+          "$value": "{color.bg.surface}",
+          "$description": "Secondary button hover"
+        },
+        "fg": { 
+          "$type": "color", 
+          "$value": "{color.fg.default}",
+          "$description": "Secondary button text"
+        },
+        "border": { 
+          "$type": "color", 
+          "$value": "{color.border.default}",
+          "$description": "Secondary button border"
+        }
+      },
+      "ghost": {
+        "bg": { 
+          "$type": "color", 
+          "$value": "rgba(0,0,0,0)",
+          "$description": "Ghost button background"
+        },
+        "bgHover": { 
+          "$type": "color", 
+          "$value": "{color.bg.surfaceMuted}",
+          "$description": "Ghost button hover"
+        },
+        "fg": { 
+          "$type": "color", 
+          "$value": "{color.fg.default}",
+          "$description": "Ghost button text"
+        },
+        "border": { 
+          "$type": "color", 
+          "$value": "{color.border.muted}",
+          "$description": "Ghost button border"
+        }
+      }
+    },
+
+    "sidebar": {
+      "bg": { 
+        "$type": "color", 
+        "$value": "rgba(11,7,6,0.78)",
+        "$description": "Sidebar background"
+      },
+      "fg": { 
+        "$type": "color", 
+        "$value": "{color.fg.subtle}",
+        "$description": "Sidebar inactive text"
+      },
+      "activeFg": { 
+        "$type": "color", 
+        "$value": "{color.fg.default}",
+        "$description": "Sidebar active text"
+      },
+      "activeIndicator": { 
+        "$type": "color", 
+        "$value": "{color.accent.secondary}",
+        "$description": "Sidebar active indicator"
+      },
+      "hoverBg": { 
+        "$type": "color", 
+        "$value": "{color.bg.surfaceMuted}",
+        "$description": "Sidebar item hover"
+      },
+      "border": { 
+        "$type": "color", 
+        "$value": "{color.border.muted}",
+        "$description": "Sidebar border"
+      }
+    },
+
+    "input": {
+      "bg": { 
+        "$type": "color", 
+        "$value": "rgba(22,15,12,0.55)",
+        "$description": "Input background"
+      },
+      "bgFocus": { 
+        "$type": "color", 
+        "$value": "rgba(22,15,12,0.72)",
+        "$description": "Input focused background"
+      },
+      "fg": { 
+        "$type": "color", 
+        "$value": "{color.fg.default}",
+        "$description": "Input text"
+      },
+      "placeholder": { 
+        "$type": "color", 
+        "$value": "{color.fg.subtle}",
+        "$description": "Input placeholder"
+      },
+      "border": { 
+        "$type": "color", 
+        "$value": "{color.border.default}",
+        "$description": "Input border"
+      },
+      "borderFocus": { 
+        "$type": "color", 
+        "$value": "{color.accent.primary}",
+        "$description": "Input focus border"
+      },
+      "radius": { 
+        "$type": "dimension", 
+        "$value": "{radius.lg}",
+        "$description": "Input border radius"
+      }
+    },
+
+    "modal": {
+      "bg": { 
+        "$type": "color", 
+        "$value": "{color.bg.surfaceElevated}",
+        "$description": "Modal background"
+      },
+      "overlay": { 
+        "$type": "color", 
+        "$value": "{color.bg.overlay}",
+        "$description": "Modal backdrop"
+      },
+      "border": { 
+        "$type": "color", 
+        "$value": "{color.border.default}",
+        "$description": "Modal border"
+      },
+      "shadow": { 
+        "$type": "shadow", 
+        "$value": "{effect.shadow.raised}",
+        "$description": "Modal shadow"
+      },
+      "blur": { 
+        "$type": "dimension", 
+        "$value": "{effect.blur.popover}",
+        "$description": "Modal backdrop blur"
+      },
+      "radius": { 
+        "$type": "dimension", 
+        "$value": "{radius.2xl}",
+        "$description": "Modal border radius"
+      }
+    },
+
+    "tabs": {
+      "bg": { 
+        "$type": "color", 
+        "$value": "rgba(0,0,0,0)",
+        "$description": "Tab container background"
+      },
+      "fg": { 
+        "$type": "color", 
+        "$value": "{color.fg.muted}",
+        "$description": "Inactive tab text"
+      },
+      "activeFg": { 
+        "$type": "color", 
+        "$value": "{color.fg.default}",
+        "$description": "Active tab text"
+      },
+      "indicator": { 
+        "$type": "color", 
+        "$value": "{color.accent.primary}",
+        "$description": "Active tab indicator"
+      },
+      "hoverBg": { 
+        "$type": "color", 
+        "$value": "{color.bg.surfaceMuted}",
+        "$description": "Tab hover background"
+      }
+    },
+
+    "tooltip": {
+      "bg": { 
+        "$type": "color", 
+        "$value": "{color.bg.surfaceElevated}",
+        "$description": "Tooltip background"
+      },
+      "fg": { 
+        "$type": "color", 
+        "$value": "{color.fg.default}",
+        "$description": "Tooltip text"
+      },
+      "border": { 
+        "$type": "color", 
+        "$value": "{color.border.default}",
+        "$description": "Tooltip border"
+      },
+      "radius": { 
+        "$type": "dimension", 
+        "$value": "{radius.md}",
+        "$description": "Tooltip radius"
+      }
+    },
+
+    "badge": {
+      "primary": {
+        "bg": { 
+          "$type": "color", 
+          "$value": "rgba(214,160,74,0.20)",
+          "$description": "Primary badge background"
+        },
+        "fg": { 
+          "$type": "color", 
+          "$value": "{color.accent.primary}",
+          "$description": "Primary badge text"
+        }
+      },
+      "secondary": {
+        "bg": { 
+          "$type": "color", 
+          "$value": "rgba(197,123,76,0.20)",
+          "$description": "Secondary badge background"
+        },
+        "fg": { 
+          "$type": "color", 
+          "$value": "{color.accent.secondary}",
+          "$description": "Secondary badge text"
+        }
+      },
+      "muted": {
+        "bg": { 
+          "$type": "color", 
+          "$value": "{color.bg.surfaceMuted}",
+          "$description": "Muted badge background"
+        },
+        "fg": { 
+          "$type": "color", 
+          "$value": "{color.fg.muted}",
+          "$description": "Muted badge text"
+        }
+      }
+    },
+
+    "avatar": {
+      "bg": { 
+        "$type": "color", 
+        "$value": "{color.bg.surfaceMuted}",
+        "$description": "Avatar fallback background"
+      },
+      "fg": { 
+        "$type": "color", 
+        "$value": "{color.fg.default}",
+        "$description": "Avatar fallback text"
+      },
+      "border": { 
+        "$type": "color", 
+        "$value": "{color.border.default}",
+        "$description": "Avatar ring"
+      },
+      "borderActive": { 
+        "$type": "color", 
+        "$value": "{color.accent.primary}",
+        "$description": "Active avatar ring"
+      }
+    },
+
+    "widget": {
+      "ticket": {
+        "bg": { 
+          "$type": "color", 
+          "$value": "{color.bg.surface}",
+          "$description": "Ticket widget background"
+        },
+        "border": { 
+          "$type": "color", 
+          "$value": "{color.border.default}",
+          "$description": "Ticket widget border"
+        },
+        "accent": { 
+          "$type": "color", 
+          "$value": "{color.accent.primary}",
+          "$description": "Ticket accent color"
+        }
+      }
+    }
+  }
+}

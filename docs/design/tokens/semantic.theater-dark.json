@@ -1,0 +1,216 @@
+{
+  "$description": "Theater Dark theme - warm gold on dark velvet cinematic look",
+  
+  "color": {
+    "bg": {
+      "canvas": { 
+        "$type": "color", 
+        "$value": "{color.core.neutral.950}",
+        "$description": "Root background / stage floor"
+      },
+      "surface": { 
+        "$type": "color", 
+        "$value": "rgba(22,15,12,0.72)",
+        "$description": "Card/panel backgrounds with transparency"
+      },
+      "surfaceElevated": { 
+        "$type": "color", 
+        "$value": "rgba(28,20,17,0.85)",
+        "$description": "Elevated surfaces like modals"
+      },
+      "surfaceMuted": { 
+        "$type": "color", 
+        "$value": "rgba(45,29,22,0.55)",
+        "$description": "Subtle interactive surfaces"
+      },
+      "overlay": { 
+        "$type": "color", 
+        "$value": "rgba(0,0,0,0.55)",
+        "$description": "Modal/drawer backdrop"
+      },
+      "overlayHeavy": { 
+        "$type": "color", 
+        "$value": "rgba(0,0,0,0.75)",
+        "$description": "Heavy overlay for focus"
+      }
+    },
+
+    "fg": {
+      "default": { 
+        "$type": "color", 
+        "$value": "{color.core.neutral.100}",
+        "$description": "Primary text / headings"
+      },
+      "muted": { 
+        "$type": "color", 
+        "$value": "{color.core.neutral.200}",
+        "$description": "Secondary text"
+      },
+      "subtle": { 
+        "$type": "color", 
+        "$value": "rgba(230,211,189,0.72)",
+        "$description": "Tertiary text / placeholders"
+      },
+      "disabled": { 
+        "$type": "color", 
+        "$value": "rgba(149,117,91,0.55)",
+        "$description": "Disabled state text"
+      },
+      "inverse": { 
+        "$type": "color", 
+        "$value": "{color.core.neutral.950}",
+        "$description": "Text on accent backgrounds"
+      }
+    },
+
+    "border": {
+      "default": { 
+        "$type": "color", 
+        "$value": "rgba(230,189,115,0.22)",
+        "$description": "Default border with warm tint"
+      },
+      "muted": { 
+        "$type": "color", 
+        "$value": "rgba(191,165,138,0.16)",
+        "$description": "Subtle dividers"
+      },
+      "emphasis": { 
+        "$type": "color", 
+        "$value": "rgba(230,189,115,0.40)",
+        "$description": "Emphasized borders"
+      }
+    },
+
+    "accent": {
+      "primary": { 
+        "$type": "color", 
+        "$value": "{color.core.amber.500}",
+        "$description": "Primary brand accent - golden"
+      },
+      "primaryHover": { 
+        "$type": "color", 
+        "$value": "{color.core.amber.400}",
+        "$description": "Primary hover state"
+      },
+      "primaryActive": { 
+        "$type": "color", 
+        "$value": "{color.core.amber.600}",
+        "$description": "Primary pressed state"
+      },
+      "onPrimary": { 
+        "$type": "color", 
+        "$value": "{color.core.neutral.950}",
+        "$description": "Text on primary accent"
+      },
+      "secondary": { 
+        "$type": "color", 
+        "$value": "{color.core.copper.400}",
+        "$description": "Secondary accent - copper warmth"
+      },
+      "secondaryHover": { 
+        "$type": "color", 
+        "$value": "{color.core.copper.300}",
+        "$description": "Secondary hover"
+      },
+      "tertiary": { 
+        "$type": "color", 
+        "$value": "{color.core.velvet.500}",
+        "$description": "Tertiary accent - velvet red"
+      }
+    },
+
+    "state": {
+      "focusRing": { 
+        "$type": "color", 
+        "$value": "rgba(230,189,115,0.55)",
+        "$description": "Focus ring color"
+      },
+      "success": { 
+        "$type": "color", 
+        "$value": "#4A7C59",
+        "$description": "Success state"
+      },
+      "warning": { 
+        "$type": "color", 
+        "$value": "#C5893A",
+        "$description": "Warning state"
+      },
+      "error": { 
+        "$type": "color", 
+        "$value": "#A54242",
+        "$description": "Error state"
+      },
+      "info": { 
+        "$type": "color", 
+        "$value": "#5B7A9D",
+        "$description": "Info state"
+      }
+    }
+  },
+
+  "effect": {
+    "shadow": {
+      "surface": { 
+        "$type": "shadow", 
+        "$value": "{shadow.surface}",
+        "$description": "Standard elevation"
+      },
+      "raised": { 
+        "$type": "shadow", 
+        "$value": "{shadow.raised}",
+        "$description": "High elevation"
+      },
+      "glow": { 
+        "$type": "shadow", 
+        "$value": "{shadow.glow}",
+        "$description": "Focus glow"
+      }
+    },
+    "blur": {
+      "surface": { 
+        "$type": "dimension", 
+        "$value": "{blur.surface}",
+        "$description": "Glassmorphism blur"
+      },
+      "popover": { 
+        "$type": "dimension", 
+        "$value": "{blur.popover}",
+        "$description": "Popover/dropdown blur"
+      }
+    }
+  },
+
+  "typography": {
+    "display": {
+      "family": { 
+        "$type": "fontFamily", 
+        "$value": "{font.family.display}",
+        "$description": "Cinematic display font"
+      },
+      "tracking": { 
+        "$type": "letterSpacing", 
+        "$value": "{font.letterSpacing.display}",
+        "$description": "Display letter spacing"
+      }
+    },
+    "body": {
+      "family": { 
+        "$type": "fontFamily", 
+        "$value": "{font.family.body}",
+        "$description": "UI body font"
+      },
+      "tracking": { 
+        "$type": "letterSpacing", 
+        "$value": "{font.letterSpacing.normal}",
+        "$description": "Body letter spacing"
+      }
+    },
+    "label": {
+      "tracking": { 
+        "$type": "letterSpacing", 
+        "$value": "{font.letterSpacing.caps}",
+        "$description": "All-caps labels"
+      }
+    }
+  }
+}

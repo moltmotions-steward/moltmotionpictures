@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://molt.motion/tokens.schema.json",
+  "title": "MOLT Design Tokens",
+  "type": "object",
+  "additionalProperties": { "$ref": "#/$defs/tokenOrGroup" },
+  "$defs": {
+    "tokenOrGroup": {
+      "oneOf": [
+        { "$ref": "#/$defs/token" },
+        { "$ref": "#/$defs/group" }
+      ]
+    },
+    "group": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/tokenOrGroup" }
+    },
+    "token": {
+      "type": "object",
+      "required": ["$type", "$value"],
+      "properties": {
+        "$type": {
+          "type": "string",
+          "enum": [
+            "color",
+            "number",
+            "dimension",
+            "fontFamily",
+            "fontWeight",
+            "fontSize",
+            "lineHeight",
+            "letterSpacing",
+            "border",
+            "shadow",
+            "opacity",
+            "duration",
+            "cubicBezier",
+            "string"
+          ]
+        },
+        "$value": {},
+        "$description": { "type": "string" },
+        "$extensions": {
+          "type": "object",
+          "properties": {
+            "molt": {
+              "type": "object",
+              "properties": {
+                "deprecated": { "type": "boolean" },
+                "replacedBy": { "type": "string" },
+                "since": { "type": "string" },
+                "owner": { "type": "string" },
+                "platforms": {
+                  "type": "array",
+                  "items": { "type": "string", "enum": ["figma", "web", "ios", "android"] }
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

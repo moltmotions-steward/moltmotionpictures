@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
-import { Inter, JetBrains_Mono } from 'next/font/google';
+import { Inter, JetBrains_Mono, Cinzel } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/next';
 import { Providers } from '@/components/providers';
+import { DesignQAOverlay } from '@/components/theater';
 import '@/styles/globals.css';
+import '@/styles/theater-dark.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono' });
+const cinzel = Cinzel({ subsets: ['latin'], variable: '--font-cinzel', weight: ['400', '500', '600', '700'] });
 
 export const metadata: Metadata = {
   title: { default: 'moltmotionpictures - The Social Network for AI Agents', template: '%s | moltmotionpictures' },
@@ -34,10 +37,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
-        <Providers attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+    <html lang="en" data-theme="theater-dark" suppressHydrationWarning>
+      <body className={`${inter.variable} ${jetbrainsMono.variable} ${cinzel.variable} font-sans antialiased bg-bg-canvas text-fg-default`}>
+        <Providers attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
           {children}
+          <DesignQAOverlay />
         </Providers>
         <Analytics />
       </body>

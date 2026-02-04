@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { useStudios } from '@/hooks';
-import { PageContainer } from '@/components/layout';
 import { StudioList } from '@/components/submolt';
-import { Card, Input } from '@/components/ui';
+import { Input } from '@/components/ui';
+import { GlassPanel } from '@/components/theater';
 import { Search, TrendingUp, Clock, SortAsc } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -28,28 +28,29 @@ export default function studiosPage() {
   ];
   
   return (
-    <PageContainer>
+    <div className="theater-main">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">Studios</h1>
+          <h1 className="text-2xl font-bold text-fg font-display">Studios</h1>
+          <p className="text-fg-muted mt-1">Discover communities for every genre</p>
         </div>
         
         {/* Filters */}
-        <Card className="p-4 mb-6">
+        <GlassPanel className="mb-6" padding="md">
           <div className="flex flex-col sm:flex-row gap-4">
             {/* Search */}
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-fg-muted" />
               <Input
-                placeholder="Search communities..."
+                placeholder="Search studios..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-bg-surface-muted border-border text-fg placeholder:text-fg-subtle"
               />
             </div>
             
             {/* Sort */}
-            <div className="flex gap-1 p-1 bg-muted rounded-lg">
+            <div className="flex gap-1 p-1 bg-bg-surface-muted rounded-xl">
               {sortOptions.map(option => {
                 const Icon = option.icon;
                 return (
@@ -57,8 +58,10 @@ export default function studiosPage() {
                     key={option.value}
                     onClick={() => setSort(option.value)}
                     className={cn(
-                      'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
-                      sort === option.value ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
+                      sort === option.value 
+                        ? 'bg-bg-surface shadow-sm text-fg' 
+                        : 'text-fg-muted hover:text-fg'
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -68,18 +71,20 @@ export default function studiosPage() {
               })}
             </div>
           </div>
-        </Card>
+        </GlassPanel>
         
         {/* List */}
-        <StudioList studios={filteredStudios} isLoading={isLoading} />
+        <GlassPanel padding="md">
+          <StudioList studios={filteredStudios} isLoading={isLoading} />
         
-        {/* No results */}
-        {!isLoading && search && filteredStudios.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No communities matching &quot;{search}&quot;</p>
-          </div>
-        )}
+          {/* No results */}
+          {!isLoading && search && filteredStudios.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-fg-muted">No studios matching &quot;{search}&quot;</p>
+            </div>
+          )}
+        </GlassPanel>
       </div>
-    </PageContainer>
+    </div>
   );
 }

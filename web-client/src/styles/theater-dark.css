@@ -1,0 +1,281 @@
+/**
+ * MOLT Motion Pictures - Theater Dark Theme
+ * Generated from design tokens v1.0.0
+ * 
+ * Usage: Add data-theme="theater-dark" to <html> or <body>
+ */
+
+:root[data-theme="theater-dark"],
+[data-theme="theater-dark"] {
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * BACKGROUND COLORS
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  --color-bg-canvas: #0B0706;
+  --color-bg-surface: rgba(22, 15, 12, 0.72);
+  --color-bg-surface-elevated: rgba(28, 20, 17, 0.85);
+  --color-bg-surface-muted: rgba(45, 29, 22, 0.55);
+  --color-bg-overlay: rgba(0, 0, 0, 0.55);
+  --color-bg-overlay-heavy: rgba(0, 0, 0, 0.75);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * FOREGROUND COLORS
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  --color-fg-default: #E6D3BD;
+  --color-fg-muted: #BFA58A;
+  --color-fg-subtle: rgba(230, 211, 189, 0.72);
+  --color-fg-disabled: rgba(149, 117, 91, 0.55);
+  --color-fg-inverse: #0B0706;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * BORDER COLORS
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  --color-border-default: rgba(230, 189, 115, 0.22);
+  --color-border-muted: rgba(191, 165, 138, 0.16);
+  --color-border-emphasis: rgba(230, 189, 115, 0.40);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * ACCENT COLORS
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  --color-accent-primary: #D6A04A;
+  --color-accent-primary-hover: #E6BD73;
+  --color-accent-primary-active: #B98131;
+  --color-accent-on-primary: #0B0706;
+  --color-accent-secondary: #C57B4C;
+  --color-accent-secondary-hover: #D59B5B;
+  --color-accent-tertiary: #652726;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * STATE COLORS
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  --color-state-focus-ring: rgba(230, 189, 115, 0.55);
+  --color-state-success: #4A7C59;
+  --color-state-warning: #C5893A;
+  --color-state-error: #A54242;
+  --color-state-info: #5B7A9D;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * CORE PALETTE (for reference - prefer semantic tokens)
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  --color-core-neutral-950: #0B0706;
+  --color-core-neutral-900: #160F0C;
+  --color-core-neutral-850: #1C1411;
+  --color-core-neutral-800: #241915;
+  --color-core-neutral-700: #2D1D16;
+  --color-core-neutral-600: #3F291E;
+  --color-core-neutral-500: #573A2B;
+  --color-core-neutral-300: #95755B;
+  --color-core-neutral-200: #BFA58A;
+  --color-core-neutral-100: #E6D3BD;
+
+  --color-core-amber-700: #9C6B2B;
+  --color-core-amber-600: #B98131;
+  --color-core-amber-500: #D6A04A;
+  --color-core-amber-400: #E6BD73;
+  --color-core-amber-300: #F1D29A;
+  --color-core-amber-200: #FBE4BC;
+
+  --color-core-copper-700: #6F3B24;
+  --color-core-copper-600: #8A4B2D;
+  --color-core-copper-500: #A85F3A;
+  --color-core-copper-400: #C57B4C;
+  --color-core-copper-300: #D59B5B;
+
+  --color-core-velvet-800: #2A0F10;
+  --color-core-velvet-700: #3A1415;
+  --color-core-velvet-600: #4A1C1A;
+  --color-core-velvet-500: #652726;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * TYPOGRAPHY
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  --font-family-display: "Cinzel", "Trajan Pro", "Times New Roman", serif;
+  --font-family-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 30px;
+  --font-size-4xl: 36px;
+  --font-size-5xl: 48px;
+
+  --line-height-tight: 1.1;
+  --line-height-snug: 1.25;
+  --line-height-normal: 1.5;
+
+  --letter-spacing-display: 0.08em;
+  --letter-spacing-caps: 0.12em;
+  --letter-spacing-normal: 0em;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * SPACING
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * BORDER RADIUS
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  --radius-none: 0px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * BORDER WIDTH
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  --border-width-hairline: 1px;
+  --border-width-thin: 2px;
+  --border-width-medium: 3px;
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * EFFECTS
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  --opacity-subtle: 0.12;
+  --opacity-muted: 0.24;
+  --opacity-medium: 0.48;
+  --opacity-strong: 0.72;
+
+  --blur-none: 0px;
+  --blur-sm: 8px;
+  --blur-surface: 14px;
+  --blur-popover: 20px;
+  --blur-lg: 32px;
+
+  --shadow-surface: 
+    0px 10px 30px -12px rgba(0, 0, 0, 0.55),
+    0px 0px 18px 0px rgba(214, 160, 74, 0.10);
+  --shadow-raised: 
+    0px 18px 48px -18px rgba(0, 0, 0, 0.65),
+    0px 0px 22px 0px rgba(230, 189, 115, 0.12);
+  --shadow-glow: 0px 0px 24px 0px rgba(214, 160, 74, 0.25);
+  --shadow-inset: inset 0px 2px 8px 0px rgba(0, 0, 0, 0.35);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * MOTION
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  --motion-duration-instant: 0ms;
+  --motion-duration-fast: 120ms;
+  --motion-duration-base: 200ms;
+  --motion-duration-slow: 320ms;
+  --motion-duration-slower: 480ms;
+
+  --motion-easing-linear: linear;
+  --motion-easing-standard: cubic-bezier(0.2, 0.0, 0.0, 1.0);
+  --motion-easing-emphasized: cubic-bezier(0.2, 0.0, 0.0, 1.2);
+  --motion-easing-decelerate: cubic-bezier(0.0, 0.0, 0.2, 1.0);
+  --motion-easing-accelerate: cubic-bezier(0.4, 0.0, 1.0, 1.0);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * COMPONENT TOKENS
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  
+  /* Card */
+  --component-card-bg: var(--color-bg-surface);
+  --component-card-bg-hover: var(--color-bg-surface-elevated);
+  --component-card-border: var(--color-border-default);
+  --component-card-shadow: var(--shadow-surface);
+  --component-card-radius: var(--radius-2xl);
+  --component-card-blur: var(--blur-surface);
+  --component-card-padding: var(--space-6);
+
+  /* Button Primary */
+  --component-button-primary-bg: var(--color-accent-primary);
+  --component-button-primary-bg-hover: var(--color-accent-primary-hover);
+  --component-button-primary-bg-active: var(--color-accent-primary-active);
+  --component-button-primary-fg: var(--color-accent-on-primary);
+  --component-button-primary-radius: var(--radius-xl);
+
+  /* Button Secondary */
+  --component-button-secondary-bg: var(--color-bg-surface-muted);
+  --component-button-secondary-bg-hover: var(--color-bg-surface);
+  --component-button-secondary-fg: var(--color-fg-default);
+  --component-button-secondary-border: var(--color-border-default);
+
+  /* Button Ghost */
+  --component-button-ghost-bg: transparent;
+  --component-button-ghost-bg-hover: var(--color-bg-surface-muted);
+  --component-button-ghost-fg: var(--color-fg-default);
+  --component-button-ghost-border: var(--color-border-muted);
+
+  /* Sidebar */
+  --component-sidebar-bg: rgba(11, 7, 6, 0.78);
+  --component-sidebar-fg: var(--color-fg-subtle);
+  --component-sidebar-fg-active: var(--color-fg-default);
+  --component-sidebar-indicator: var(--color-accent-secondary);
+  --component-sidebar-hover-bg: var(--color-bg-surface-muted);
+  --component-sidebar-border: var(--color-border-muted);
+
+  /* Input */
+  --component-input-bg: rgba(22, 15, 12, 0.55);
+  --component-input-bg-focus: rgba(22, 15, 12, 0.72);
+  --component-input-fg: var(--color-fg-default);
+  --component-input-placeholder: var(--color-fg-subtle);
+  --component-input-border: var(--color-border-default);
+  --component-input-border-focus: var(--color-accent-primary);
+  --component-input-radius: var(--radius-lg);
+
+  /* Modal */
+  --component-modal-bg: var(--color-bg-surface-elevated);
+  --component-modal-overlay: var(--color-bg-overlay);
+  --component-modal-border: var(--color-border-default);
+  --component-modal-shadow: var(--shadow-raised);
+  --component-modal-blur: var(--blur-popover);
+  --component-modal-radius: var(--radius-2xl);
+
+  /* Tabs */
+  --component-tabs-bg: transparent;
+  --component-tabs-fg: var(--color-fg-muted);
+  --component-tabs-fg-active: var(--color-fg-default);
+  --component-tabs-indicator: var(--color-accent-primary);
+  --component-tabs-hover-bg: var(--color-bg-surface-muted);
+
+  /* Tooltip */
+  --component-tooltip-bg: var(--color-bg-surface-elevated);
+  --component-tooltip-fg: var(--color-fg-default);
+  --component-tooltip-border: var(--color-border-default);
+  --component-tooltip-radius: var(--radius-md);
+
+  /* Badge */
+  --component-badge-primary-bg: rgba(214, 160, 74, 0.20);
+  --component-badge-primary-fg: var(--color-accent-primary);
+  --component-badge-secondary-bg: rgba(197, 123, 76, 0.20);
+  --component-badge-secondary-fg: var(--color-accent-secondary);
+  --component-badge-muted-bg: var(--color-bg-surface-muted);
+  --component-badge-muted-fg: var(--color-fg-muted);
+
+  /* Avatar */
+  --component-avatar-bg: var(--color-bg-surface-muted);
+  --component-avatar-fg: var(--color-fg-default);
+  --component-avatar-border: var(--color-border-default);
+  --component-avatar-border-active: var(--color-accent-primary);
+}
+
+/* Default to theater-dark if no theme specified */
+:root {
+  --color-bg-canvas: #0B0706;
+  --color-bg-surface: rgba(22, 15, 12, 0.72);
+  --color-fg-default: #E6D3BD;
+  --color-accent-primary: #D6A04A;
+}
