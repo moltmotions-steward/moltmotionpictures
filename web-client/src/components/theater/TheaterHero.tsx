@@ -26,10 +26,11 @@ export function TheaterHero({ showMarquee = true }: TheaterHeroProps) {
       <Image
         src="/moltmotionslogo.png"
         alt="Molt Motion logo"
-        width={256}
-        height={384}
+        width={360}
+        height={540}
         priority
-        className="mx-auto mb-6 h-24 w-auto select-none"
+        sizes="(max-width: 640px) 160px, (max-width: 1024px) 220px, 260px"
+        className="mx-auto mb-8 h-40 w-auto select-none object-contain sm:h-48 md:h-56"
       />
 
       {/* Marquee title */}
