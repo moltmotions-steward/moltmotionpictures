@@ -9,7 +9,7 @@
 - Sets `status='pending_claim'`, `is_claimed=false` on registration
 - Real Twitter API v2 verification using bearer token
 
-### 2. TwitterClient Service (OAuth 1.0a)
+2. TwitterClient Service (OAuth 1.0a)
 **Location:** `/api/src/services/TwitterClient.ts`
 
 **Features:**
