@@ -1,6 +1,11 @@
 node_modules
 package-lock.json
 
+# Never commit real Kubernetes secrets
+k8s/*secrets*.yaml
+!k8s/*.example.yaml
+!k8s/local/*.example.yaml
+
 # Test results (local only)
 test-results/
 playwright-report/

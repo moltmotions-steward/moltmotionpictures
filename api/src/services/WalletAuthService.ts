@@ -1,38 +1,22 @@
 /**
  * WalletAuthService
  * 
- * Handles wallet-based authentication and API key derivation.
- * The wallet address IS the identity - API keys are deterministically derived from it.
+ * Handles wallet-based authentication (signature verification).
+ *
+ * NOTE: API keys are intentionally NOT derived from wallet addresses. Keys are
+ * issued randomly at registration and can be rotated via wallet-signed recovery.
  * 
  * Flow:
  * 1. User provides wallet_address + signature of a known message
  * 2. We verify the signature proves ownership of that wallet
- * 3. We derive API key: HMAC-SHA256(server_secret, "molt:agent:v1:" + wallet_address)
- * 4. Same wallet always gets same key (recoverable by re-signing)
  */
 
-import { createHmac, createHash } from 'crypto';
+import { createHash } from 'crypto';
 import { verifyMessage } from 'ethers';
-import config from '../config';
 
 // Message the user must sign to prove wallet ownership
 const REGISTRATION_MESSAGE = 'I am registering an agent with MOLT Studios';
 const RECOVERY_MESSAGE_PREFIX = 'Recover my MOLT Studios API key at timestamp:';
-
-// API key derivation domain separator
-const KEY_DERIVATION_DOMAIN = 'molt:agent:v1:';
-
-/**
- * Get the server secret used for API key derivation.
- * Falls back to JWT_SECRET if WALLET_AUTH_SECRET not set.
- */
-function getServerSecret(): string {
-  const secret = process.env.WALLET_AUTH_SECRET || process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error('WALLET_AUTH_SECRET or JWT_SECRET must be configured');
-  }
-  return secret;
-}
 
 /**
  * Normalize wallet address to checksum format for consistent comparison
@@ -52,23 +36,6 @@ export function normalizeAddress(address: string): string {
   }
   
   return cleaned;
-}
-
-/**
- * Derive API key deterministically from wallet address.
- * Same wallet always produces same key.
- */
-export function deriveApiKey(walletAddress: string): string {
-  const normalized = normalizeAddress(walletAddress);
-  const secret = getServerSecret();
-  
-  // HMAC-SHA256 derivation
-  const hmac = createHmac('sha256', secret);
-  hmac.update(KEY_DERIVATION_DOMAIN + normalized);
-  const derived = hmac.digest('hex');
-  
-  // Format as molt API key
-  return `${config.moltmotionpictures.tokenPrefix}${derived}`;
 }
 
 /**
@@ -170,61 +137,11 @@ export function verifyRecoverySignature(
   }
 }
 
-/**
- * Full registration flow:
- * 1. Verify signature proves wallet ownership
- * 2. Derive API key from wallet
- * 3. Return both the key and its hash (for storage)
- */
-export function processRegistration(
-  walletAddress: string,
-  signature: string
-): { apiKey: string; apiKeyHash: string; normalizedAddress: string } {
-  // Verify the signature
-  const normalizedAddress = verifyRegistrationSignature(walletAddress, signature);
-  
-  // Derive the API key
-  const apiKey = deriveApiKey(normalizedAddress);
-  const apiKeyHash = hashApiKey(apiKey);
-  
-  return {
-    apiKey,
-    apiKeyHash,
-    normalizedAddress
-  };
-}
-
-/**
- * Full recovery flow:
- * 1. Verify signature proves wallet ownership (with timestamp)
- * 2. Re-derive the same API key
- * 3. Return it
- */
-export function processRecovery(
-  walletAddress: string,
-  signature: string,
-  timestamp: number
-): { apiKey: string; normalizedAddress: string } {
-  // Verify the signature with timestamp
-  const normalizedAddress = verifyRecoverySignature(walletAddress, signature, timestamp);
-  
-  // Derive the same API key (deterministic)
-  const apiKey = deriveApiKey(normalizedAddress);
-  
-  return {
-    apiKey,
-    normalizedAddress
-  };
-}
-
 export default {
   normalizeAddress,
-  deriveApiKey,
   hashApiKey,
   getRegistrationMessage,
   getRecoveryMessage,
   verifyRegistrationSignature,
-  verifyRecoverySignature,
-  processRegistration,
-  processRecovery
+  verifyRecoverySignature
 };

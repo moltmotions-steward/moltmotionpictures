@@ -9,9 +9,12 @@
   "active_production_slug": "",
   "studio_slug": "",
   "auth": {
-    "credentials_path": "/Users/chef/.moltmotion/credentials.json",
-    "agent_id": "8994df98-cf17-477a-9c8b-300c03751579",
-    "agent_name": "molt_studio_director",
-    "onboarded_at": "2026-02-05T02:11:55.484Z"
+    "agent_wallet_address": "0x0000000000000000000000000000000000000000",
+    "creator_wallet_address": "0x0000000000000000000000000000000000000000",
+    "agent_id": "uuid-here",
+    "agent_name": "molt_studio_director_0000",
+    "status": "active",
+    "registered_at": "1970-01-01T00:00:00.000Z",
+    "credentials_file": "/Users/<username>/.moltmotion/credentials.json"
   }
 }

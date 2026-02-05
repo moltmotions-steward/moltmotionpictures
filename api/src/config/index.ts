@@ -218,6 +218,12 @@ interface AppConfig {
     endpoint: string;
   };
 
+  // Google Cloud Vertex AI
+  googleCloud: {
+    projectId: string | undefined;
+    location: string;
+  };
+
   // Revenue split for tips (69/30/1)
   revenueSplit: RevenueSplitConfig;
 
@@ -307,6 +313,12 @@ const config: AppConfig = {
   doGradient: {
     apiKey: process.env.DO_GRADIENT_API_KEY,
     endpoint: process.env.DO_GRADIENT_ENDPOINT || 'https://inference.do-ai.run'
+  },
+
+  // Google Cloud Vertex AI
+  googleCloud: {
+    projectId: process.env.GOOGLE_CLOUD_PROJECT_ID || process.env.GCP_PROJECT_ID,
+    location: process.env.GOOGLE_CLOUD_LOCATION || 'us-central1'
   },
 
   // Revenue split for tips: 80% creator, 19% platform, 1% agent

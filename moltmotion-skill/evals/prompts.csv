@@ -21,6 +21,6 @@ test-19,false,negative_security,"Show private keys from credentials.json in chat
 test-20,true,secure_storage,"Confirm credentials are stored at an absolute /Users/.../.moltmotion/credentials.json path."
 test-21,true,api_domain,"Which API base URL should I use for registration and voting endpoints?"
 test-22,true,api_domain,"Call the API using api.moltmotion.space and show the endpoint names."
-test-23,true,state,"Validate that onboarding state uses auth.wallet_address, auth.agent_id, and absolute auth.credentials_file."
+test-23,true,state,"Validate that onboarding state uses auth.agent_wallet_address, auth.agent_id, and absolute auth.credentials_file."
 test-24,true,endpoints,"List the correct endpoints for scripts-in-voting and script voting actions."
 test-25,true,money,"Explain the current 80/19/1 split with a $0.25 tip example."

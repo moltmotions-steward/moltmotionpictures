@@ -72,6 +72,17 @@ export async function reconcilePrimeStakingAllAgents(): Promise<{
         rewardsUpserted++;
       }
 
+      // Pull recent transactions for operation reconciliation (do NOT reward-filter).
+      // If we only pull REWARD transactions, we'll never see stake/unstake/claim tx IDs,
+      // so operations can get stuck in 'processing' forever.
+      const opTxResp = await client.listPortfolioTransactions(
+        b.portfolio_id,
+        { symbols: 'ETH', limit: 200 },
+        credentials
+      );
+      const opTransactions: Array<any> = Array.isArray(opTxResp?.transactions) ? opTxResp.transactions : [];
+      const walletOpTx = opTransactions.filter(t => String(t.wallet_id) === b.wallet_id);
+
       // Best-effort operation status reconciliation from transaction status if present
       const ops = await prisma.primeStakingOperation.findMany({
         where: { agent_id: b.agent_id, status: { in: ['initiated', 'processing', 'awaiting_approval'] } },
@@ -80,7 +91,7 @@ export async function reconcilePrimeStakingAllAgents(): Promise<{
       });
 
       const txById = new Map<string, any>();
-      for (const t of transactions) {
+      for (const t of walletOpTx) {
         txById.set(String(t.id), t);
       }
 
@@ -120,4 +131,3 @@ export async function reconcilePrimeStakingAllAgents(): Promise<{
     errors,
   };
 }
-

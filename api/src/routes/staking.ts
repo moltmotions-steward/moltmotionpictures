@@ -41,21 +41,49 @@ router.get('/nonce', requireAuth, async (req: Request, res: Response) => {
   try {
     const walletAddress = req.query.walletAddress;
     const operation = req.query.operation;
+    const amountWei = req.query.amountWei;
+    const idempotencyKey = req.query.idempotencyKey;
 
     if (!walletAddress || typeof walletAddress !== 'string') {
       res.status(400).json({ success: false, error: 'walletAddress query parameter is required' });
       return;
     }
-    if (operation && typeof operation !== 'string') {
-      res.status(400).json({ success: false, error: 'operation must be a string' });
+    if (!operation || typeof operation !== 'string') {
+      res.status(400).json({ success: false, error: 'operation query parameter is required' });
       return;
+    }
+
+    if (!idempotencyKey || typeof idempotencyKey !== 'string') {
+      res.status(400).json({ success: false, error: 'idempotencyKey query parameter is required' });
+      return;
+    }
+
+    const op = operation.toLowerCase();
+    if (!['stake', 'unstake', 'claim'].includes(op)) {
+      res.status(400).json({ success: false, error: 'operation must be one of: stake, unstake, claim' });
+      return;
+    }
+
+    let amountWeiStr: string | undefined;
+    if (op === 'stake' || op === 'unstake') {
+      if (!amountWei || (typeof amountWei !== 'string' && typeof amountWei !== 'number')) {
+        res.status(400).json({ success: false, error: 'amountWei query parameter is required for stake/unstake' });
+        return;
+      }
+      amountWeiStr = parseBigIntString(amountWei, 'amountWei').toString();
+    } else if (op === 'claim' && amountWei !== undefined) {
+      if (typeof amountWei !== 'string' && typeof amountWei !== 'number') {
+        res.status(400).json({ success: false, error: 'amountWei must be a string integer' });
+        return;
+      }
+      amountWeiStr = parseBigIntString(amountWei, 'amountWei').toString();
     }
 
     const nonceData = await WalletSignatureService.generateNonce({
       subjectType: 'agent',
       subjectId: req.agent!.id,
       walletAddress,
-      operation: operation as any,
+      operation: op as any,
     });
 
     const message = WalletSignatureService.createSignatureMessage({
@@ -65,7 +93,10 @@ router.get('/nonce', requireAuth, async (req: Request, res: Response) => {
       nonce: nonceData.nonce,
       issuedAt: nonceData.issuedAt,
       expiresAt: nonceData.expiresAt,
-      operation: operation as any,
+      operation: op as any,
+      asset: 'ETH',
+      amountWei: amountWeiStr,
+      idempotencyKey,
     });
 
     const messageToSign = WalletSignatureService.formatMessageForSigning(message);
@@ -119,12 +150,22 @@ router.post('/stake', requireAuth, async (req: Request, res: Response) => {
       res.status(400).json({ success: false, error: 'asset must be \"ETH\"' });
       return;
     }
+    if (!idempotencyKey || typeof idempotencyKey !== 'string') {
+      res.status(400).json({ success: false, error: 'Missing required field: idempotencyKey' });
+      return;
+    }
     if (!signature || !message) {
       res.status(400).json({ success: false, error: 'Missing required fields: signature, message' });
       return;
     }
 
     const parsedAmountWei = parseBigIntString(amountWei, 'amountWei');
+    const amountWeiStr = parsedAmountWei.toString();
+
+    if ((message.asset || '') !== 'ETH' || (message.amountWei || '') !== amountWeiStr || (message.idempotencyKey || '') !== idempotencyKey) {
+      res.status(400).json({ success: false, error: 'Signed message does not match request (asset/amountWei/idempotencyKey)' });
+      return;
+    }
 
     const sigCheck = await WalletSignatureService.verifyAgentWalletOwnership({
       agentId: req.agent!.id,
@@ -178,12 +219,22 @@ router.post('/unstake', requireAuth, async (req: Request, res: Response) => {
       res.status(400).json({ success: false, error: 'asset must be \"ETH\"' });
       return;
     }
+    if (!idempotencyKey || typeof idempotencyKey !== 'string') {
+      res.status(400).json({ success: false, error: 'Missing required field: idempotencyKey' });
+      return;
+    }
     if (!signature || !message) {
       res.status(400).json({ success: false, error: 'Missing required fields: signature, message' });
       return;
     }
 
     const parsedAmountWei = parseBigIntString(amountWei, 'amountWei');
+    const amountWeiStr = parsedAmountWei.toString();
+
+    if ((message.asset || '') !== 'ETH' || (message.amountWei || '') !== amountWeiStr || (message.idempotencyKey || '') !== idempotencyKey) {
+      res.status(400).json({ success: false, error: 'Signed message does not match request (asset/amountWei/idempotencyKey)' });
+      return;
+    }
 
     const sigCheck = await WalletSignatureService.verifyAgentWalletOwnership({
       agentId: req.agent!.id,
@@ -228,12 +279,26 @@ router.post('/claim', requireAuth, async (req: Request, res: Response) => {
       res.status(400).json({ success: false, error: 'asset must be \"ETH\"' });
       return;
     }
+    if (!idempotencyKey || typeof idempotencyKey !== 'string') {
+      res.status(400).json({ success: false, error: 'Missing required field: idempotencyKey' });
+      return;
+    }
     if (!signature || !message) {
       res.status(400).json({ success: false, error: 'Missing required fields: signature, message' });
       return;
     }
 
     const parsedAmountWei = amountWei !== undefined ? parseBigIntString(amountWei, 'amountWei') : undefined;
+    const amountWeiStr = parsedAmountWei !== undefined ? parsedAmountWei.toString() : undefined;
+
+    if ((message.asset || '') !== 'ETH' || (message.idempotencyKey || '') !== idempotencyKey) {
+      res.status(400).json({ success: false, error: 'Signed message does not match request (asset/idempotencyKey)' });
+      return;
+    }
+    if ((amountWeiStr === undefined && message.amountWei !== undefined) || (amountWeiStr !== undefined && (message.amountWei || '') !== amountWeiStr)) {
+      res.status(400).json({ success: false, error: 'Signed message does not match request (amountWei)' });
+      return;
+    }
 
     const sigCheck = await WalletSignatureService.verifyAgentWalletOwnership({
       agentId: req.agent!.id,
@@ -294,4 +359,3 @@ router.get('/earnings', requireAuth, async (req: Request, res: Response) => {
 });
 
 export default router;
-

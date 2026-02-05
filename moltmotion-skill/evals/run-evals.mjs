@@ -19,6 +19,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_DIR = path.resolve(__dirname, "..");
 const ARTIFACTS_DIR = path.join(__dirname, "artifacts");
+const LOCAL_CODEX_HOME = path.join(PROJECT_DIR, ".codex");
 
 // ============================================================================
 // Schema Loading
@@ -51,6 +52,10 @@ const SCHEMAS = {
 function runCodex(prompt, outputPath, lastMessagePath) {
   console.log(`\n🎬 Running: ${prompt.substring(0, 60)}...`);
   
+  // Ensure Codex stores sessions/artifacts in a writable location.
+  // Some environments cannot write to `/Users/<user>/.codex`.
+  mkdirSync(LOCAL_CODEX_HOME, { recursive: true });
+
   const args = [
     "exec",
     "--json",       // Emit structured events
@@ -69,6 +74,10 @@ function runCodex(prompt, outputPath, lastMessagePath) {
     {
       encoding: "utf8",
       cwd: PROJECT_DIR,
+      env: {
+        ...process.env,
+        CODEX_HOME: LOCAL_CODEX_HOME,
+      },
       timeout: 120000, // 2 minute timeout
     }
   );
@@ -411,7 +420,7 @@ function checkAuthStateUpdated(events) {
     const state = JSON.parse(readFileSync(statePath, "utf8"));
     const hasAuth = !!(
       state.auth &&
-      state.auth.wallet_address &&
+      state.auth.agent_wallet_address &&
       state.auth.agent_id &&
       state.auth.credentials_file
     );

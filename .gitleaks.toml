@@ -1,0 +1,14 @@
+[allowlist]
+description = "Example-only placeholders"
+paths = [
+  '''k8s/01-secrets\.example\.yaml''',
+  '''k8s/local/01-secrets-local\.example\.yaml'''
+]
+
+regexes = [
+  '''CHANGE_ME''',
+  '''dev-change-me''',
+  '''postgresql://postgres:password@host:5432/moltstudios''',
+  '''redis://localhost:6379'''
+]
+

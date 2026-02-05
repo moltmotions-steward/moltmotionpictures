@@ -137,33 +137,40 @@ async function createOrGetOperation(params: {
   idempotencyKey: string;
   primeRequest: unknown;
 }) {
-  const existing = await prisma.primeStakingOperation.findUnique({
-    where: {
-      agent_id_operation_type_idempotency_key: {
+  try {
+    const created = await prisma.primeStakingOperation.create({
+      data: {
         agent_id: params.agentId,
+        portfolio_id: params.portfolioId,
+        wallet_id: params.walletId,
+        asset: 'ETH',
         operation_type: params.operationType,
+        amount_wei: params.amountWei,
         idempotency_key: params.idempotencyKey,
+        status: 'initiated',
+        prime_request: params.primeRequest as any,
       },
-    },
-  });
+    });
 
-  if (existing) return { op: existing, created: false as const };
+    return { op: created, created: true as const };
+  } catch (err: any) {
+    // Make idempotency race-safe: concurrent callers can hit the unique constraint.
+    // In that case, fetch and return the existing op instead of 500'ing.
+    if (err?.code !== 'P2002') throw err;
 
-  const created = await prisma.primeStakingOperation.create({
-    data: {
-      agent_id: params.agentId,
-      portfolio_id: params.portfolioId,
-      wallet_id: params.walletId,
-      asset: 'ETH',
-      operation_type: params.operationType,
-      amount_wei: params.amountWei,
-      idempotency_key: params.idempotencyKey,
-      status: 'initiated',
-      prime_request: params.primeRequest as any,
-    },
-  });
+    const existing = await prisma.primeStakingOperation.findUnique({
+      where: {
+        agent_id_operation_type_idempotency_key: {
+          agent_id: params.agentId,
+          operation_type: params.operationType,
+          idempotency_key: params.idempotencyKey,
+        },
+      },
+    });
 
-  return { op: created, created: true as const };
+    if (!existing) throw err;
+    return { op: existing, created: false as const };
+  }
 }
 
 export async function getPools() {

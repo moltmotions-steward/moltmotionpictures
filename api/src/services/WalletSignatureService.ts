@@ -24,6 +24,10 @@ export interface SignatureMessage {
   expiresAt: number;
   chainId: number;
   operation?: string;
+  asset?: string;
+  amountWei?: string;
+  idempotencyKey?: string;
+  creatorWalletAddress?: string; // empty string indicates "clear"
 }
 
 export interface GenerateNonceParams {
@@ -79,6 +83,10 @@ export function createSignatureMessage(params: {
   issuedAt: number;
   expiresAt: number;
   operation?: string;
+  asset?: string;
+  amountWei?: string;
+  idempotencyKey?: string;
+  creatorWalletAddress?: string;
 }): SignatureMessage {
   return {
     domain: 'molt.studio',
@@ -90,6 +98,10 @@ export function createSignatureMessage(params: {
     expiresAt: params.expiresAt,
     chainId: 8453,
     operation: params.operation,
+    asset: params.asset,
+    amountWei: params.amountWei,
+    idempotencyKey: params.idempotencyKey,
+    creatorWalletAddress: params.creatorWalletAddress,
   };
 }
 
@@ -108,6 +120,18 @@ export function formatMessageForSigning(message: SignatureMessage): string {
 
   if (message.operation) {
     parts.push(`Operation: ${message.operation}`);
+  }
+  if (message.asset) {
+    parts.push(`Asset: ${message.asset}`);
+  }
+  if (message.amountWei !== undefined) {
+    parts.push(`Amount Wei: ${message.amountWei}`);
+  }
+  if (message.idempotencyKey) {
+    parts.push(`Idempotency Key: ${message.idempotencyKey}`);
+  }
+  if (message.creatorWalletAddress !== undefined) {
+    parts.push(`Creator Wallet: ${message.creatorWalletAddress}`);
   }
 
   return parts.join('\n');
@@ -217,7 +241,7 @@ export async function verifyAgentWalletOwnership(params: {
   agentId: string;
   signature: string;
   message: SignatureMessage;
-  operation: 'stake' | 'unstake' | 'claim';
+  operation: 'stake' | 'unstake' | 'claim' | 'set_creator_wallet';
 }): Promise<{ valid: boolean; error?: string }> {
   const { agentId, signature, message, operation } = params;
 
@@ -253,4 +277,3 @@ export async function verifyAgentWalletOwnership(params: {
 
   return { valid: true };
 }
-

@@ -6,6 +6,7 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 import { runCronTick, getVotingDashboard } from '../services/VotingPeriodManager';
 import * as PaymentMetrics from '../services/PaymentMetrics.js';
 import * as RefundService from '../services/RefundService.js';
@@ -22,7 +23,8 @@ const router = Router();
  */
 const validateCronSecret = (req: Request, res: Response, next: NextFunction): void => {
   const cronSecret = process.env.INTERNAL_CRON_SECRET;
-  const providedSecret = req.headers['x-cron-secret'] as string;
+  const providedSecretRaw = req.headers['x-cron-secret'];
+  const providedSecret = typeof providedSecretRaw === 'string' ? providedSecretRaw : '';
 
   // In development, allow without secret
   if (process.env.NODE_ENV === 'development' && !cronSecret) {
@@ -34,8 +36,53 @@ const validateCronSecret = (req: Request, res: Response, next: NextFunction): vo
     return;
   }
 
-  if (!providedSecret || providedSecret !== cronSecret) {
+  if (!providedSecret || !cronSecret) {
     res.status(401).json({ error: 'Invalid cron secret' });
+    return;
+  }
+
+  const a = Buffer.from(providedSecret);
+  const b = Buffer.from(cronSecret);
+  const ok = a.length === b.length && crypto.timingSafeEqual(a, b);
+
+  if (!ok) {
+    res.status(401).json({ error: 'Invalid cron secret' });
+    return;
+  }
+
+  next();
+};
+
+/**
+ * Middleware to validate internal admin secret
+ * Protects admin-only internal endpoints (e.g., Prime bindings)
+ */
+const validateAdminSecret = (req: Request, res: Response, next: NextFunction): void => {
+  const adminSecret = process.env.INTERNAL_ADMIN_SECRET;
+  const providedSecretRaw = req.headers['x-internal-admin-secret'];
+  const providedSecret = typeof providedSecretRaw === 'string' ? providedSecretRaw : '';
+
+  // In development, allow without secret
+  if (process.env.NODE_ENV === 'development' && !adminSecret) {
+    return next();
+  }
+
+  if (!adminSecret) {
+    res.status(500).json({ error: 'INTERNAL_ADMIN_SECRET not configured' });
+    return;
+  }
+
+  if (!providedSecret) {
+    res.status(401).json({ error: 'Invalid admin secret' });
+    return;
+  }
+
+  const a = Buffer.from(providedSecret);
+  const b = Buffer.from(adminSecret);
+  const ok = a.length === b.length && crypto.timingSafeEqual(a, b);
+
+  if (!ok) {
+    res.status(401).json({ error: 'Invalid admin secret' });
     return;
   }
 
@@ -111,7 +158,7 @@ router.get('/voting/dashboard', validateCronSecret, async (req: Request, res: Re
  * Internal health check for K8s liveness probes.
  * More detailed than public health endpoint.
  */
-router.get('/health', (req: Request, res: Response) => {
+router.get('/health', validateCronSecret, (req: Request, res: Response) => {
   res.json({
     success: true,
     status: 'healthy',
@@ -330,7 +377,7 @@ router.post('/cron/refresh-gauges', validateCronSecret, async (req: Request, res
  * - passphrase: string (secret)
  * - signingKey: string (secret; Prime signing key, typically base64)
  */
-router.post('/prime/bind-agent', validateCronSecret, async (req: Request, res: Response) => {
+router.post('/prime/bind-agent', validateAdminSecret, async (req: Request, res: Response) => {
   try {
     const { agentId, portfolioId, walletId, accessKey, passphrase, signingKey } = req.body || {};
 
@@ -369,7 +416,7 @@ router.post('/prime/bind-agent', validateCronSecret, async (req: Request, res: R
  *
  * Returns whether an agent is bound (no secrets).
  */
-router.get('/prime/bind-agent/:agentId', validateCronSecret, async (req: Request, res: Response) => {
+router.get('/prime/bind-agent/:agentId', validateAdminSecret, async (req: Request, res: Response) => {
   try {
     const agentId = req.params.agentId;
     const binding = await PrimeStakingService.getPrimeAgentBindingPublic(agentId);
