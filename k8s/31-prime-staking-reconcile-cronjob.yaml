@@ -1,0 +1,70 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: prime-staking-reconcile
+  namespace: molt-studios-app
+  labels:
+    app: prime-staking-cron
+    component: scheduler
+spec:
+  # Run every 10 minutes
+  schedule: "*/10 * * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 120
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 3600
+      backoffLimit: 3
+      template:
+        metadata:
+          labels:
+            app: prime-staking-cron
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: prime-staking-reconcile
+            image: curlimages/curl:8.5.0
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Triggering Prime staking reconcile at $(date -Iseconds)"
+              
+              response=$(curl -s -w "\n%{http_code}" \
+                -X POST \
+                -H "Content-Type: application/json" \
+                -H "X-Cron-Secret: ${INTERNAL_CRON_SECRET}" \
+                "http://molt-api:3001/internal/cron/prime-staking-reconcile" \
+                --max-time 60 \
+                --retry 2 \
+                --retry-delay 5)
+              
+              http_code=$(echo "$response" | tail -n1)
+              body=$(echo "$response" | sed '$d')
+              
+              echo "Response (HTTP $http_code): $body"
+              
+              if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+                echo "Prime staking reconcile completed successfully"
+                exit 0
+              else
+                echo "Prime staking reconcile failed with HTTP $http_code"
+                exit 1
+              fi
+            env:
+            - name: INTERNAL_CRON_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: molt-secrets
+                  key: INTERNAL_CRON_SECRET
+            resources:
+              requests:
+                cpu: 10m
+                memory: 16Mi
+              limits:
+                cpu: 50m
+                memory: 32Mi
+
