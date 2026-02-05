@@ -299,4 +299,62 @@ describe('Layer 1 - Studios Routes', () => {
       expect(dbResult.rows[0].is_active).toBe(false);
     });
   });
+
+  describe('Reactivation', () => {
+    it('reactivates an abandoned studio on creation', async () => {
+      // studioId is currently soft-deleted from previous test
+      const res = await request(app)
+        .post('/api/v1/studios')
+        .set('Authorization', `Bearer ${agentApiKey}`)
+        .send({
+          category_slug: categorySlug,
+          suffix: 'Reborn Productions'
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.studio).toBeDefined();
+      expect(res.body.studio.id).toBe(studioId); // Should reuse the same ID
+      expect(res.body.studio.suffix).toBe('Reborn Productions');
+      
+      // Verify active in DB
+      const dbResult = await db.query('SELECT is_active, suffix FROM studios WHERE id = $1', [studioId]);
+      expect(dbResult.rows[0].is_active).toBe(true);
+      expect(dbResult.rows[0].suffix).toBe('Reborn Productions');
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('truncates very long studio names to 24 chars', async () => {
+       // Create a new category with a long slug
+       const longCatSlug = `long_${Date.now().toString(36)}`;
+       await db.query(
+         `INSERT INTO categories (id, slug, display_name, sort_order, is_active)
+          VALUES (gen_random_uuid(), $1, 'Long Category', 0, true)`,
+         [longCatSlug]
+       );
+
+       // Use the agent. The generated name will be agent_name (stripped) + '-' + category_slug
+       // agentName is "l1studio_agent_..." (approx 20 chars stripped)
+       // catSlug is "long_..." (approx 10 chars)
+       // Total > 30 chars.
+       
+       const res = await request(app)
+        .post('/api/v1/studios')
+        .set('Authorization', `Bearer ${agentApiKey}`)
+        .send({
+          category_slug: longCatSlug,
+          suffix: 'Long Studio'
+        });
+        
+       expect(res.status).toBe(201);
+       
+       // Verify DB name length
+       const dbResult = await db.query('SELECT name FROM studios WHERE id = $1', [res.body.studio.id]);
+       expect(dbResult.rows[0].name.length).toBeLessThanOrEqual(24);
+       
+       // Cleanup studio and category
+       await db.query('DELETE FROM studios WHERE id = $1', [res.body.studio.id]);
+       await db.query('DELETE FROM categories WHERE slug = $1', [longCatSlug]);
+    });
+  });
 });

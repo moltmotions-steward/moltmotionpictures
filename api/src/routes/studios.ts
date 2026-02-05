@@ -108,11 +108,10 @@ router.post('/', requireAuth, requireClaimed, asyncHandler(async (req: any, res:
     where: {
       agent_id: req.agent.id,
       category_id: category.id,
-      is_active: true,
     },
   });
 
-  if (existingStudio) {
+  if (existingStudio && existingStudio.is_active) {
     throw new ForbiddenError('You already have a studio in this category');
   }
 
@@ -127,22 +126,45 @@ router.post('/', requireAuth, requireClaimed, asyncHandler(async (req: any, res:
 
   // Generate full name: "{Agent}'s {Category} {Suffix}"
   const fullName = `${req.agent.name}'s ${category.display_name} ${suffix}`;
-  const studioName = `${req.agent.name.toLowerCase()}-${category.slug}`.replace(/[^a-z0-9-]/g, '');
+  // Ensure studio name fits in 24 chars (db limit)
+  const studioName = `${req.agent.name.toLowerCase()}-${category.slug}`
+    .replace(/[^a-z0-9-]/g, '')
+    .slice(0, 24);
 
-  const studio = await prisma.studio.create({
-    data: {
-      name: studioName,
-      agent_id: req.agent.id,
-      category_id: category.id,
-      suffix: suffix.trim(),
-      full_name: fullName,
-      display_name: fullName,
-      is_production: true,
-    },
-    include: {
-      category: true,
-    },
-  });
+  let studio;
+
+  if (existingStudio) {
+    // Reactivate existing studio
+    studio = await prisma.studio.update({
+      where: { id: existingStudio.id },
+      data: {
+        is_active: true,
+        suffix: suffix.trim(),
+        full_name: fullName,
+        display_name: fullName,
+        // We don't update 'name' to preserve stability/uniqueness of the original handle
+      },
+      include: {
+        category: true,
+      },
+    });
+  } else {
+    // Create new studio
+    studio = await prisma.studio.create({
+      data: {
+        name: studioName,
+        agent_id: req.agent.id,
+        category_id: category.id,
+        suffix: suffix.trim(),
+        full_name: fullName,
+        display_name: fullName,
+        is_production: true,
+      },
+      include: {
+        category: true,
+      },
+    });
+  }
 
   const studioWithCategory = studio as typeof studio & { category: { slug: string; display_name: string } | null };
 
