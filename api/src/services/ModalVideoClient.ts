@@ -1,10 +1,10 @@
 /**
  * Modal Video Generation Client
  * 
- * TypeScript client for calling the Modal-hosted Mochi video generation endpoint.
- * This replaces the DigitalOcean Gradient video generation (which doesn't exist).
+ * TypeScript client for calling the Modal-hosted LTX-2 video generation endpoint.
+ * Uses Lightricks LTX-2 (19B) for synchronized audio-video generation.
  * 
- * Endpoint: https://rikc-speak--molt-video-gen-generate-video.modal.run
+ * Endpoint: https://rikc-speak--molt-ltx2-gen-ltx-2-generator-generate.modal.run
  */
 
 // =============================================================================
@@ -13,26 +13,25 @@
 
 export interface VideoGenerationRequest {
   prompt: string;
+  audio_text?: string | null;      // Text for audio generation (LTX-2 feature)
   negative_prompt?: string;
-  num_frames?: number;      // Default: 84 (~3.5s at 24fps)
-  fps?: number;             // Default: 24
-  width?: number;           // Default: 848
-  height?: number;          // Default: 480
-  num_inference_steps?: number;  // Default: 50
-  guidance_scale?: number;  // Default: 4.5
-  seed?: number | null;     // For reproducibility
+  num_frames?: number;              // Default: 121 (~5s at 24fps)
+  fps?: number;                     // Default: 24
+  width?: number;                   // Default: 1280 (must be divisible by 32)
+  height?: number;                  // Default: 704 (must be divisible by 32)
+  num_inference_steps?: number;     // Default: 50
+  guidance_scale?: number;          // Default: 7.5
+  seed?: number | null;             // For reproducibility
 }
 
 export interface VideoGenerationResponse {
   video_base64: string;
-  duration_seconds: number;
+  duration: number;                 // Video duration in seconds
+  wall_clock_time: number;          // Generation time in seconds
   width: number;
   height: number;
-  fps: number;
-  num_frames: number;
   seed: number;
-  generation_time_seconds: number;
-  prompt: string;
+  model: string;                    // "LTX-2"
 }
 
 export interface ModalHealthResponse {
@@ -62,8 +61,9 @@ export class ModalVideoError extends Error {
 // Client Class
 // =============================================================================
 
-const DEFAULT_ENDPOINT = 'https://rikc-speak--molt-video-gen-generate-video.modal.run';
-const DEFAULT_HEALTH_ENDPOINT = 'https://rikc-speak--molt-video-gen-health.modal.run';
+// LTX-2 endpoint (H100)
+const LTX2_ENDPOINT = 'https://rikc-speak--molt-ltx2-gen-ltx-2-generator-generate.modal.run';
+const LTX2_HEALTH_ENDPOINT = 'https://rikc-speak--molt-ltx2-gen-ltx-2-generator-health-check.modal.run';
 const DEFAULT_TIMEOUT = 600000; // 10 minutes - video generation takes time
 
 export class ModalVideoClient {
@@ -72,8 +72,8 @@ export class ModalVideoClient {
   private readonly timeout: number;
 
   constructor(config: ModalVideoConfig = {}) {
-    this.endpoint = config.endpoint || process.env.MODAL_VIDEO_ENDPOINT || DEFAULT_ENDPOINT;
-    this.healthEndpoint = config.healthEndpoint || process.env.MODAL_HEALTH_ENDPOINT || DEFAULT_HEALTH_ENDPOINT;
+    this.endpoint = config.endpoint || process.env.MODAL_VIDEO_ENDPOINT || LTX2_ENDPOINT;
+    this.healthEndpoint = config.healthEndpoint || process.env.MODAL_HEALTH_ENDPOINT || LTX2_HEALTH_ENDPOINT;
     this.timeout = config.timeout || DEFAULT_TIMEOUT;
   }
 
@@ -116,7 +116,7 @@ export class ModalVideoClient {
   // ---------------------------------------------------------------------------
 
   /**
-   * Generate a video from a text prompt.
+   * Generate a video from a text prompt using LTX-2.
    * 
    * @param request - Video generation parameters
    * @returns Video data including base64-encoded video bytes
@@ -126,7 +126,8 @@ export class ModalVideoClient {
    * const client = new ModalVideoClient();
    * const result = await client.generateVideo({
    *   prompt: "A cinematic shot of a futuristic city at sunset",
-   *   num_frames: 84,  // ~3.5 seconds
+   *   audio_text: "Welcome to the city of tomorrow.",
+   *   num_frames: 121,  // ~5 seconds
    * });
    * // result.video_base64 contains the MP4 video
    * ```
@@ -139,7 +140,7 @@ export class ModalVideoClient {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
-    console.log(`[ModalVideo] Generating video for prompt: ${request.prompt.slice(0, 100)}...`);
+    console.log(`[ModalVideo/LTX-2] Generating video for prompt: ${request.prompt.slice(0, 100)}...`);
     const startTime = Date.now();
 
     try {
@@ -150,13 +151,14 @@ export class ModalVideoClient {
         },
         body: JSON.stringify({
           prompt: request.prompt,
-          negative_prompt: request.negative_prompt || 'low quality, blurry, distorted',
-          num_frames: request.num_frames || 84,
+          audio_text: request.audio_text ?? null,
+          negative_prompt: request.negative_prompt || 'low quality, worst quality, deformed, distorted',
+          num_frames: request.num_frames || 121,
           fps: request.fps || 24,
-          width: request.width || 848,
-          height: request.height || 480,
+          width: request.width || 1280,
+          height: request.height || 704,  // Must be divisible by 32
           num_inference_steps: request.num_inference_steps || 50,
-          guidance_scale: request.guidance_scale || 4.5,
+          guidance_scale: request.guidance_scale || 7.5,
           seed: request.seed ?? null,
         }),
         signal: controller.signal,
@@ -176,8 +178,8 @@ export class ModalVideoClient {
       const result = await response.json() as VideoGenerationResponse;
       const elapsedMs = Date.now() - startTime;
       
-      console.log(`[ModalVideo] Video generated in ${(elapsedMs / 1000).toFixed(1)}s`);
-      console.log(`[ModalVideo]   Duration: ${result.duration_seconds}s, Resolution: ${result.width}x${result.height}`);
+      console.log(`[ModalVideo/LTX-2] Video generated in ${(elapsedMs / 1000).toFixed(1)}s (modal: ${result.wall_clock_time?.toFixed(1)}s)`);
+      console.log(`[ModalVideo/LTX-2]   Duration: ${result.duration}s, Resolution: ${result.width}x${result.height}, Model: ${result.model}`);
 
       return result;
     } catch (error) {
@@ -202,46 +204,50 @@ export class ModalVideoClient {
     prompt: string,
     options: {
       negativePrompt?: string;
+      audioText?: string;
       seed?: number;
     } = {}
   ): Promise<VideoGenerationResponse> {
     return this.generateVideo({
       prompt,
+      audio_text: options.audioText,
       negative_prompt: options.negativePrompt,
-      num_frames: 48,  // ~2 seconds at 24fps
+      num_frames: 49,  // ~2 seconds at 24fps (must be odd for LTX-2)
       num_inference_steps: 30,  // Faster but slightly lower quality
       seed: options.seed,
     });
   }
 
   /**
-   * Generate a standard shot (~3.5 seconds).
+   * Generate a standard shot (~5 seconds).
    * Good for episode clips and voting variants.
    */
   async generateShot(
     prompt: string,
     options: {
       negativePrompt?: string;
+      audioText?: string;
       aspectRatio?: '16:9' | '9:16' | '1:1';
       seed?: number;
     } = {}
   ): Promise<VideoGenerationResponse> {
-    // Calculate dimensions based on aspect ratio
-    let width = 848;
-    let height = 480;
+    // Calculate dimensions based on aspect ratio (must be divisible by 32)
+    let width = 1280;
+    let height = 704;
     
     if (options.aspectRatio === '9:16') {
-      width = 480;
-      height = 848;
+      width = 704;
+      height = 1280;
     } else if (options.aspectRatio === '1:1') {
-      width = 512;
-      height = 512;
+      width = 768;
+      height = 768;
     }
 
     return this.generateVideo({
       prompt,
+      audio_text: options.audioText,
       negative_prompt: options.negativePrompt,
-      num_frames: 84,  // ~3.5 seconds
+      num_frames: 121,  // ~5 seconds
       width,
       height,
       seed: options.seed,
@@ -249,22 +255,46 @@ export class ModalVideoClient {
   }
 
   /**
-   * Generate a longer sequence (~5 seconds).
+   * Generate a longer sequence (~8 seconds).
    * Higher quality settings, takes longer.
    */
   async generateSequence(
     prompt: string,
     options: {
       negativePrompt?: string;
+      audioText?: string;
       seed?: number;
     } = {}
   ): Promise<VideoGenerationResponse> {
     return this.generateVideo({
       prompt,
+      audio_text: options.audioText,
       negative_prompt: options.negativePrompt,
-      num_frames: 120,  // ~5 seconds at 24fps
+      num_frames: 193,  // ~8 seconds at 24fps (must be odd for LTX-2)
       num_inference_steps: 50,
-      guidance_scale: 5.0,
+      guidance_scale: 7.5,
+      seed: options.seed,
+    });
+  }
+
+  /**
+   * Generate a video with synchronized audio narration.
+   * Uses LTX-2's native audio-video sync capabilities.
+   */
+  async generateWithAudio(
+    prompt: string,
+    audioText: string,
+    options: {
+      negativePrompt?: string;
+      numFrames?: number;
+      seed?: number;
+    } = {}
+  ): Promise<VideoGenerationResponse> {
+    return this.generateVideo({
+      prompt,
+      audio_text: audioText,
+      negative_prompt: options.negativePrompt,
+      num_frames: options.numFrames || 121,
       seed: options.seed,
     });
   }
