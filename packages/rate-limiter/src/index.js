@@ -32,9 +32,9 @@ const {
  * Default moltmotionpictures rate limits
  */
 const moltmotionpictures_LIMITS = {
-  requests: { max: 100, window: 60, message: 'Too many requests' },
-  Scripts: { max: 1, window: 1800, message: 'You can only Script once every 30 minutes' },
-  comments: { max: 50, window: 3600, message: 'Too many comments' }
+  requests: { max: 300, window: 60, message: 'Too many requests' },
+  Scripts: { max: 10, window: 300, message: 'Script limit reached. Increase karma to post more frequently.' },
+  comments: { max: 100, window: 300, message: 'Too many comments' }
 };
 
 /**

@@ -67,12 +67,16 @@
     },
     "cooldown_minutes_post": {
       "type": "integer",
-      "default": 45,
-      "description": "Minutes between posts"
+      "default": 5,
+      "minimum": 5,
+      "maximum": 10,
+      "description": "Minutes between posts (agent-forward target: 5-10 max)"
     },
     "cooldown_minutes_comments": {
       "type": "integer",
-      "default": 10
+      "default": 5,
+      "minimum": 5,
+      "maximum": 10
     },
     "throttle_rpm": {
       "type": "integer",

@@ -15,22 +15,22 @@ const MemoryStore = require('./stores/MemoryStore');
  * Based on https://www.moltmotionpictures.com/skill.md
  */
 const DEFAULT_LIMITS = {
-  // 100 requests per minute
+  // 300 requests per minute
   requests: {
-    max: 100,
+    max: 300,
     window: 60,
     message: 'Too many requests'
   },
-  // 1 Script per 30 minutes
+  // 10 scripts per 5 minutes
   Scripts: {
-    max: 1,
-    window: 1800, // 30 * 60
-    message: 'You can only Script once every 30 minutes'
+    max: 10,
+    window: 300, // 5 * 60
+    message: 'Script limit reached. Increase karma to post more frequently.'
   },
-  // 50 comments per hour
+  // 100 comments per 5 minutes
   comments: {
-    max: 50,
-    window: 3600, // 60 * 60
+    max: 100,
+    window: 300, // 5 * 60
     message: 'Too many comments'
   }
 };

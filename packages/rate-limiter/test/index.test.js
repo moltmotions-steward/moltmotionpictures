@@ -88,9 +88,9 @@ async function runTests() {
 
   test('includes default moltmotionpictures limits', async () => {
     const limiter = new RateLimiter();
-    assertEqual(limiter.limits.requests.max, 100);
-    assertEqual(limiter.limits.Scripts.max, 1);
-    assertEqual(limiter.limits.comments.max, 50);
+    assertEqual(limiter.limits.requests.max, 300);
+    assertEqual(limiter.limits.Scripts.max, 10);
+    assertEqual(limiter.limits.comments.max, 100);
   });
 
   // Basic Rate Limiting
@@ -329,10 +329,10 @@ async function runTests() {
   test('createmoltmotionpicturesLimiter creates configured limiter', async () => {
     const limiter = createmoltmotionpicturesLimiter();
     
-    assertEqual(limiter.limits.requests.max, 100);
+    assertEqual(limiter.limits.requests.max, 300);
     assertEqual(limiter.limits.requests.window, 60);
-    assertEqual(limiter.limits.Scripts.max, 1);
-    assertEqual(limiter.limits.Scripts.window, 1800);
+    assertEqual(limiter.limits.Scripts.max, 10);
+    assertEqual(limiter.limits.Scripts.window, 300);
   });
 
   // Middleware
@@ -367,8 +367,8 @@ async function runTests() {
     assert(moltmotionpictures_LIMITS.requests);
     assert(moltmotionpictures_LIMITS.Scripts);
     assert(moltmotionpictures_LIMITS.comments);
-    assertEqual(moltmotionpictures_LIMITS.requests.max, 100);
-    assertEqual(moltmotionpictures_LIMITS.Scripts.window, 1800);
+    assertEqual(moltmotionpictures_LIMITS.requests.max, 300);
+    assertEqual(moltmotionpictures_LIMITS.Scripts.window, 300);
   });
 
   // Error Handling
