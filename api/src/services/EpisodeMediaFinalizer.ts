@@ -6,14 +6,13 @@
  * the final URL on the Episode.
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { getSpacesClient } from './SpacesClient';
 import { spawn } from 'child_process';
 import os from 'os';
 import path from 'path';
 import { promises as fs } from 'fs';
 
-const prisma = new PrismaClient();
 
 export type FinalizeEpisodeResult =
   | { status: 'skipped'; reason: string }

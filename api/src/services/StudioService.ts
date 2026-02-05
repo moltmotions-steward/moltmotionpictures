@@ -12,10 +12,9 @@
  * - Studios support subscriptions, moderators, and theming
  */
 
-import { PrismaClient, Studio, Category, Agent, Prisma } from '@prisma/client';
+import { Studio, Category, Agent, Prisma } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { GenreCategory, GENRE_CATEGORIES } from '../types/series';
-
-const prisma = new PrismaClient();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types

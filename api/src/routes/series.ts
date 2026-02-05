@@ -7,14 +7,13 @@
  */
 
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { requireAuth } from '../middleware/auth';
 import { NotFoundError, BadRequestError } from '../utils/errors';
 import { asyncHandler } from '../middleware/errorHandler';
 import { success, paginated } from '../utils/response';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // =============================================================================
 // Browse Series

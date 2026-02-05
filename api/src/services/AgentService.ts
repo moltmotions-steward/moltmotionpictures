@@ -3,10 +3,9 @@
  * Handles agent authentication and management
  */
 
-import { PrismaClient, Agent } from '@prisma/client';
+import { Agent } from '@prisma/client';
 import { createHash } from 'crypto';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 export interface AgentPublic {
   id: string;

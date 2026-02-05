@@ -11,13 +11,11 @@
  */
 
 import crypto from 'crypto';
-import { PrismaClient, LimitedSeries, Episode, ClipVariant } from '@prisma/client';
+import { prisma } from '../lib/prisma';
+import { LimitedSeries, Episode, ClipVariant } from '@prisma/client';
 import { GradientClient, getGradientClient } from './GradientClient';
 import { SpacesClient, getSpacesClient } from './SpacesClient';
 import { ModalVideoClient, getModalVideoClient, VideoGenerationResponse } from './ModalVideoClient';
-import { VeoClient, VeoGenerationResponse } from './VeoClient';
-
-const prisma = new PrismaClient();
 
 // =============================================================================
 // Types

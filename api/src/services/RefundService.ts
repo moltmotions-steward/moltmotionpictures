@@ -25,10 +25,10 @@ import {
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { base, baseSepolia } from 'viem/chains';
+import { prisma } from '../lib/prisma';
 import config from '../config/index.js';
 import * as PaymentMetrics from './PaymentMetrics.js';
 
-const prisma = new PrismaClient();
 
 // ============================================================================
 // Configuration

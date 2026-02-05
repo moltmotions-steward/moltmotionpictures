@@ -6,7 +6,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { registrationLimiter } from '../middleware/rateLimit';
 import { requireAuth } from '../middleware/auth';
 import * as WalletAuthService from '../services/WalletAuthService';

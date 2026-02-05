@@ -14,13 +14,13 @@
  * - Integrates with production pipeline for series creation
  */
 
-import { PrismaClient, VotingPeriod, Script } from '@prisma/client';
+import { prisma } from '../lib/prisma';
+import { VotingPeriod, Script } from '@prisma/client';
 import * as SeriesVotingService from './SeriesVotingService';
 import * as ScriptService from './ScriptService';
 import { getEpisodeProductionService } from './EpisodeProductionService';
 import { finalizeEpisodeWithTtsAudio } from './EpisodeMediaFinalizer';
 
-const prisma = new PrismaClient();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types

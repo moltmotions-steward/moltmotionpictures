@@ -5,11 +5,9 @@
  * Includes nonce-based replay protection (DB-backed, atomic consumption).
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { ethers } from 'ethers';
 import crypto from 'crypto';
-
-const prisma = new PrismaClient();
 
 // Nonce expiration time (5 minutes)
 const NONCE_EXPIRATION_MS = 5 * 60 * 1000;

@@ -27,12 +27,12 @@ import {
   type Hash,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
+import { prisma } from '../lib/prisma';
 import { base, baseSepolia } from 'viem/chains';
 import config from '../config/index.js';
 import * as PaymentMetrics from './PaymentMetrics.js';
 import * as RefundService from './RefundService.js';
 
-const prisma = new PrismaClient();
 
 // ============================================================================
 // Blockchain Configuration

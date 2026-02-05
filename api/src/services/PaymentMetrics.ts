@@ -13,10 +13,9 @@
  * - Internal dashboards for business intelligence
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
+import { AgentService } from './AgentService';
 import config from '../config/index.js';
-
-const prisma = new PrismaClient();
 
 // ============================================================================
 // In-Memory Metrics (for export to external systems)

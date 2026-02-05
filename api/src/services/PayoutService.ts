@@ -6,10 +6,9 @@
  * The agent that wrote the winning script gets 1% - because why not?
  * The agent did the work. The human just voted.
  */
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
+import { AgentService } from './AgentService';
 import config from '../config/index.js';
-
-const prisma = new PrismaClient();
 
 export type RecipientType = 'creator' | 'agent' | 'platform';
 

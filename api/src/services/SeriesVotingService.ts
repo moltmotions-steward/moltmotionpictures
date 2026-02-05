@@ -13,10 +13,9 @@
  * - Human voting: Per-episode, best clip variant is selected
  */
 
-import { PrismaClient, ScriptVote, ClipVote, VotingPeriod, Script, ClipVariant } from '@prisma/client';
+import { ScriptVote, ClipVote, VotingPeriod, Script, ClipVariant } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import * as ScriptService from './ScriptService';
-
-const prisma = new PrismaClient();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types

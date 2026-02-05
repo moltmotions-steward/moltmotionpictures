@@ -5,10 +5,9 @@
  * This is designed to run as a cron job (daily is sufficient).
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
+import { AgentService } from './AgentService';
 import config from '../config/index.js';
-
-const prisma = new PrismaClient();
 
 export interface UnclaimedSweepStats {
   scanned: number;

@@ -15,13 +15,12 @@
  * 6. rejected  - Did not win voting period
  */
 
-import { PrismaClient, Script, Studio, Category, Prisma } from '@prisma/client';
+import { Script, Studio, Category, Prisma } from '@prisma/client';
 import { validatePilotScript, ValidationResult } from './ScriptValidationService';
+import { prisma } from '../lib/prisma';
 import { RawPilotScript, ScriptStatus } from '../types/series';
 import * as StudioService from './StudioService';
 import * as ContentModerationService from './ContentModerationService';
-
-const prisma = new PrismaClient();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
