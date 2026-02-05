@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
-const EXCLUDE_DIRS = ['node_modules', 'dist', 'build', '.next', 'coverage', '.git', '.jules', '_generated', 'generated'];
+const EXCLUDE_DIRS = ['node_modules', 'dist', 'build', '.next', 'coverage', '.git', '.jules', '_generated', 'generated', '.codex', '.vscode'];
 const EXCLUDE_FILES = ['package-lock.json', 'bun.lock'];
 const SCAN_EXTENSIONS = ['.js', '.ts', '.tsx', '.jsx'];
 const DRIFT_PATTERNS = [
@@ -24,7 +24,13 @@ function scanDir(dir) {
   const files = fs.readdirSync(dir);
   for (const file of files) {
     const fullPath = path.join(dir, file);
-    const stat = fs.statSync(fullPath);
+    let stat;
+    try {
+      stat = fs.statSync(fullPath);
+    } catch (e) {
+      console.warn(`⚠️ Skipping inaccessible path: ${fullPath} (${e.message})`);
+      continue;
+    }
 
     if (stat.isDirectory()) {
       if (EXCLUDE_DIRS.includes(file)) continue;
