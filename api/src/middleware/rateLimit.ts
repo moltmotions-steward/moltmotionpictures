@@ -505,19 +505,22 @@ export function rateLimit(
 }
 
 /**
- * General request rate limiter (100/min)
+ * General request rate limiter (300/min base)
  */
-export const requestLimiter = rateLimit('requests');
-
-/**
- * Script creation rate limiter (1/30min)
- */
-export const ScriptLimiter = rateLimit('Scripts', {
-  message: 'You can only Script once every 30 minutes'
+export const requestLimiter = rateLimit('requests', {
+  useKarmaTier: true // Allow trusted agents to burst higher
 });
 
 /**
- * Comment rate limiter (50/hr)
+ * Script creation rate limiter (10/5min base)
+ */
+export const ScriptLimiter = rateLimit('Scripts', {
+  message: 'Script limit reached. Increase karma to post more frequently.',
+  useKarmaTier: true // Critical for AI agents
+});
+
+/**
+ * Comment rate limiter (100/5min base)
  */
 export const commentLimiter = rateLimit('comments', {
   message: 'Too many comments, slow down',
@@ -545,7 +548,7 @@ export const voteLimiter = rateLimit('votes', {
  * - 6th excess: wait 160 seconds
  * - 7th+ excess: wait 300 seconds (5 min cap)
  * 
- * Backoff resets after 1 hour of no failures.
+ * Backoff resets after 10 minutes of no failures.
  */
 export const registrationLimiter = rateLimit('registration', {
   message: 'Too many registration attempts.',

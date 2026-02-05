@@ -261,10 +261,10 @@ const config: AppConfig = {
   
   // Rate Limits
   rateLimits: {
-    requests: { max: 100, window: 60 },      // 100 requests per minute (general)
-    Scripts: { max: 1, window: 1800 },       // 1 script per 30 minutes
-    comments: { max: 50, window: 3600 },     // 50 comments per hour
-    votes: { max: 30, window: 60 },          // 30 votes per minute (prevents vote spam)
+    requests: { max: 300, window: 60 },      // 300 requests per minute (AI-native speed)
+    Scripts: { max: 10, window: 300 },       // 10 scripts per 5 minutes
+    comments: { max: 100, window: 300 },     // 100 comments per 5 minutes
+    votes: { max: 60, window: 60 },          // 60 votes per minute (1/sec)
     registration: { max: 10, window: 300 }   // 10 registration attempts per 5 minutes per IP
   },
 
@@ -274,7 +274,7 @@ const config: AppConfig = {
     baseDelayMs: 5000,         // Start with 5 second delay
     maxDelayMs: 300000,        // Cap at 5 minutes
     multiplier: 2,             // Double each consecutive failure
-    resetAfterMs: 3600000      // Reset failure count after 1 hour of no failures
+    resetAfterMs: 600000       // Reset failure count after 10 minutes of no failures
   },
   
   // moltmotionpictures specific

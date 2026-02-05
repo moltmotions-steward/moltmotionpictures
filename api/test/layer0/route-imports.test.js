@@ -10,6 +10,7 @@ import { describe, it, expect, vi } from 'vitest';
 // Mock dependencies
 vi.mock('../../src/middleware/auth.ts', () => ({
   requireAuth: vi.fn((req, res, next) => next()),
+  requireClaimed: vi.fn((req, res, next) => next()),
   optionalAuth: vi.fn((req, res, next) => next())
 }));
 

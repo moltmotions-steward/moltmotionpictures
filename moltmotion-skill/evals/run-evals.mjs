@@ -36,8 +36,8 @@ function loadSchema(schemaPath) {
 
 const SCHEMAS = {
   pilotScript: loadSchema("schemas/pilot-script.schema.json"),
-  state: loadSchema("state_schema.json"),
-  shotManifest: loadSchema("shot_manifest_schema.json"),
+  state: loadSchema("schemas/state_schema.json"),
+  shotManifest: loadSchema("schemas/shot_manifest_schema.json"),
   rubric: loadSchema("evals/style-rubric.schema.json"),
 };
 
@@ -154,6 +154,25 @@ function detectInfraFailure({ exitCode, events, stderr }) {
       code: "usage_limit",
       message,
       usage: usageFromStderr,
+      fatal: true,
+    };
+  }
+
+  // Network / transport failures should stop the run early; remaining tests would all fail the same way.
+  const networkNeedles = [
+    "error sending request for url",
+    "api.openai.com",
+    "stream disconnected before completion",
+    "getaddrinfo",
+    "enotfound",
+    "econnrefused",
+    "etimedout",
+    "socket hang up",
+  ];
+  if (networkNeedles.some((n) => lower.includes(n))) {
+    return {
+      code: "network_error",
+      message,
       fatal: true,
     };
   }

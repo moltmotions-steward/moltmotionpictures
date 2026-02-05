@@ -88,12 +88,17 @@ results.push(
   )
 );
 
-// 2. Validate state.json
+// 2. Validate agent state (prefer runtime state.json, fall back to example)
+const stateSchemaPath = "schemas/state_schema.json";
+const stateDataPath = existsSync(path.join(PROJECT_DIR, "state.json"))
+  ? "state.json"
+  : "examples/state.example.json";
+const stateLabel = stateDataPath === "state.json" ? "Agent State (runtime)" : "Agent State (example)";
 results.push(
   validateAgainstSchema(
-    "state.json",
-    "state_schema.json",
-    "Agent State"
+    stateDataPath,
+    stateSchemaPath,
+    stateLabel
   )
 );
 

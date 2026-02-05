@@ -12,6 +12,7 @@ import * as PaymentMetrics from '../services/PaymentMetrics.js';
 import * as RefundService from '../services/RefundService.js';
 import { processPayouts } from '../services/PayoutProcessor.js';
 import { sweepExpiredUnclaimedFunds } from '../services/UnclaimedFundProcessor.js';
+import { getVotingRuntimeConfigState, updateVotingRuntimeConfig } from '../services/VotingRuntimeConfigService.js';
 
 
 const router = Router();
@@ -354,6 +355,48 @@ router.post('/cron/refresh-gauges', validateCronSecret, async (req: Request, res
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+// =============================================================================
+// Admin Runtime Configuration
+// =============================================================================
+
+/**
+ * GET /internal/admin/voting/config
+ *
+ * Returns current runtime voting cadence configuration.
+ */
+router.get('/admin/voting/config', validateAdminSecret, (req: Request, res: Response) => {
+  res.json({
+    success: true,
+    data: getVotingRuntimeConfigState(),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+/**
+ * PUT /internal/admin/voting/config
+ *
+ * Updates runtime voting cadence configuration.
+ * Protected by INTERNAL_ADMIN_SECRET.
+ */
+router.put('/admin/voting/config', validateAdminSecret, (req: Request, res: Response) => {
+  try {
+    const actor = req.headers['x-admin-actor'];
+    const actorLabel = typeof actor === 'string' && actor.trim() ? actor.trim() : 'internal-admin';
+
+    const next = updateVotingRuntimeConfig(req.body || {}, actorLabel);
+    res.json({
+      success: true,
+      data: next,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Invalid configuration update',
     });
   }
 });

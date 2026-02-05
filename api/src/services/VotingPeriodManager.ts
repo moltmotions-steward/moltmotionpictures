@@ -20,6 +20,7 @@ import * as SeriesVotingService from './SeriesVotingService';
 import * as ScriptService from './ScriptService';
 import { getEpisodeProductionService } from './EpisodeProductionService';
 import { finalizeEpisodeWithTtsAudio } from './EpisodeMediaFinalizer';
+import { getVotingRuntimeConfig } from './VotingRuntimeConfigService';
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -65,6 +66,17 @@ const DEFAULT_CONFIG: VotingPeriodConfig = {
   minScriptsForVoting: 1,
 };
 
+function getEffectiveConfig(base: VotingPeriodConfig = DEFAULT_CONFIG): VotingPeriodConfig {
+  const runtime = getVotingRuntimeConfig();
+  return {
+    agentVotingDurationHours: runtime.agentVotingDurationMinutes / 60,
+    humanVotingDurationHours: runtime.humanVotingDurationMinutes / 60,
+    startDayOfWeek: runtime.startDayOfWeek,
+    startHour: runtime.startHour,
+    minScriptsForVoting: base.minScriptsForVoting,
+  };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Voting Period Lifecycle
 // ─────────────────────────────────────────────────────────────────────────────
@@ -76,19 +88,23 @@ export async function createNextVotingPeriod(
   periodType: 'agent_voting' | 'human_voting',
   config: VotingPeriodConfig = DEFAULT_CONFIG
 ): Promise<VotingPeriod> {
+  const runtime = getVotingRuntimeConfig();
+  const effective = getEffectiveConfig(config);
   const now = new Date();
   
-  // Calculate next start time (next occurrence of startDayOfWeek at startHour)
-  const startsAt = calculateNextStartTime(
-    now,
-    config.startDayOfWeek,
-    config.startHour
-  );
+  let startsAt: Date;
+  if (runtime.cadence === 'immediate') {
+    startsAt = new Date(now.getTime() + runtime.immediateStartDelaySeconds * 1000);
+  } else if (runtime.cadence === 'daily') {
+    startsAt = calculateNextDailyStartTime(now, effective.startHour);
+  } else {
+    startsAt = calculateNextStartTime(now, effective.startDayOfWeek, effective.startHour);
+  }
   
   // Calculate end time based on period type
   const durationHours = periodType === 'agent_voting'
-    ? config.agentVotingDurationHours
-    : config.humanVotingDurationHours;
+    ? effective.agentVotingDurationHours
+    : effective.humanVotingDurationHours;
     
   const endsAt = new Date(startsAt.getTime() + durationHours * 60 * 60 * 1000);
   
@@ -104,6 +120,7 @@ export async function openVotingPeriod(
   periodId: string,
   config: VotingPeriodConfig = DEFAULT_CONFIG
 ): Promise<{ period: VotingPeriod; scriptsCount: number }> {
+  const effective = getEffectiveConfig(config);
   // Check minimum scripts requirement
   const submittedScripts = await prisma.script.count({
     where: {
@@ -112,9 +129,9 @@ export async function openVotingPeriod(
     },
   });
   
-  if (submittedScripts < config.minScriptsForVoting) {
-    console.log(`[VotingPeriodManager] Not enough scripts (${submittedScripts}/${config.minScriptsForVoting}). Skipping period activation.`);
-    throw new Error(`Minimum ${config.minScriptsForVoting} scripts required for voting`);
+  if (submittedScripts < effective.minScriptsForVoting) {
+    console.log(`[VotingPeriodManager] Not enough scripts (${submittedScripts}/${effective.minScriptsForVoting}). Skipping period activation.`);
+    throw new Error(`Minimum ${effective.minScriptsForVoting} scripts required for voting`);
   }
   
   const period = await SeriesVotingService.activateVotingPeriod(periodId);
@@ -229,11 +246,29 @@ export async function checkAndClosePeriods(): Promise<VotingPeriodResult[]> {
 export async function ensureUpcomingPeriods(
   config: VotingPeriodConfig = DEFAULT_CONFIG
 ): Promise<void> {
+  const runtime = getVotingRuntimeConfig();
+
+  if (runtime.cadence === 'immediate') {
+    const active = await SeriesVotingService.getCurrentVotingPeriod('agent_voting');
+    if (active) return;
+
+    const upcoming = await SeriesVotingService.getNextVotingPeriod('agent_voting');
+    if (upcoming) {
+      // Reuse an already-near future period in immediate mode.
+      const msUntilStart = upcoming.starts_at.getTime() - Date.now();
+      if (msUntilStart <= 10 * 60 * 1000) return;
+    }
+
+    console.log('[VotingPeriodManager] Immediate cadence: creating near-term agent voting period.');
+    await createNextVotingPeriod('agent_voting', config);
+    return;
+  }
+
   // Check if there's an upcoming agent voting period
   const upcomingAgentPeriod = await SeriesVotingService.getNextVotingPeriod('agent_voting');
   
   if (!upcomingAgentPeriod) {
-    console.log('[VotingPeriodManager] No upcoming agent voting period. Creating one.');
+    console.log(`[VotingPeriodManager] No upcoming agent voting period. Creating one (cadence=${runtime.cadence}).`);
     await createNextVotingPeriod('agent_voting', config);
   }
 }
@@ -450,6 +485,15 @@ function calculateNextStartTime(
   
   result.setUTCDate(result.getUTCDate() + daysUntilTarget);
   
+  return result;
+}
+
+function calculateNextDailyStartTime(from: Date, targetHour: number): Date {
+  const result = new Date(from);
+  result.setUTCHours(targetHour, 0, 0, 0);
+  if (result <= from) {
+    result.setUTCDate(result.getUTCDate() + 1);
+  }
   return result;
 }
 

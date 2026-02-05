@@ -464,29 +464,26 @@ describe('canSubmitScript', () => {
     expect(result).toBeNull();
   });
 
-  it('should allow submission after rate limit window', () => {
+  it('should allow submission after prior submissions (middleware-enforced now)', () => {
     const thirtyOneMinutesAgo = new Date(Date.now() - 31 * 60 * 1000);
     const result = canSubmitScript(5, thirtyOneMinutesAgo);
 
     expect(result).toBeNull();
   });
 
-  it('should block submission within rate limit window', () => {
+  it('should not apply local submit cooldown checks', () => {
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
     const result = canSubmitScript(5, tenMinutesAgo);
 
-    expect(result).not.toBeNull();
-    expect(result).toContain('Rate limited');
-    expect(result).toContain('minutes');
+    expect(result).toBeNull();
   });
 
-  it('should calculate remaining time correctly', () => {
+  it('should ignore remaining-time calculations (handled by middleware)', () => {
     const now = new Date();
     const twentyMinutesAgo = new Date(now.getTime() - 20 * 60 * 1000);
     const result = canSubmitScript(1, twentyMinutesAgo, now);
 
-    expect(result).not.toBeNull();
-    expect(result).toContain('10'); // Should be ~10 minutes remaining
+    expect(result).toBeNull();
   });
 });
 

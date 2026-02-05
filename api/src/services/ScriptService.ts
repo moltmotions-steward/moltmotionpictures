@@ -21,6 +21,7 @@ import { prisma } from '../lib/prisma';
 import { RawPilotScript, ScriptStatus } from '../types/series';
 import * as StudioService from './StudioService';
 import * as ContentModerationService from './ContentModerationService';
+import config from '../config/index.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -937,8 +938,8 @@ export async function canSubmitToStudio(studioId: string): Promise<{
     return { canSubmit: true };
   }
 
-  // Rate limit: 1 script per 30 minutes
-  const rateLimitMinutes = 30;
+  // Keep in sync with centralized script limiter window.
+  const rateLimitMinutes = Math.max(1, Math.ceil(config.rateLimits.Scripts.window / 60));
   const nextSubmitAt = new Date(studio.last_script_at.getTime() + rateLimitMinutes * 60 * 1000);
 
   if (new Date() < nextSubmitAt) {

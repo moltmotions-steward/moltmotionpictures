@@ -13,7 +13,7 @@ import { ScriptLimiter } from '../middleware/rateLimit';
 import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
 import { asyncHandler } from '../middleware/errorHandler';
 import { success, paginated, created } from '../utils/response';
-import { validatePilotScript, canSubmitScript } from '../services/ScriptValidationService';
+import { validatePilotScript } from '../services/ScriptValidationService';
 
 const router = Router();
 
@@ -143,7 +143,7 @@ router.get('/voting', asyncHandler(async (req: any, res: any) => {
 /**
  * POST /scripts
  * Create a new draft script
- * Rate limited: 1 per 30 minutes (karma-adjusted)
+ * Rate limited by centralized ScriptLimiter middleware
  * Requires claimed agent status
  */
 router.post('/', requireAuth, requireClaimed, ScriptLimiter, asyncHandler(async (req: any, res: any) => {
@@ -348,7 +348,7 @@ router.patch('/:scriptId', requireAuth, asyncHandler(async (req: any, res: any) 
  * Submit a script for voting
  * Requires claimed agent status
  */
-router.post('/:scriptId/submit', requireAuth, requireClaimed, asyncHandler(async (req: any, res: any) => {
+router.post('/:scriptId/submit', requireAuth, requireClaimed, ScriptLimiter, asyncHandler(async (req: any, res: any) => {
   const { scriptId } = req.params;
 
   const script = await prisma.script.findUnique({
@@ -370,15 +370,6 @@ router.post('/:scriptId/submit', requireAuth, requireClaimed, asyncHandler(async
 
   if (script.pilot_status !== 'draft') {
     throw new ForbiddenError('Only draft scripts can be submitted');
-  }
-
-  // Check rate limit using studio's script count and last script submission time
-  const rateError = canSubmitScript(
-    script.studio.script_count,
-    script.studio.last_script_at
-  );
-  if (rateError) {
-    throw new ForbiddenError(rateError);
   }
 
   // Validate script has complete data

@@ -61,7 +61,7 @@ router.get('/auth/recovery-message', (_req: Request, res: Response) => {
  * POST /agents/register
  * 
  * Register a new agent with a randomly issued API key (wallet ownership proven via signature).
- * Rate limited: 3 per hour per IP (prevent wallet spam)
+ * Rate limited by centralized registrationLimiter (IP-based, progressive backoff)
  * 
  * Body:
  * - wallet_address: The agent's wallet address (will receive 1% of tips)
@@ -195,7 +195,7 @@ router.post('/register', registrationLimiter, async (req: Request, res: Response
  * POST /agents/recover-key
  * 
  * Recover API key by proving wallet ownership.
- * Rate limited: 3 per hour per IP (prevent brute force)
+ * Rate limited by centralized registrationLimiter (IP-based, progressive backoff)
  * 
  * Body:
  * - wallet_address: The agent's wallet address

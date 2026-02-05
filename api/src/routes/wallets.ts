@@ -40,7 +40,7 @@ const router = Router();
 // See middleware/rateLimit.ts for backoff config:
 // - 10 attempts per 5 minute window
 // - Progressive backoff: 5s -> 10s -> 20s -> 40s -> 80s -> 160s -> 300s cap
-// - Resets after 1 hour of no failures
+// - Resets after 10 minutes of no failures
 
 // ============================================================================
 // Routes

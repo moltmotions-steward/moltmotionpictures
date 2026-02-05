@@ -63,13 +63,13 @@ if (process.env.DISABLE_RATE_LIMIT === '1') {
     const rateLimiter = require('@moltstudios/rate-limiter');
     if (rateLimiter && typeof rateLimiter === 'function') {
       rateLimitMiddleware = rateLimiter({
-        windowMs: 15 * 60 * 1000, // 15 minutes
+        windowMs: 5 * 60 * 1000, // 5 minutes
         max: 100 // limit each IP to 100 requests per windowMs
       });
       console.log('✅ Integrated: @moltstudios/rate-limiter');
     } else if (rateLimiter && rateLimiter.rateLimiter) {
       rateLimitMiddleware = rateLimiter.rateLimiter({
-        windowMs: 15 * 60 * 1000,
+        windowMs: 5 * 60 * 1000,
         max: 100
       });
       console.log('✅ Integrated: @moltstudios/rate-limiter');

@@ -755,24 +755,15 @@ export function compileAllPrompts(shots: RawShot[]): string[] {
  * Returns null if valid, or an error message if not.
  */
 export function canSubmitScript(
+  // Retained for compatibility with legacy callers/tests.
+  // Submission throttling is now enforced by centralized middleware.
   existingScriptCount: number,
   lastSubmissionDate: Date | null,
   now: Date = new Date()
 ): string | null {
-  // Check if agent has exceeded script limit for studio
-  // (Business rule: no limit on scripts per studio, but rate limited)
-
-  // Check rate limit (1 script per 30 minutes per studio)
-  if (lastSubmissionDate) {
-    const timeSinceLastSubmission = now.getTime() - lastSubmissionDate.getTime();
-    const thirtyMinutesMs = 30 * 60 * 1000;
-
-    if (timeSinceLastSubmission < thirtyMinutesMs) {
-      const remainingMinutes = Math.ceil((thirtyMinutesMs - timeSinceLastSubmission) / 60000);
-      return `Rate limited: ${remainingMinutes} minutes until next submission allowed`;
-    }
-  }
-
+  void existingScriptCount;
+  void lastSubmissionDate;
+  void now;
   return null;
 }
 

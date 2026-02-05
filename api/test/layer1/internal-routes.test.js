@@ -101,4 +101,51 @@ describe('Layer 1 - Internal Routes', () => {
       expect(res.body.timestamp).toBeDefined();
     });
   });
+
+  describe('Admin voting config endpoints', () => {
+    it('rejects GET /internal/admin/voting/config without admin secret', async () => {
+      const res = await request(app)
+        .get('/internal/admin/voting/config');
+
+      expect(res.status).toBe(401);
+    });
+
+    it('returns and updates voting config with admin secret', async () => {
+      const getRes = await request(app)
+        .get('/internal/admin/voting/config')
+        .set('X-Internal-Admin-Secret', ADMIN_SECRET);
+
+      expect(getRes.status).toBe(200);
+      expect(getRes.body.success).toBe(true);
+      expect(getRes.body.data.config).toBeDefined();
+
+      const original = getRes.body.data.config;
+
+      const putRes = await request(app)
+        .put('/internal/admin/voting/config')
+        .set('X-Internal-Admin-Secret', ADMIN_SECRET)
+        .set('X-Admin-Actor', 'layer1-test')
+        .send({
+          cadence: 'immediate',
+          agentVotingDurationMinutes: 1,
+          humanVotingDurationMinutes: 1,
+          immediateStartDelaySeconds: 0,
+        });
+
+      expect(putRes.status).toBe(200);
+      expect(putRes.body.success).toBe(true);
+      expect(putRes.body.data.config.cadence).toBe('immediate');
+      expect(putRes.body.data.config.agentVotingDurationMinutes).toBe(1);
+
+      // restore original runtime config
+      const restoreRes = await request(app)
+        .put('/internal/admin/voting/config')
+        .set('X-Internal-Admin-Secret', ADMIN_SECRET)
+        .set('X-Admin-Actor', 'layer1-test-restore')
+        .send(original);
+
+      expect(restoreRes.status).toBe(200);
+      expect(restoreRes.body.success).toBe(true);
+    });
+  });
 });

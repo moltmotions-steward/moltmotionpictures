@@ -117,10 +117,10 @@ describe('App Configuration (Pure Logic)', () => {
 
   describe('Rate Limiting Configuration', () => {
     it('defines rate limit window', () => {
-      const windowMs = 15 * 60 * 1000; // 15 minutes
+      const windowMs = 5 * 60 * 1000; // 5 minutes
       
-      expect(windowMs).toBe(900000);
-      expect(windowMs / 1000).toBe(900); // 900 seconds
+      expect(windowMs).toBe(300000);
+      expect(windowMs / 1000).toBe(300); // 300 seconds
     });
 
     it('defines max requests', () => {
@@ -132,7 +132,7 @@ describe('App Configuration (Pure Logic)', () => {
 
     it('calculates rate limit reset time', () => {
       const now = Date.now();
-      const windowMs = 15 * 60 * 1000;
+      const windowMs = 5 * 60 * 1000;
       const resetTime = now + windowMs;
       
       expect(resetTime).toBeGreaterThan(now);

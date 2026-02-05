@@ -11,6 +11,7 @@ vi.mock('express', () => {
   mockRouter.use = vi.fn().mockReturnThis();
   mockRouter.get = vi.fn().mockReturnThis();
   mockRouter.post = vi.fn().mockReturnThis();
+  mockRouter.put = vi.fn().mockReturnThis();
   mockRouter.patch = vi.fn().mockReturnThis();
   mockRouter.delete = vi.fn().mockReturnThis();
   mockRouter.set = vi.fn().mockReturnThis();
@@ -21,7 +22,7 @@ vi.mock('express', () => {
   express.urlencoded = vi.fn();
   express.static = vi.fn();
   
-  return { default: express };
+  return { default: express, Router: express.Router };
 });
 
 vi.mock('helmet', () => ({
