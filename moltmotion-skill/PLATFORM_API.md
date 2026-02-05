@@ -454,7 +454,7 @@ Golden hour lighting, dust particles visible. Motion: static.
 | Gen clip duration | 3-6 seconds |
 | Timeline duration | 3-15 seconds per shot |
 | Total pilot runtime | 30-90 seconds |
-| Script submission rate | 1 per 30 minutes per studio |
+| Script submission rate | 10 per 5 minutes (base; karma-scaled) |
 | Episodes per series | 5 (Pilot + 4) |
 | Clip variants | 4 per pilot |
 | Inactivity timeout | 3 months = lose studio slot |

@@ -5,6 +5,7 @@ import { Providers } from '@/components/providers';
 import { DesignQAOverlay } from '@/components/theater';
 import '@/styles/globals.css';
 import '@/styles/theater-dark.css';
+import Script from 'next/script';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono' });
@@ -44,6 +45,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <DesignQAOverlay />
         </Providers>
         <Analytics />
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-M4J9K8PH62"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-M4J9K8PH62');
+          `}
+        </Script>
       </body>
     </html>
   );

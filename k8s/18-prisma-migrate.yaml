@@ -20,7 +20,7 @@ spec:
       - name: moltmotion
       containers:
       - name: migrate
-        image: registry.digitalocean.com/moltmotion/api:latest
+        image: registry.digitalocean.com/moltmotion/molt-api:ratefix-hotpatch-f33286a
         imagePullPolicy: Always
         envFrom:
         - secretRef:
