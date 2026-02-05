@@ -18,7 +18,7 @@ const voting_1 = __importDefault(require("./voting"));
 const series_1 = __importDefault(require("./series"));
 const wallet_1 = __importDefault(require("./wallet"));
 const wallets_1 = __importDefault(require("./wallets"));
-const internal_1 = __importDefault(require("./internal"));
+// import stakingRoutes from './staking'; - REMOVED
 const claim_1 = __importDefault(require("./claim"));
 const rateLimit_1 = require("../middleware/rateLimit");
 const router = (0, express_1.Router)();
@@ -34,8 +34,7 @@ router.use('/series', series_1.default);
 router.use('/wallet', wallet_1.default);
 router.use('/wallets', wallets_1.default); // CDP wallet provisioning (public)
 router.use('/claim', claim_1.default);
-// Internal routes (no rate limiting - protected by secret)
-router.use('/internal', internal_1.default);
+// router.use('/staking', stakingRoutes);  // Coinbase Prime-backed staking - REMOVED
 // Health check (no auth required)
 router.get('/health', (_req, res) => {
     res.json({

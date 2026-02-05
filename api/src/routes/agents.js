@@ -3,7 +3,7 @@
  * Agent Routes
  *
  * Wallet-based agent registration and key recovery.
- * One wallet = one agent = one API key (deterministically derived).
+ * One wallet = one agent.
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -46,8 +46,8 @@ const express_1 = require("express");
 const client_1 = require("@prisma/client");
 const rateLimit_1 = require("../middleware/rateLimit");
 const auth_1 = require("../middleware/auth");
-const auth_2 = require("../utils/auth");
 const WalletAuthService = __importStar(require("../services/WalletAuthService"));
+const auth_2 = require("../utils/auth");
 const index_js_1 = __importDefault(require("../config/index.js"));
 const router = (0, express_1.Router)();
 const prisma = new client_1.PrismaClient();
@@ -92,7 +92,7 @@ router.get('/auth/recovery-message', (_req, res) => {
 /**
  * POST /agents/register
  *
- * Register a new agent with wallet-derived API key.
+ * Register a new agent with a randomly issued API key (wallet ownership proven via signature).
  * Rate limited: 3 per hour per IP (prevent wallet spam)
  *
  * Body:
@@ -121,10 +121,10 @@ router.post('/register', rateLimit_1.registrationLimiter, async (req, res) => {
             });
             return;
         }
-        // Process registration (verify signature, derive key)
-        let registrationResult;
+        // Verify signature proves wallet ownership
+        let normalizedAddress;
         try {
-            registrationResult = WalletAuthService.processRegistration(wallet_address, signature);
+            normalizedAddress = WalletAuthService.verifyRegistrationSignature(wallet_address, signature);
         }
         catch (error) {
             res.status(401).json({
@@ -133,7 +133,9 @@ router.post('/register', rateLimit_1.registrationLimiter, async (req, res) => {
             });
             return;
         }
-        const { apiKey, apiKeyHash, normalizedAddress } = registrationResult;
+        // Issue a random API key (do not derive keys from wallet addresses)
+        const apiKey = (0, auth_2.generateApiKey)();
+        const apiKeyHash = WalletAuthService.hashApiKey(apiKey);
         // Check if wallet already has an agent
         const existingByWallet = await prisma.agent.findFirst({
             where: { wallet_address: normalizedAddress }
@@ -157,7 +159,7 @@ router.post('/register', rateLimit_1.registrationLimiter, async (req, res) => {
             });
             return;
         }
-        // Create the agent (pending_claim status)
+        // Create the agent (requires claim)
         const claimToken = (0, auth_2.generateClaimToken)();
         const verificationCode = (0, auth_2.generateVerificationCode)();
         const agent = await prisma.agent.create({
@@ -173,7 +175,6 @@ router.post('/register', rateLimit_1.registrationLimiter, async (req, res) => {
                 is_claimed: false
             }
         });
-        // Return the API key + claim instructions
         const claimUrl = `${index_js_1.default.moltmotionpictures.baseUrl}/claim/${agent.name}`;
         res.status(201).json({
             success: true,
@@ -181,7 +182,9 @@ router.post('/register', rateLimit_1.registrationLimiter, async (req, res) => {
                 id: agent.id,
                 name: agent.name,
                 display_name: agent.display_name,
-                wallet_address: agent.wallet_address
+                wallet_address: agent.wallet_address,
+                status: agent.status,
+                is_claimed: agent.is_claimed
             },
             api_key: apiKey,
             claim: {
@@ -196,6 +199,7 @@ router.post('/register', rateLimit_1.registrationLimiter, async (req, res) => {
                     '⚠️  Agent cannot create studios until claimed'
                 ]
             },
+            message: 'Agent registered. Save your API key now — it will not be shown again!',
             warning: 'Save your API key now - it will not be shown again!'
         });
     }
@@ -229,10 +233,10 @@ router.post('/recover-key', rateLimit_1.registrationLimiter, async (req, res) =>
             });
             return;
         }
-        // Process recovery (verify signature with timestamp, derive key)
-        let recoveryResult;
+        // Verify signature proves wallet ownership (with timestamp)
+        let normalizedAddress;
         try {
-            recoveryResult = WalletAuthService.processRecovery(wallet_address, signature, timestamp);
+            normalizedAddress = WalletAuthService.verifyRecoverySignature(wallet_address, signature, timestamp);
         }
         catch (error) {
             res.status(401).json({
@@ -241,7 +245,6 @@ router.post('/recover-key', rateLimit_1.registrationLimiter, async (req, res) =>
             });
             return;
         }
-        const { apiKey, normalizedAddress } = recoveryResult;
         // Find the agent for this wallet
         const agent = await prisma.agent.findFirst({
             where: { wallet_address: normalizedAddress }
@@ -254,17 +257,13 @@ router.post('/recover-key', rateLimit_1.registrationLimiter, async (req, res) =>
             });
             return;
         }
-        // Verify the stored hash matches our derived key
-        const derivedHash = WalletAuthService.hashApiKey(apiKey);
-        if (derivedHash !== agent.api_key_hash) {
-            // This shouldn't happen unless server secret changed
-            console.error('[Agents] API key hash mismatch for wallet:', normalizedAddress);
-            res.status(500).json({
-                success: false,
-                error: 'Key recovery failed - contact support'
-            });
-            return;
-        }
+        // Rotate API key (invalidate any previously issued keys)
+        const apiKey = (0, auth_2.generateApiKey)();
+        const apiKeyHash = WalletAuthService.hashApiKey(apiKey);
+        await prisma.agent.update({
+            where: { id: agent.id },
+            data: { api_key_hash: apiKeyHash }
+        });
         res.json({
             success: true,
             agent: {
@@ -273,7 +272,8 @@ router.post('/recover-key', rateLimit_1.registrationLimiter, async (req, res) =>
                 display_name: agent.display_name,
                 wallet_address: agent.wallet_address
             },
-            api_key: apiKey
+            api_key: apiKey,
+            note: 'This reissues your API key and invalidates any previously issued API keys for this agent.'
         });
     }
     catch (error) {

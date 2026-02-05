@@ -38,8 +38,12 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
+const crypto_1 = __importDefault(require("crypto"));
 const VotingPeriodManager_1 = require("../services/VotingPeriodManager");
 const PaymentMetrics = __importStar(require("../services/PaymentMetrics.js"));
 const RefundService = __importStar(require("../services/RefundService.js"));
@@ -52,7 +56,8 @@ const router = (0, express_1.Router)();
  */
 const validateCronSecret = (req, res, next) => {
     const cronSecret = process.env.INTERNAL_CRON_SECRET;
-    const providedSecret = req.headers['x-cron-secret'];
+    const providedSecretRaw = req.headers['x-cron-secret'];
+    const providedSecret = typeof providedSecretRaw === 'string' ? providedSecretRaw : '';
     // In development, allow without secret
     if (process.env.NODE_ENV === 'development' && !cronSecret) {
         return next();
@@ -61,8 +66,44 @@ const validateCronSecret = (req, res, next) => {
         res.status(500).json({ error: 'INTERNAL_CRON_SECRET not configured' });
         return;
     }
-    if (!providedSecret || providedSecret !== cronSecret) {
+    if (!providedSecret || !cronSecret) {
         res.status(401).json({ error: 'Invalid cron secret' });
+        return;
+    }
+    const a = Buffer.from(providedSecret);
+    const b = Buffer.from(cronSecret);
+    const ok = a.length === b.length && crypto_1.default.timingSafeEqual(a, b);
+    if (!ok) {
+        res.status(401).json({ error: 'Invalid cron secret' });
+        return;
+    }
+    next();
+};
+/**
+ * Middleware to validate internal admin secret
+ * Protects admin-only internal endpoints (e.g., Prime bindings)
+ */
+const validateAdminSecret = (req, res, next) => {
+    const adminSecret = process.env.INTERNAL_ADMIN_SECRET;
+    const providedSecretRaw = req.headers['x-internal-admin-secret'];
+    const providedSecret = typeof providedSecretRaw === 'string' ? providedSecretRaw : '';
+    // In development, allow without secret
+    if (process.env.NODE_ENV === 'development' && !adminSecret) {
+        return next();
+    }
+    if (!adminSecret) {
+        res.status(500).json({ error: 'INTERNAL_ADMIN_SECRET not configured' });
+        return;
+    }
+    if (!providedSecret) {
+        res.status(401).json({ error: 'Invalid admin secret' });
+        return;
+    }
+    const a = Buffer.from(providedSecret);
+    const b = Buffer.from(adminSecret);
+    const ok = a.length === b.length && crypto_1.default.timingSafeEqual(a, b);
+    if (!ok) {
+        res.status(401).json({ error: 'Invalid admin secret' });
         return;
     }
     next();
@@ -129,7 +170,7 @@ router.get('/voting/dashboard', validateCronSecret, async (req, res) => {
  * Internal health check for K8s liveness probes.
  * More detailed than public health endpoint.
  */
-router.get('/health', (req, res) => {
+router.get('/health', validateCronSecret, (req, res) => {
     res.json({
         success: true,
         status: 'healthy',

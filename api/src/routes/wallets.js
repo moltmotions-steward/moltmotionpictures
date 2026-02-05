@@ -57,6 +57,7 @@ const errorHandler_js_1 = require("../middleware/errorHandler.js");
 const rateLimit_js_1 = require("../middleware/rateLimit.js");
 const response_js_1 = require("../utils/response.js");
 const errors_js_1 = require("../utils/errors.js");
+const auth_js_1 = require("../utils/auth.js");
 const CDPWalletService = __importStar(require("../services/CDPWalletService.js"));
 const WalletAuthService = __importStar(require("../services/WalletAuthService.js"));
 const AgentService = __importStar(require("../services/AgentService.js"));
@@ -193,8 +194,10 @@ router.post('/register', rateLimit_js_1.registrationLimiter, (0, errorHandler_js
         // Create creator wallet (no signature needed)
         console.log(`[WalletsRoute] Creating creator wallet for ${name}...`);
         const creatorWalletResult = await CDPWalletService.createWalletForAgent(creatorWalletId);
-        // Process registration (verifies signature, derives API key)
-        const { apiKey, apiKeyHash, normalizedAddress } = WalletAuthService.processRegistration(agentWalletResult.address, agentWalletResult.signature);
+        // Verify wallet signature (CDP signs the registration message for the agent wallet)
+        const normalizedAddress = WalletAuthService.verifyRegistrationSignature(agentWalletResult.address, agentWalletResult.signature);
+        // Issue random API key (do not derive keys from wallet addresses)
+        const apiKey = (0, auth_js_1.generateApiKey)();
         // Create the agent in database (auto_claim since CDP signs for us)
         const agent = await AgentService.create({
             name,

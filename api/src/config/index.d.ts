@@ -118,6 +118,10 @@ interface AppConfig {
         apiKey: string | undefined;
         endpoint: string;
     };
+    googleCloud: {
+        projectId: string | undefined;
+        location: string;
+    };
     revenueSplit: RevenueSplitConfig;
     payouts: PayoutsConfig;
     x402: X402Config;

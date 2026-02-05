@@ -12,8 +12,7 @@ import * as PaymentMetrics from '../services/PaymentMetrics.js';
 import * as RefundService from '../services/RefundService.js';
 import { processPayouts } from '../services/PayoutProcessor.js';
 import { sweepExpiredUnclaimedFunds } from '../services/UnclaimedFundProcessor.js';
-import * as PrimeStakingService from '../services/PrimeStakingService.js';
-import { reconcilePrimeStakingAllAgents } from '../services/PrimeStakingReconciler.js';
+
 
 const router = Router();
 
@@ -359,114 +358,6 @@ router.post('/cron/refresh-gauges', validateCronSecret, async (req: Request, res
   }
 });
 
-// =============================================================================
-// Coinbase Prime (Custody) Staking - Admin / Cron
-// =============================================================================
 
-/**
- * POST /internal/prime/bind-agent
- *
- * Bind an agent to a Coinbase Prime portfolio + wallet with per-agent credentials.
- * Stores passphrase/signingKey encrypted at rest (PRIME_CREDENTIALS_ENCRYPTION_KEY).
- *
- * Body:
- * - agentId: UUID
- * - portfolioId: string
- * - walletId: string
- * - accessKey: string (non-secret identifier)
- * - passphrase: string (secret)
- * - signingKey: string (secret; Prime signing key, typically base64)
- */
-router.post('/prime/bind-agent', validateAdminSecret, async (req: Request, res: Response) => {
-  try {
-    const { agentId, portfolioId, walletId, accessKey, passphrase, signingKey } = req.body || {};
-
-    if (!agentId || !portfolioId || !walletId || !accessKey || !passphrase || !signingKey) {
-      res.status(400).json({ success: false, error: 'Missing required fields for binding' });
-      return;
-    }
-
-    const binding = await PrimeStakingService.upsertPrimeAgentBinding({
-      agentId,
-      portfolioId,
-      walletId,
-      accessKey,
-      passphrase,
-      signingKey,
-    });
-
-    res.json({
-      success: true,
-      binding: {
-        agentId: binding.agent_id,
-        portfolioId: binding.portfolio_id,
-        walletId: binding.wallet_id,
-        accessKey: binding.access_key,
-        lastReconciledAt: binding.last_reconciled_at,
-        updatedAt: binding.updated_at,
-      },
-    });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: 'Failed to bind agent', message: error.message });
-  }
-});
-
-/**
- * GET /internal/prime/bind-agent/:agentId
- *
- * Returns whether an agent is bound (no secrets).
- */
-router.get('/prime/bind-agent/:agentId', validateAdminSecret, async (req: Request, res: Response) => {
-  try {
-    const agentId = req.params.agentId;
-    const binding = await PrimeStakingService.getPrimeAgentBindingPublic(agentId);
-
-    // Avoid adding more exports; do a direct prisma read via service helper if needed later.
-    if (!binding) {
-      res.json({ success: true, bound: false });
-      return;
-    }
-
-    res.json({
-      success: true,
-      bound: true,
-      binding: {
-        agentId: binding.agent_id,
-        portfolioId: binding.portfolio_id,
-        walletId: binding.wallet_id,
-        accessKey: binding.access_key,
-        lastReconciledAt: binding.last_reconciled_at,
-        updatedAt: binding.updated_at,
-      },
-    });
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: 'Failed to read binding', message: error.message });
-  }
-});
-
-/**
- * POST /internal/cron/prime-staking-reconcile
- *
- * Pulls Coinbase Prime staking state and reward transactions for all bound agents,
- * upserts reward events, and updates operation status best-effort.
- */
-router.post('/cron/prime-staking-reconcile', validateCronSecret, async (_req: Request, res: Response) => {
-  const startTime = Date.now();
-  try {
-    const result = await reconcilePrimeStakingAllAgents();
-    res.json({
-      success: true,
-      result,
-      duration_ms: Date.now() - startTime,
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Reconcile failed',
-      duration_ms: Date.now() - startTime,
-    });
-  }
-});
 
 export default router;

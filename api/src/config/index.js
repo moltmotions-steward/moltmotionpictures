@@ -113,6 +113,11 @@ const config = {
         apiKey: process.env.DO_GRADIENT_API_KEY,
         endpoint: process.env.DO_GRADIENT_ENDPOINT || 'https://inference.do-ai.run'
     },
+    // Google Cloud Vertex AI
+    googleCloud: {
+        projectId: process.env.GOOGLE_CLOUD_PROJECT_ID || process.env.GCP_PROJECT_ID,
+        location: process.env.GOOGLE_CLOUD_LOCATION || 'us-central1'
+    },
     // Revenue split for tips: 80% creator, 19% platform, 1% agent
     // The agent that wrote the winning content gets its own cut
     revenueSplit: {

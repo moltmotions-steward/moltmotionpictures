@@ -41,12 +41,15 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
+const client_1 = require("@prisma/client");
 const auth_js_1 = require("../middleware/auth.js");
 const errors_js_1 = require("../utils/errors.js");
 const errorHandler_js_1 = require("../middleware/errorHandler.js");
 const response_js_1 = require("../utils/response.js");
 const PayoutService = __importStar(require("../services/PayoutService.js"));
+const WalletSignatureService = __importStar(require("../services/WalletSignatureService.js"));
 const router = (0, express_1.Router)();
+const prisma = new client_1.PrismaClient();
 // All wallet routes require authentication
 router.use(auth_js_1.requireAuth);
 /**
@@ -85,20 +88,7 @@ router.get('/', (0, errorHandler_js_1.asyncHandler)(async (req, res) => {
  * The creator (user) wallet is managed separately.
  */
 router.post('/', (0, errorHandler_js_1.asyncHandler)(async (req, res) => {
-    const { wallet_address } = req.body;
-    if (!wallet_address) {
-        throw new errors_js_1.BadRequestError('wallet_address is required');
-    }
-    // Basic validation: should look like an Ethereum address
-    const ethAddressRegex = /^0x[a-fA-F0-9]{40}$/;
-    if (!ethAddressRegex.test(wallet_address)) {
-        throw new errors_js_1.BadRequestError('Invalid wallet address format. Must be a valid Ethereum address (0x...)');
-    }
-    const agent = await PayoutService.setAgentWallet(req.agent.id, wallet_address);
-    (0, response_js_1.created)(res, {
-        wallet_address: agent.wallet_address,
-        message: 'Wallet registered successfully'
-    });
+    throw new errors_js_1.BadRequestError('Agent wallet is immutable. Create a new agent if you need a new wallet, or contact support for an admin-only migration.');
 }));
 /**
  * DELETE /wallet
@@ -116,14 +106,30 @@ router.delete('/', (0, errorHandler_js_1.asyncHandler)(async (req, res) => {
  * - When null/empty: clears the creator wallet (future tips will be escrowed)
  */
 router.post('/creator', (0, errorHandler_js_1.asyncHandler)(async (req, res) => {
-    const { creator_wallet_address } = req.body;
-    if (creator_wallet_address && creator_wallet_address !== '') {
+    const { creator_wallet_address, signature, message } = req.body || {};
+    if (!signature || !message) {
+        throw new errors_js_1.BadRequestError('Missing required fields: signature, message');
+    }
+    const normalizedCreatorWallet = creator_wallet_address && creator_wallet_address !== '' ? String(creator_wallet_address).toLowerCase() : '';
+    if (normalizedCreatorWallet) {
         const ethAddressRegex = /^0x[a-fA-F0-9]{40}$/;
-        if (!ethAddressRegex.test(creator_wallet_address)) {
+        if (!ethAddressRegex.test(normalizedCreatorWallet)) {
             throw new errors_js_1.BadRequestError('Invalid creator wallet address format. Must be a valid Ethereum address (0x...)');
         }
     }
-    const updated = await PayoutService.setCreatorWallet(req.agent.id, creator_wallet_address || null);
+    if ((message.creatorWalletAddress ?? '') !== normalizedCreatorWallet) {
+        throw new errors_js_1.BadRequestError('Signature message does not match requested creator_wallet_address');
+    }
+    const sigCheck = await WalletSignatureService.verifyAgentWalletOwnership({
+        agentId: req.agent.id,
+        signature,
+        message,
+        operation: 'set_creator_wallet',
+    });
+    if (!sigCheck.valid) {
+        throw new errors_js_1.BadRequestError(sigCheck.error || 'Wallet signature verification failed');
+    }
+    const updated = await PayoutService.setCreatorWallet(req.agent.id, normalizedCreatorWallet || null);
     // If they just set a wallet, attempt to convert unclaimed creator funds into real payouts
     let claimResult = null;
     if (updated.creator_wallet_address) {
@@ -135,6 +141,60 @@ router.post('/creator', (0, errorHandler_js_1.asyncHandler)(async (req, res) => 
         message: updated.creator_wallet_address
             ? 'Creator wallet registered successfully'
             : 'Creator wallet cleared. Future creator shares will be escrowed.'
+    });
+}));
+/**
+ * GET /wallet/nonce
+ *
+ * Returns a nonce + message to sign for sensitive wallet operations.
+ *
+ * Query:
+ * - operation: currently only "set_creator_wallet"
+ * - creatorWalletAddress: the requested creator wallet (empty string means clear)
+ */
+router.get('/nonce', (0, errorHandler_js_1.asyncHandler)(async (req, res) => {
+    const operation = String(req.query.operation || '');
+    if (operation !== 'set_creator_wallet') {
+        throw new errors_js_1.BadRequestError('operation must be "set_creator_wallet"');
+    }
+    const creatorWalletAddress = typeof req.query.creatorWalletAddress === 'string' ? req.query.creatorWalletAddress : '';
+    const normalizedCreatorWallet = creatorWalletAddress ? creatorWalletAddress.trim().toLowerCase() : '';
+    if (normalizedCreatorWallet) {
+        const ethAddressRegex = /^0x[a-fA-F0-9]{40}$/;
+        if (!ethAddressRegex.test(normalizedCreatorWallet)) {
+            throw new errors_js_1.BadRequestError('Invalid creatorWalletAddress format. Must be a valid Ethereum address (0x...)');
+        }
+    }
+    const agent = await prisma.agent.findUnique({
+        where: { id: req.agent.id },
+        select: { wallet_address: true },
+    });
+    if (!agent) {
+        throw new errors_js_1.BadRequestError('Agent not found');
+    }
+    const nonceData = await WalletSignatureService.generateNonce({
+        subjectType: 'agent',
+        subjectId: req.agent.id,
+        walletAddress: agent.wallet_address,
+        operation,
+    });
+    const sigMessage = WalletSignatureService.createSignatureMessage({
+        subjectType: 'agent',
+        subjectId: req.agent.id,
+        walletAddress: agent.wallet_address,
+        nonce: nonceData.nonce,
+        issuedAt: nonceData.issuedAt,
+        expiresAt: nonceData.expiresAt,
+        operation,
+        creatorWalletAddress: normalizedCreatorWallet,
+    });
+    res.json({
+        success: true,
+        nonce: nonceData.nonce,
+        issuedAt: nonceData.issuedAt,
+        expiresAt: nonceData.expiresAt,
+        message: sigMessage,
+        messageToSign: WalletSignatureService.formatMessageForSigning(sigMessage),
     });
 }));
 /**

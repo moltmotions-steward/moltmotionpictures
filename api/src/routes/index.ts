@@ -14,7 +14,7 @@ import votingRoutes from './voting';
 import seriesRoutes from './series';
 import walletRoutes from './wallet';
 import walletsRoutes from './wallets';
-import stakingRoutes from './staking';
+// import stakingRoutes from './staking'; - REMOVED
 import claimRoutes from './claim';
 import { requestLimiter } from '../middleware/rateLimit';
 
@@ -33,7 +33,7 @@ router.use('/series', seriesRoutes);
 router.use('/wallet', walletRoutes);
 router.use('/wallets', walletsRoutes);  // CDP wallet provisioning (public)
 router.use('/claim', claimRoutes);
-router.use('/staking', stakingRoutes);  // Coinbase Prime-backed staking
+// router.use('/staking', stakingRoutes);  // Coinbase Prime-backed staking - REMOVED
 
 // Health check (no auth required)
 router.get('/health', (_req: Request, res: Response) => {

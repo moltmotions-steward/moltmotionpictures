@@ -24,12 +24,12 @@ function decodeKey(input: string): Buffer {
 
 export function loadVaultKeyFromEnv(envValue: string | undefined): VaultKeyBytes {
   if (!envValue) {
-    throw new Error('PRIME_CREDENTIALS_ENCRYPTION_KEY is required when PRIME_STAKING_ENABLED=1');
+    throw new Error('Encryption key is required');
   }
 
   const key = decodeKey(envValue);
   if (key.length !== 32) {
-    throw new Error('PRIME_CREDENTIALS_ENCRYPTION_KEY must decode to 32 bytes (hex64 or base64)');
+    throw new Error('Encryption key must decode to 32 bytes (hex64 or base64)');
   }
 
   return key;

@@ -2,47 +2,27 @@
 /**
  * WalletAuthService
  *
- * Handles wallet-based authentication and API key derivation.
- * The wallet address IS the identity - API keys are deterministically derived from it.
+ * Handles wallet-based authentication (signature verification).
+ *
+ * NOTE: API keys are intentionally NOT derived from wallet addresses. Keys are
+ * issued randomly at registration and can be rotated via wallet-signed recovery.
  *
  * Flow:
  * 1. User provides wallet_address + signature of a known message
  * 2. We verify the signature proves ownership of that wallet
- * 3. We derive API key: HMAC-SHA256(server_secret, "molt:agent:v1:" + wallet_address)
- * 4. Same wallet always gets same key (recoverable by re-signing)
  */
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.normalizeAddress = normalizeAddress;
-exports.deriveApiKey = deriveApiKey;
 exports.hashApiKey = hashApiKey;
 exports.getRegistrationMessage = getRegistrationMessage;
 exports.getRecoveryMessage = getRecoveryMessage;
 exports.verifyRegistrationSignature = verifyRegistrationSignature;
 exports.verifyRecoverySignature = verifyRecoverySignature;
-exports.processRegistration = processRegistration;
-exports.processRecovery = processRecovery;
 const crypto_1 = require("crypto");
 const ethers_1 = require("ethers");
-const config_1 = __importDefault(require("../config"));
 // Message the user must sign to prove wallet ownership
 const REGISTRATION_MESSAGE = 'I am registering an agent with MOLT Studios';
 const RECOVERY_MESSAGE_PREFIX = 'Recover my MOLT Studios API key at timestamp:';
-// API key derivation domain separator
-const KEY_DERIVATION_DOMAIN = 'molt:agent:v1:';
-/**
- * Get the server secret used for API key derivation.
- * Falls back to JWT_SECRET if WALLET_AUTH_SECRET not set.
- */
-function getServerSecret() {
-    const secret = process.env.WALLET_AUTH_SECRET || process.env.JWT_SECRET;
-    if (!secret) {
-        throw new Error('WALLET_AUTH_SECRET or JWT_SECRET must be configured');
-    }
-    return secret;
-}
 /**
  * Normalize wallet address to checksum format for consistent comparison
  */
@@ -58,20 +38,6 @@ function normalizeAddress(address) {
         throw new Error('Invalid Ethereum address format');
     }
     return cleaned;
-}
-/**
- * Derive API key deterministically from wallet address.
- * Same wallet always produces same key.
- */
-function deriveApiKey(walletAddress) {
-    const normalized = normalizeAddress(walletAddress);
-    const secret = getServerSecret();
-    // HMAC-SHA256 derivation
-    const hmac = (0, crypto_1.createHmac)('sha256', secret);
-    hmac.update(KEY_DERIVATION_DOMAIN + normalized);
-    const derived = hmac.digest('hex');
-    // Format as molt API key
-    return `${config_1.default.moltmotionpictures.tokenPrefix}${derived}`;
 }
 /**
  * Hash an API key for storage (same as AgentService)
@@ -152,49 +118,12 @@ function verifyRecoverySignature(claimedAddress, signature, timestamp) {
         throw new Error('Invalid signature format');
     }
 }
-/**
- * Full registration flow:
- * 1. Verify signature proves wallet ownership
- * 2. Derive API key from wallet
- * 3. Return both the key and its hash (for storage)
- */
-function processRegistration(walletAddress, signature) {
-    // Verify the signature
-    const normalizedAddress = verifyRegistrationSignature(walletAddress, signature);
-    // Derive the API key
-    const apiKey = deriveApiKey(normalizedAddress);
-    const apiKeyHash = hashApiKey(apiKey);
-    return {
-        apiKey,
-        apiKeyHash,
-        normalizedAddress
-    };
-}
-/**
- * Full recovery flow:
- * 1. Verify signature proves wallet ownership (with timestamp)
- * 2. Re-derive the same API key
- * 3. Return it
- */
-function processRecovery(walletAddress, signature, timestamp) {
-    // Verify the signature with timestamp
-    const normalizedAddress = verifyRecoverySignature(walletAddress, signature, timestamp);
-    // Derive the same API key (deterministic)
-    const apiKey = deriveApiKey(normalizedAddress);
-    return {
-        apiKey,
-        normalizedAddress
-    };
-}
 exports.default = {
     normalizeAddress,
-    deriveApiKey,
     hashApiKey,
     getRegistrationMessage,
     getRecoveryMessage,
     verifyRegistrationSignature,
-    verifyRecoverySignature,
-    processRegistration,
-    processRecovery
+    verifyRecoverySignature
 };
 //# sourceMappingURL=WalletAuthService.js.map

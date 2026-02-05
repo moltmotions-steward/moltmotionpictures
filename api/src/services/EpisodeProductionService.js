@@ -16,18 +16,20 @@ exports.getEpisodeProductionService = getEpisodeProductionService;
 const client_1 = require("@prisma/client");
 const GradientClient_1 = require("./GradientClient");
 const SpacesClient_1 = require("./SpacesClient");
-const ModalVideoClient_1 = require("./ModalVideoClient");
+// import { ModalVideoClient, getModalVideoClient, VideoGenerationResponse } from './ModalVideoClient'; // Legacy
+const VeoClient_1 = require("./VeoClient");
 const prisma = new client_1.PrismaClient();
 // =============================================================================
 // Episode Production Service
 // =============================================================================
 class EpisodeProductionService {
     gradient;
-    modalVideo;
+    // private modalVideo: ModalVideoClient | null;
+    veo;
     spaces;
     isConfigured;
     defaultTtsTimeoutMs = 120000; // TTS can take longer than prompt refinement
-    constructor(gradient, spaces, modalVideo) {
+    constructor(gradient, spaces) {
         // Gradient client for LLM calls (prompt refinement)
         try {
             this.gradient = gradient || (0, GradientClient_1.getGradientClient)();
@@ -36,13 +38,24 @@ class EpisodeProductionService {
             this.gradient = null;
             console.warn('[EpisodeProduction] GradientClient not configured - prompt refinement disabled');
         }
-        // Modal Video client for actual video generation
+        // Veo Client for video+audio generation
         try {
-            this.modalVideo = modalVideo || (0, ModalVideoClient_1.getModalVideoClient)();
+            // Lazy init or pass in. Using default constructor for now if config exists
+            const config = require('../config').default || require('../config');
+            if (config.googleCloud.projectId) {
+                this.veo = new VeoClient_1.VeoClient({
+                    project: config.googleCloud.projectId,
+                    location: config.googleCloud.location
+                });
+            }
+            else {
+                this.veo = null;
+                console.warn('[EpisodeProduction] Google Cloud Project ID not configured - Veo disabled');
+            }
         }
-        catch {
-            this.modalVideo = null;
-            console.warn('[EpisodeProduction] ModalVideoClient not configured - video generation disabled');
+        catch (e) {
+            this.veo = null;
+            console.warn('[EpisodeProduction] Failed to init VeoClient:', e);
         }
         try {
             this.spaces = spaces || (0, SpacesClient_1.getSpacesClient)();
@@ -51,8 +64,8 @@ class EpisodeProductionService {
             this.spaces = null;
             console.warn('[EpisodeProduction] SpacesClient not configured - asset storage disabled');
         }
-        // We need Modal for video gen and Spaces for storage; Gradient is optional for prompt refinement
-        this.isConfigured = this.modalVideo !== null && this.spaces !== null;
+        // We need Veo for video gen and Spaces for storage
+        this.isConfigured = this.veo !== null && this.spaces !== null;
     }
     // ---------------------------------------------------------------------------
     // Main Entry Point: Process Pending Series
@@ -174,14 +187,26 @@ class EpisodeProductionService {
             const startTime = Date.now();
             try {
                 console.log(`[EpisodeProduction] Generating variant ${i + 1} for episode ${episode.id}`);
-                // Generate video using Modal + Mochi
-                const generation = await this.modalVideo.generateShot(prompt, {
+                // Generate video using Veo (Vertex AI)
+                // Veo supports 16:9 natively
+                const generation = await this.veo.generateVideo({
+                    prompt: prompt,
                     aspectRatio: '16:9',
-                    seed: seed, // Different seed per variant for variety
+                    withAudio: true, // Enable native audio
+                    seed: seed
                 });
+                // Veo returns a URL (GCS signed URL usually), we might need to fetch it to upload to our Spaces
+                // OR if VeoClient handles the fetch, we get a buffer/base64?
+                // Let's assume VeoClient returns a URL we need to download, or we update to download it.
+                // For simplicity in this migration step, let's assume `videoUrl` is accessible.
+                // Download from Veo output (GCS)
+                const videoResponse = await fetch(generation.videoUrl);
+                if (!videoResponse.ok)
+                    throw new Error(`Failed to download Veo output from ${generation.videoUrl}`);
+                const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
                 const generationTimeMs = Date.now() - startTime;
-                // Upload video to Spaces storage
-                const videoBuffer = Buffer.from(generation.video_base64, 'base64');
+                // Upload to Spaces storage
+                // const videoBuffer = Buffer.from(generation.video_base64, 'base64'); // Legacy Modal
                 const uploadResult = await this.spaces.upload({
                     key: `episodes/${episode.id}/variant-${i + 1}.mp4`,
                     body: videoBuffer,
@@ -189,8 +214,9 @@ class EpisodeProductionService {
                     metadata: {
                         episodeId: episode.id,
                         variantNumber: String(i + 1),
-                        prompt: prompt.slice(0, 500), // Truncate for metadata limits
-                        generatedBy: 'mochi-modal',
+                        prompt: prompt.slice(0, 500),
+                        generatedBy: 'veo-vertex-ai',
+                        model: generation.metadata.model
                     },
                 });
                 const videoUrl = uploadResult.url;
@@ -204,7 +230,7 @@ class EpisodeProductionService {
                         is_selected: false,
                         // Generation metadata
                         prompt: prompt,
-                        model_used: 'mochi-1-preview',
+                        model_used: generation.metadata.model || 'veo-3',
                         seed: seed,
                         generation_time_ms: generationTimeMs,
                         status: 'completed',

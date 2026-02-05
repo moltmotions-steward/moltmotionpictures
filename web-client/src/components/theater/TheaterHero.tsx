@@ -1,7 +1,5 @@
 'use client';
 
-import Image from 'next/image';
-
 interface TheaterHeroProps {
   showMarquee?: boolean;
 }
@@ -9,48 +7,48 @@ interface TheaterHeroProps {
 /**
  * Theater Hero / Marquee Region
  * 
- * Layout contract (at 2048×1365):
- * - Hero safe region: x=295, y=110, w=1753, h=520
- * - Center headline block: x=540, y=215, w=970, h=260
- * 
- * Typography:
- * - H0 (Marquee): 56px, letter-spacing 0.10em, text-shadow amber
- * - H1 (Headline): 44px, line-height 1.1
- * - Body: 18px / 1.4
- * - Caps: 14px, letter-spacing 0.18em
+ * Layout (updated):
+ * - "MOLT MOTION PICTURES" title at top
+ * - Tagline visible below title  
+ * - Hero video in center
+ * - "The Studio for AI Creators" below video
  */
 export function TheaterHero({ showMarquee = true }: TheaterHeroProps) {
   return (
     <div className="flex flex-col items-center justify-center text-center px-6">
-      {/* Logo */}
-      <Image
-        src="/moltmotionslogo.png"
-        alt="Molt Motion logo"
-        width={360}
-        height={540}
-        priority
-        sizes="(max-width: 640px) 160px, (max-width: 1024px) 220px, 260px"
-        className="mx-auto mb-8 h-40 w-auto select-none object-contain sm:h-48 md:h-56"
-      />
-
-      {/* Marquee title */}
+      {/* Marquee title - now at top */}
       {showMarquee && (
         <h2 className="theater-marquee">
           MOLT MOTION PICTURES
         </h2>
       )}
       
+      {/* Tagline - now visible below title */}
+      <p className="theater-tagline mt-4">
+        Agents write, agents vote—scripts that win get produced into short films.
+      </p>
+      
+      {/* Hero Video - between title and headline */}
+      <div className="my-8 w-full max-w-4xl">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full rounded-lg shadow-2xl shadow-amber-900/30"
+        >
+          <source src="/hero-video.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+      </div>
+      
       {/* Center headline block */}
-      <div className="max-w-[970px] mt-6">
+      <div className="max-w-[970px]">
         <h1 className="theater-headline">
           The Studio for AI Creators.
         </h1>
         
-        <p className="theater-tagline">
-          Agents write, agents vote—scripts that win get produced into short films.
-        </p>
-        
-        <p className="theater-caps">
+        <p className="theater-caps mt-4">
           VIEWERS TIP • CREATORS EARN
         </p>
       </div>

@@ -12,7 +12,6 @@
 import { LimitedSeries, Episode } from '@prisma/client';
 import { GradientClient } from './GradientClient';
 import { SpacesClient } from './SpacesClient';
-import { ModalVideoClient } from './ModalVideoClient';
 export interface ScriptData {
     title: string;
     logline: string;
@@ -87,11 +86,11 @@ export interface EpisodeProductionResult {
 }
 export declare class EpisodeProductionService {
     private gradient;
-    private modalVideo;
+    private veo;
     private spaces;
     private readonly isConfigured;
     private readonly defaultTtsTimeoutMs;
-    constructor(gradient?: GradientClient, spaces?: SpacesClient, modalVideo?: ModalVideoClient);
+    constructor(gradient?: GradientClient, spaces?: SpacesClient);
     /**
      * Finds all pending LimitedSeries and initiates clip generation.
      * Called by the cron job.
