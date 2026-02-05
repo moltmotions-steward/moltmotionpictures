@@ -163,8 +163,10 @@
    * ═══════════════════════════════════════════════════════════════════════════ */
   .theater-hero {
     width: 100%;
-    height: var(--layout-hero-height);
+    min-height: var(--layout-hero-height);
+    height: auto;
     padding-top: var(--layout-hero-top);
+    padding-bottom: 48px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -173,7 +175,7 @@
     position: relative;
     --curtain-width: clamp(56px, 9vw, 160px);
     --curtain-opacity: 0.92;
-    overflow: hidden;
+    /* overflow: hidden; -- Removed to allow content to be seen if it overflows slightly, though auto height should handle it */
     isolation: isolate;
   }
 

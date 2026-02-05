@@ -14,7 +14,7 @@ import crypto from 'crypto';
 import { PrismaClient, LimitedSeries, Episode, ClipVariant } from '@prisma/client';
 import { GradientClient, getGradientClient } from './GradientClient';
 import { SpacesClient, getSpacesClient } from './SpacesClient';
-// import { ModalVideoClient, getModalVideoClient, VideoGenerationResponse } from './ModalVideoClient'; // Legacy
+import { ModalVideoClient, getModalVideoClient, VideoGenerationResponse } from './ModalVideoClient';
 import { VeoClient, VeoGenerationResponse } from './VeoClient';
 
 const prisma = new PrismaClient();
@@ -89,7 +89,7 @@ export interface EpisodeProductionResult {
 
 export class EpisodeProductionService {
   private gradient: GradientClient | null;
-  // private modalVideo: ModalVideoClient | null;
+  private modalVideo: ModalVideoClient | null;
   private veo: VeoClient | null;
   private spaces: SpacesClient | null;
   private readonly isConfigured: boolean;
@@ -97,11 +97,16 @@ export class EpisodeProductionService {
   private readonly defaultTtsTimeoutMs = 120000; // TTS can take longer than prompt refinement
 
   constructor(gradient?: GradientClient, spaces?: SpacesClient) {
+    // Initialize potential nulls
+    this.modalVideo = null;
+    this.veo = null;
+    this.gradient = null;
+    this.spaces = null;
+
     // Gradient client for LLM calls (prompt refinement)
     try {
       this.gradient = gradient || getGradientClient();
     } catch {
-      this.gradient = null;
       console.warn('[EpisodeProduction] GradientClient not configured - prompt refinement disabled');
     }
     
@@ -110,18 +115,22 @@ export class EpisodeProductionService {
       // Lazy init or pass in. Using default constructor for now if config exists
       const config = require('../config').default || require('../config');
       if (config.googleCloud.projectId) {
-          this.veo = new VeoClient({
-              project: config.googleCloud.projectId,
-              location: config.googleCloud.location
-          });
-      } else {
-          this.veo = null;
-          console.warn('[EpisodeProduction] Google Cloud Project ID not configured - Veo disabled');
-      }
+          // this.veo = new VeoClient({ ... }); // Disabled
+      } 
     } catch (e) {
-      this.veo = null;
       console.warn('[EpisodeProduction] Failed to init VeoClient:', e);
     }
+
+    // Modal Video Client (LTX-2)
+    try {
+      this.modalVideo = getModalVideoClient();
+    } catch (e) {
+      this.modalVideo = null;
+      console.warn('[EpisodeProduction] Failed to init ModalVideoClient:', e);
+    }
+    
+    // Veo Client (Disabled/Legacy for now, kept for reference if needed)
+    this.veo = null;
     
     try {
       this.spaces = spaces || getSpacesClient();
@@ -130,8 +139,8 @@ export class EpisodeProductionService {
       console.warn('[EpisodeProduction] SpacesClient not configured - asset storage disabled');
     }
     
-    // We need Veo for video gen and Spaces for storage
-    this.isConfigured = this.veo !== null && this.spaces !== null;
+    // We need Video generator and Spaces for storage
+    this.isConfigured = this.modalVideo !== null && this.spaces !== null;
   }
 
   // ---------------------------------------------------------------------------
@@ -245,18 +254,21 @@ export class EpisodeProductionService {
 
   /**
    * Calculate number of frames based on desired duration.
-   * Mochi generates at 24fps.
+   * LTX-2 generates at 24fps. 121 frames is ~5s.
    */
   private calculateFrames(durationSeconds: number): number {
-    // Clamp to reasonable range: 2-5 seconds
-    const clampedDuration = Math.max(2, Math.min(5, durationSeconds));
+    // Clamp to reasonable range for LTX-2: 3-5 seconds
+    const clampedDuration = Math.max(3, Math.min(5, durationSeconds));
+    // LTX-2 prefers odd number of frames + 1 usually, e.g. 121. 
+    // But let's just do roughly 24fps. 
+    // Actually, LTX-2 default in our Client is 121 frames.
     return Math.round(clampedDuration * 24);
   }
 
   /**
    * Initiates generation of 4 clip variants for an episode.
    * Uses different shot sequences and styles for variety.
-   * Now uses Modal + Mochi for text-to-video generation.
+   * Uses Modal + LTX-2 for synchronized audio-video generation.
    */
   async initiateClipGeneration(
     episode: Episode,
@@ -269,12 +281,11 @@ export class EpisodeProductionService {
     // Generate base prompt from script data
     const basePrompt = await this.buildVideoPrompt(series, scriptData);
     
+    // Extract audio text (narration/dialogue) if available
+    const audioText = scriptData ? this.extractNarrationText(scriptData, series) : null;
+    
     // Generate 4 variants with different stylistic approaches
     const variants = this.generatePromptVariants(basePrompt, scriptData);
-
-    // Calculate frames based on script data (default ~3.5s)
-    const requestedClipSeconds = scriptData?.shots?.[0]?.gen_clip_seconds || 3.5;
-    const numFrames = this.calculateFrames(requestedClipSeconds);
 
     for (let i = 0; i < VARIANT_COUNT; i++) {
       const prompt = variants[i] || basePrompt;
@@ -284,30 +295,20 @@ export class EpisodeProductionService {
       try {
         console.log(`[EpisodeProduction] Generating variant ${i + 1} for episode ${episode.id}`);
         
-        // Generate video using Veo (Vertex AI)
-        // Veo supports 16:9 natively
-        const generation = await this.veo!.generateVideo({
+        // Generate video using Modal LTX-2
+        const generation = await this.modalVideo!.generateVideo({
             prompt: prompt,
-            aspectRatio: '16:9',
-            withAudio: true, // Enable native audio
-            seed: seed
+            audio_text: audioText, // Pass synchronized audio text
+            seed: seed,
+            width: 1280, // LTX-2 Divisible by 32
+            height: 704
         });
         
-        // Veo returns a URL (GCS signed URL usually), we might need to fetch it to upload to our Spaces
-        // OR if VeoClient handles the fetch, we get a buffer/base64?
-        // Let's assume VeoClient returns a URL we need to download, or we update to download it.
-        // For simplicity in this migration step, let's assume `videoUrl` is accessible.
-        
-        // Download from Veo output (GCS)
-        const videoResponse = await fetch(generation.videoUrl);
-        if (!videoResponse.ok) throw new Error(`Failed to download Veo output from ${generation.videoUrl}`);
-        const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
-        
+        // Modal client returns base64 video
+        const videoBuffer = Buffer.from(generation.video_base64, 'base64');
         const generationTimeMs = Date.now() - startTime;
 
-
         // Upload to Spaces storage
-        // const videoBuffer = Buffer.from(generation.video_base64, 'base64'); // Legacy Modal
         const uploadResult = await this.spaces!.upload({
           key: `episodes/${episode.id}/variant-${i + 1}.mp4`,
           body: videoBuffer,
@@ -316,8 +317,8 @@ export class EpisodeProductionService {
             episodeId: episode.id,
             variantNumber: String(i + 1),
             prompt: prompt.slice(0, 500),
-            generatedBy: 'veo-vertex-ai',
-            model: generation.metadata.model
+            generatedBy: 'modal-ltx2',
+            model: generation.model || 'LTX-2'
           },
         });
         const videoUrl = uploadResult.url;
@@ -332,7 +333,8 @@ export class EpisodeProductionService {
             is_selected: false,
             // Generation metadata
             prompt: prompt,
-            model_used: generation.metadata.model || 'veo-3',
+            audio_text: audioText || undefined, // Store transcript
+            model_used: generation.model || 'LTX-2',
             seed: seed,
             generation_time_ms: generationTimeMs,
             status: 'completed',
@@ -361,7 +363,7 @@ export class EpisodeProductionService {
             vote_count: 0,
             is_selected: false,
             prompt: prompt,
-            model_used: 'mochi-1-preview',
+            model_used: 'LTX-2',
             seed: seed,
             generation_time_ms: Date.now() - startTime,
             status: 'failed',

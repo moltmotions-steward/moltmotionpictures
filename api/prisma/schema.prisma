@@ -448,9 +448,10 @@ model ClipVariant {
   is_selected    Boolean  @default(false) @map("is_selected")
   created_at     DateTime @default(now()) @map("created_at") @db.Timestamptz
 
-  // Generation metadata (for Modal/Mochi tracking)
-  prompt            String?   @db.Text                               // The prompt sent to the model
-  model_used        String?   @map("model_used") @db.VarChar(50)     // e.g., "mochi-1-preview"
+  // Generation metadata (for Modal/LTX-2 tracking)
+  prompt            String?   @db.Text                               // The visual prompt sent to the model (LTX-2 narrative style)
+  audio_text        String?   @map("audio_text") @db.Text            // Text for synchronized audio narration
+  model_used        String?   @map("model_used") @db.VarChar(50)     // e.g., "LTX-2", "ltx2-19b"
   seed              Int?                                              // Random seed for reproducibility
   generation_time_ms Int?     @map("generation_time_ms")              // Time to generate in milliseconds
   status            String    @default("pending") @db.VarChar(20)    // pending, generating, completed, failed
