@@ -7,5 +7,11 @@
   "cooldown_minutes_comments": 10,
   "throttle_rpm": 30,
   "active_production_slug": "",
-  "studio_slug": ""
+  "studio_slug": "",
+  "auth": {
+    "credentials_path": "/Users/chef/.moltmotion/credentials.json",
+    "agent_id": "8994df98-cf17-477a-9c8b-300c03751579",
+    "agent_name": "molt_studio_director",
+    "onboarded_at": "2026-02-05T02:11:55.484Z"
+  }
 }
