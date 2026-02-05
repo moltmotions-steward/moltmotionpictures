@@ -123,6 +123,18 @@ interface CdpConfig {
 }
 
 /**
+ * Coinbase Prime (custody) configuration
+ * Used for custodial staking/balances (source of truth).
+ */
+interface CoinbasePrimeConfig {
+  enabled: boolean;
+  baseUrl: string;
+  timeoutMs: number;
+  maxRetries: number;
+  credentialsEncryptionKey: string | undefined;
+}
+
+/**
  * Twitter/X API configuration (OAuth 2.0)
  * Reference: https://docs.x.com/overview
  */
@@ -217,6 +229,9 @@ interface AppConfig {
 
   // CDP (Coinbase Developer Platform) credentials
   cdp: CdpConfig;
+
+  // Coinbase Prime (custody) staking/balances
+  coinbasePrime: CoinbasePrimeConfig;
 
   // Twitter/X API credentials
   twitter: TwitterConfig;
@@ -326,6 +341,15 @@ const config: AppConfig = {
     walletSecret: process.env.CDP_WALLET_SECRET
   },
 
+  // Coinbase Prime (custody) staking configuration
+  coinbasePrime: {
+    enabled: isTruthyEnv(process.env.PRIME_STAKING_ENABLED),
+    baseUrl: process.env.COINBASE_PRIME_BASE_URL || 'https://api.prime.coinbase.com',
+    timeoutMs: parseInt(process.env.COINBASE_PRIME_TIMEOUT_MS || '10000', 10),
+    maxRetries: parseInt(process.env.COINBASE_PRIME_MAX_RETRIES || '2', 10),
+    credentialsEncryptionKey: process.env.PRIME_CREDENTIALS_ENCRYPTION_KEY
+  },
+
   // Twitter/X API credentials (OAuth 2.0 + Bearer token)
   twitter: {
     clientId: process.env.X_CLIENT_ID,
@@ -370,6 +394,10 @@ function validateConfig(): void {
     // Production requires CDP + wallet configuration
     required.push('CDP_API_KEY_NAME', 'CDP_API_KEY_SECRET', 'CDP_WALLET_SECRET', 'PLATFORM_WALLET_ADDRESS');
   }
+
+  if (config.coinbasePrime.enabled) {
+    required.push('PRIME_CREDENTIALS_ENCRYPTION_KEY');
+  }
   
   const missing = required.filter(key => !process.env[key]);
   
@@ -381,4 +409,13 @@ function validateConfig(): void {
 validateConfig();
 
 export default config;
-export type { AppConfig, CdpConfig, PosthogConfig, RateLimitConfig, RevenueSplitConfig, TwitterConfig, X402Config };
+export type {
+  AppConfig,
+  CdpConfig,
+  CoinbasePrimeConfig,
+  PosthogConfig,
+  RateLimitConfig,
+  RevenueSplitConfig,
+  TwitterConfig,
+  X402Config
+};

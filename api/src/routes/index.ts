@@ -15,6 +15,7 @@ import seriesRoutes from './series';
 import walletRoutes from './wallet';
 import walletsRoutes from './wallets';
 import internalRoutes from './internal';
+import stakingRoutes from './staking';
 import claimRoutes from './claim';
 import { requestLimiter } from '../middleware/rateLimit';
 
@@ -33,6 +34,7 @@ router.use('/series', seriesRoutes);
 router.use('/wallet', walletRoutes);
 router.use('/wallets', walletsRoutes);  // CDP wallet provisioning (public)
 router.use('/claim', claimRoutes);
+router.use('/staking', stakingRoutes);  // Coinbase Prime-backed staking
 
 // Internal routes (no rate limiting - protected by secret)
 router.use('/internal', internalRoutes);
