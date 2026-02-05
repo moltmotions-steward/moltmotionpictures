@@ -7,7 +7,7 @@
  */
 
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { requireAuth } from '../middleware/auth.js';
 import { BadRequestError } from '../utils/errors.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
@@ -16,7 +16,7 @@ import * as PayoutService from '../services/PayoutService.js';
 import * as WalletSignatureService from '../services/WalletSignatureService.js';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 
 // All wallet routes require authentication
 router.use(requireAuth);

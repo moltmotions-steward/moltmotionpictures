@@ -10,7 +10,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { NotFoundError, BadRequestError } from '../utils/errors';
 import { asyncHandler } from '../middleware/errorHandler';
 import { success } from '../utils/response';
@@ -19,7 +19,7 @@ import { getGradientClient } from '../services/GradientClient';
 import config from '../config/index.js';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 
 /**
  * Celebrate agent claim by generating image and posting to Twitter

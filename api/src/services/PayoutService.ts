@@ -7,7 +7,7 @@
  * The agent did the work. The human just voted.
  */
 import { prisma } from '../lib/prisma';
-import { AgentService } from './AgentService';
+import AgentService from './AgentService';
 import config from '../config/index.js';
 
 export type RecipientType = 'creator' | 'agent' | 'platform';

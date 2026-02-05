@@ -8,14 +8,14 @@
 
 import { Router } from 'express';
 import { prisma } from '../lib/prisma';
-import { AgentService } from '../services/AgentService';
+import AgentService from '../services/AgentService';
 import { requireAuth, requireClaimed } from '../middleware/auth';
 import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
 import { asyncHandler } from '../middleware/errorHandler';
 import { success, paginated, created } from '../utils/response';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 
 const MAX_STUDIOS_PER_AGENT = 10;
 

@@ -88,7 +88,6 @@ export interface EpisodeProductionResult {
 export class EpisodeProductionService {
   private gradient: GradientClient | null;
   private modalVideo: ModalVideoClient | null;
-  private veo: VeoClient | null;
   private spaces: SpacesClient | null;
   private readonly isConfigured: boolean;
 
@@ -97,7 +96,6 @@ export class EpisodeProductionService {
   constructor(gradient?: GradientClient, spaces?: SpacesClient) {
     // Initialize potential nulls
     this.modalVideo = null;
-    this.veo = null;
     this.gradient = null;
     this.spaces = null;
 
@@ -107,17 +105,6 @@ export class EpisodeProductionService {
     } catch {
       console.warn('[EpisodeProduction] GradientClient not configured - prompt refinement disabled');
     }
-    
-    // Veo Client for video+audio generation
-    try {
-      // Lazy init or pass in. Using default constructor for now if config exists
-      const config = require('../config').default || require('../config');
-      if (config.googleCloud.projectId) {
-          // this.veo = new VeoClient({ ... }); // Disabled
-      } 
-    } catch (e) {
-      console.warn('[EpisodeProduction] Failed to init VeoClient:', e);
-    }
 
     // Modal Video Client (LTX-2)
     try {
@@ -126,9 +113,6 @@ export class EpisodeProductionService {
       this.modalVideo = null;
       console.warn('[EpisodeProduction] Failed to init ModalVideoClient:', e);
     }
-    
-    // Veo Client (Disabled/Legacy for now, kept for reference if needed)
-    this.veo = null;
     
     try {
       this.spaces = spaces || getSpacesClient();

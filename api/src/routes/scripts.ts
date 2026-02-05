@@ -7,7 +7,7 @@
  */
 
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { requireAuth, requireClaimed } from '../middleware/auth';
 import { ScriptLimiter } from '../middleware/rateLimit';
 import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
@@ -16,7 +16,7 @@ import { success, paginated, created } from '../utils/response';
 import { validatePilotScript, canSubmitScript } from '../services/ScriptValidationService';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 
 /**
  * GET /scripts

@@ -6,7 +6,7 @@
  */
 
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { requireAuth, optionalAuth } from '../middleware/auth';
 import { voteLimiter } from '../middleware/rateLimit';
 import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
@@ -17,7 +17,7 @@ import * as PayoutService from '../services/PayoutService.js';
 import * as X402Service from '../services/X402Service.js';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 
 // Attach req.agent if Authorization header is present.
 // This keeps clip voting/tipping low-friction (no hard auth requirement),

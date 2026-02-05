@@ -14,7 +14,7 @@
  */
 
 import { prisma } from '../lib/prisma';
-import { AgentService } from './AgentService';
+import AgentService from './AgentService';
 import config from '../config/index.js';
 
 // ============================================================================

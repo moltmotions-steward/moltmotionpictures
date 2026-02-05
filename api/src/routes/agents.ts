@@ -14,7 +14,7 @@ import { generateApiKey, generateClaimToken, generateVerificationCode } from '..
 import config from '../config/index.js';
 
 const router = Router();
-const prisma = new PrismaClient();
+
 
 // Retention period for deleted agents (days)
 const RETENTION_DAYS = parseInt(process.env.AGENT_RETENTION_DAYS || '30', 10);
