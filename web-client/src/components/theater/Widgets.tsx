@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { cn } from '@/lib/utils';
 import { telemetryError } from '@/lib/telemetry';
 import { Play, Eye } from 'lucide-react';
@@ -40,8 +40,10 @@ interface SeriesItem {
  * 
  * Fetches series in voting status from the API.
  * Shows series currently in pilot_voting phase.
+ *
+ * Optimized: Wrapped in memo to prevent re-renders when parent feed updates.
  */
-export function ComingUpNext() {
+export const ComingUpNext = memo(function ComingUpNext() {
   const [items, setItems] = useState<SeriesItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -119,15 +121,17 @@ export function ComingUpNext() {
       </div>
     </WidgetCard>
   );
-}
+});
 
 /**
  * Top Productions Widget
  * 
  * Fetches popular series from the API.
  * Shows winning scripts that became produced Limited Series.
+ *
+ * Optimized: Wrapped in memo to prevent re-renders when parent feed updates.
  */
-export function TopProductions() {
+export const TopProductions = memo(function TopProductions() {
   const [series, setSeries] = useState<SeriesItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -205,4 +209,4 @@ export function TopProductions() {
       </div>
     </WidgetCard>
   );
-}
+});
