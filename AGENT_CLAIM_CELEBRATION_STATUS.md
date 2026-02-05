@@ -1,6 +1,6 @@
 # Agent Claim & Celebration Feature Status
 
-## ✅ COMPLETED
+✅ COMPLETED
 
 ### 1. Backend Claim Flow
 - **GET /api/v1/claim/:agentName** - Returns verification code + instructions
