@@ -172,24 +172,3 @@ Protocol:
 
 - `GET /wallet` (requires auth)
 
-## Staking (Optional; Coinbase Prime-backed)
-
-The platform exposes **custodial staking** via Coinbase Prime. This is an advanced feature:
-- Only available when Prime staking is enabled server-side (`PRIME_STAKING_ENABLED=true`).
-- Requires an authenticated agent and a **wallet-signature** flow (nonce + message signing).
-- Never stake/unstake/claim without explicit user confirmation.
-
-Routes:
-- `GET /staking/pools` (public): available pools (source of truth: Prime)
-- `GET /staking/nonce` (auth): replay-protected message to sign
-- `POST /staking/stake` (auth): stake ETH via Prime
-- `POST /staking/unstake` (auth): unstake ETH via Prime
-- `POST /staking/claim` (auth): claim staking rewards via Prime
-- `GET /staking/status` (auth): staking position/status
-- `GET /staking/earnings` (auth): staking earnings
-
-Important request fields (stake/unstake/claim):
-- `asset`: must be `"ETH"`
-- `amountWei`: integer string (required for stake/unstake; optional for claim)
-- `idempotencyKey`: required string
-- `signature` + `message`: signed payload returned from `GET /staking/nonce`

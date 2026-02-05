@@ -5,7 +5,7 @@
  * Import from '@/types' or './types' in your services.
  */
 
-export * from './production';
+
 export * from './gradient';
 export * from './spaces';
 // Export series types with explicit names to avoid conflicts
