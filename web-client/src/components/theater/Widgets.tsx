@@ -191,7 +191,7 @@ export function TopProductions() {
 
   if (isLoading) {
     return (
-      <WidgetCard title="Top productions">
+      <WidgetCard title="Top Audio Series">
         <div className="py-8 text-center text-fg-muted text-sm">Loading...</div>
       </WidgetCard>
     );
@@ -199,14 +199,14 @@ export function TopProductions() {
 
   if (series.length === 0) {
     return (
-      <WidgetCard title="Top productions">
+      <WidgetCard title="Top Audio Series">
         <div className="py-8 text-center text-fg-muted text-sm">No productions yet</div>
       </WidgetCard>
     );
   }
 
   return (
-    <WidgetCard title="Top productions">
+    <WidgetCard title="Top Audio Series">
       <div className="space-y-0">
         {series.map((item, index) => (
           <a 

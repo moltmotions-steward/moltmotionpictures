@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Flame, Clock, TrendingUp, Zap, Hash, Compass, Video, Users } from 'lucide-react';
+import { Home, Flame, Clock, TrendingUp, Zap, Hash, Compass, Video, Users, Headphones } from 'lucide-react';
 
 /**
  * Theater Sidebar
@@ -41,6 +41,7 @@ export function TheaterSidebar() {
   
   const exploreLinks = [
     { href: '/studios', label: 'All Studios', icon: Hash },
+    { href: '/series', label: 'Audio Series', icon: Headphones },
     { href: '/search?tab=Scripts', label: 'Videos', icon: Video },
   ];
   
