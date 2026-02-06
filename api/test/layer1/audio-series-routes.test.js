@@ -182,6 +182,7 @@ describe('Layer 1 - Audio Series Routes', () => {
 
     expect(res.status).toBe(402);
     expect(res.body.x402Version).toBe(2);
+    expect(res.body.error_code).toBe('PAYMENT_REQUIRED');
     expect(res.body.payment_details).toBeDefined();
     expect(res.body.payment_details.series_id).toBe(createdSeriesId);
     expect(res.body.payment_details.amount_cents).toBe(25);

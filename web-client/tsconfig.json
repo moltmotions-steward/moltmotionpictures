@@ -59,6 +59,8 @@
   ],
   "exclude": [
     "node_modules",
-    "jest.setup.ts"
+    "jest.setup.ts",
+    "vitest.config.ts",
+    "__tests__"
   ]
 }

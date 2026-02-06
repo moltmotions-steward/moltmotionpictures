@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
-import posthog from 'posthog-js';
+import { telemetryEvent } from '@/lib/telemetry';
 import { GlassPanel } from '@/components/theater';
 import { Button, Spinner } from '@/components/ui';
 import { useWallet } from '@/components/wallet';
@@ -78,7 +78,7 @@ export default function SeriesPage() {
   const [tipError, setTipError] = useState<string | null>(null);
   const [waitingForWalletConnect, setWaitingForWalletConnect] = useState(false);
 
-  const { isConnected, isConnecting, error: walletError, connect } = useWallet();
+  const { isConnected, isConnecting, error: walletError, connect, openFunding } = useWallet();
   const x402 = getX402Client();
 
   const [showTipOptions, setShowTipOptions] = useState(false);
@@ -199,33 +199,29 @@ export default function SeriesPage() {
       return;
     }
 
-    if (isConnected) {
-      setShowTipOptions(true);
-      return;
-    }
+    setShowTipOptions(true);
+  }, [tipAvailability]);
 
-    setTipError(null);
-    setWaitingForWalletConnect(true);
-    await connect();
-  }, [connect, isConnected, tipAvailability]);
-
+  // Just-in-time auth: handled by x402 client
   const handleTip = useCallback(async () => {
     if (!series) return;
 
-    if (!isConnected) {
-      setTipError('Connect a wallet before tipping.');
-      return;
-    }
-
     setIsTipping(true);
     setTipError(null);
+
+    telemetryEvent('checkout_flow_started', {
+      series_id: series.id,
+      series_title: series.title,
+      medium: series.medium,
+      amount_cents: selectedTip,
+    });
 
     try {
       await x402.tipSeries(series.id, selectedTip);
       setTipSuccess(true);
       setShowTipOptions(false);
 
-      posthog.capture('series_tip_submitted', {
+      telemetryEvent('series_tip_submitted', {
         series_id: series.id,
         series_title: series.title,
         medium: series.medium,
@@ -234,15 +230,19 @@ export default function SeriesPage() {
 
       setTimeout(() => setTipSuccess(false), 2000);
       void fetchSeries(false);
-    } catch (e) {
+    } catch (e: any) {
+      if (e.type === 'auth_cancelled') {
+        setIsTipping(false);
+        return;
+      }
+      
       const message = extractErrorMessage(e);
       setTipError(message);
-      posthog.capture('series_tip_failed', { series_id: series.id, tip_amount_cents: selectedTip, error_message: message });
-      posthog.captureException(e);
+      telemetryEvent('series_tip_failed', { series_id: series.id, tip_amount_cents: selectedTip, error_message: message });
     } finally {
       setIsTipping(false);
     }
-  }, [fetchSeries, isConnected, selectedTip, series, x402]);
+  }, [fetchSeries, selectedTip, series, x402]);
 
   if (isLoading) {
     return (
@@ -359,13 +359,29 @@ export default function SeriesPage() {
                   variant="outline"
                   className="w-full border-green-500 text-green-500 hover:bg-green-500 hover:text-white disabled:border-border-muted disabled:text-fg-muted disabled:hover:bg-transparent"
                   onClick={handleTipStart}
-                  disabled={!tipAvailability.eligible || isConnecting || waitingForWalletConnect}
+                  disabled={!tipAvailability.eligible}
                 >
                   <DollarSign className="h-4 w-4 mr-1" />
-                  {isConnecting || waitingForWalletConnect ? 'Connecting wallet…' : 'Tip this series'}
+                  Tip this series
                 </Button>
                 {tipUnavailableMessage ? <p className="text-xs text-fg-muted">{tipUnavailableMessage}</p> : null}
-                {tipError ? <p className="text-xs text-destructive">{tipError}</p> : null}
+                {tipError ? (
+                  <div className="space-y-2">
+                    <p className="text-xs text-destructive">{tipError}</p>
+                    {(tipError.toLowerCase().includes('insufficient funds') || 
+                      tipError.toLowerCase().includes('insufficient balance') ||
+                      tipError.includes('INSUFFICIENT_FUNDS')) && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="w-full text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => openFunding({ asset: 'USDC', network: 'base' })}
+                      >
+                         Add USDC on Base
+                      </Button>
+                    )}
+                  </div>
+                ) : null}
               </div>
             )}
           </div>

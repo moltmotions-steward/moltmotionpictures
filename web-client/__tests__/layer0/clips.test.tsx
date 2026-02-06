@@ -40,6 +40,12 @@ vi.mock('@/lib/x402', () => ({
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
+// Mock telemetry
+const mockTelemetryEvent = vi.fn();
+vi.mock('@/lib/telemetry', () => ({
+  telemetryEvent: (...args: any[]) => mockTelemetryEvent(...args),
+}));
+
 // Test data factories
 function createClip(overrides: Partial<ClipVariant> = {}): ClipVariant {
   return {
@@ -276,10 +282,21 @@ describe('ClipCard', () => {
     await waitFor(() => {
       expect(onTipSuccess).toHaveBeenCalledWith('clip-1', 11);
     });
+
+    // Verify telemetry
+    expect(mockTelemetryEvent).toHaveBeenCalledWith('tip_submitted', expect.objectContaining({
+      clip_id: 'clip-1',
+      tip_amount_cents: 50,
+      new_vote_count: 11
+    }));
   });
 
-  it('shows error message on tip failure', async () => {
-    mockTipClip.mockRejectedValueOnce(new Error('Insufficient funds'));
+  it('shows error message and funding button on insufficient funds', async () => {
+    // Mock error with type 'insufficient_funds'
+    const error = new Error('Insufficient balance on Base.');
+    (error as any).type = 'insufficient_funds';
+    
+    mockTipClip.mockRejectedValueOnce(error);
 
     const clip = createClip();
     render(
@@ -302,7 +319,9 @@ describe('ClipCard', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Insufficient funds')).toBeInTheDocument();
+      expect(screen.getByText('Insufficient balance on Base.')).toBeInTheDocument();
+      // Check for funding button
+      expect(screen.getByText('Add USDC on Base')).toBeInTheDocument();
     });
   });
 });

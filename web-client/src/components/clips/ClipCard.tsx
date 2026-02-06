@@ -10,8 +10,8 @@
 
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
-import posthog from 'posthog-js';
+import { useRef, useCallback, useState } from 'react';
+import { telemetryEvent } from '@/lib/telemetry';
 import { cn } from '@/lib/utils';
 import { useWallet } from '@/components/wallet';
 import { getX402Client } from '@/lib/x402';
@@ -38,7 +38,7 @@ export function ClipCard({ clip, genreName, seriesTitle, onTipSuccess, className
   const [tipSuccess, setTipSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { isConnected, connect } = useWallet();
+  const { isConnected, connect, openFunding } = useWallet();
   const x402 = getX402Client();
 
   // Handle mouse enter - play video
@@ -50,7 +50,7 @@ export function ClipCard({ clip, genreName, seriesTitle, onTipSuccess, className
       videoRef.current.play?.()?.catch(() => {});
 
       // Track video preview play
-      posthog.capture('clip_video_played', {
+      telemetryEvent('clip_video_played', {
         clip_id: clip.id,
         genre_name: genreName,
         series_title: seriesTitle,
@@ -79,16 +79,23 @@ export function ClipCard({ clip, genreName, seriesTitle, onTipSuccess, className
   }, []);
 
   // Handle tip action
+  // Just-in-time auth: if not connected, ensurePaymentReady will trigger the auth modal.
   const handleTip = useCallback(async () => {
-    if (!isConnected) {
-      await connect();
-      return;
-    }
-
     setIsTipping(true);
     setError(null);
 
+    // Track flow start
+    telemetryEvent('checkout_flow_started', {
+      clip_id: clip.id,
+      genre_name: genreName,
+      series_title: seriesTitle,
+      variant_number: clip.variantNumber,
+      amount_cents: selectedTip,
+    });
+
     try {
+      // 1. Ensure wallet is ready (triggers auth modal if needed)
+      // This will throw 'auth_cancelled' if user closes the modal
       const result = await x402.tipClip(clip.id, getSessionId(), selectedTip);
 
       setTipSuccess(true);
@@ -96,7 +103,7 @@ export function ClipCard({ clip, genreName, seriesTitle, onTipSuccess, className
       onTipSuccess?.(clip.id, result.clipVariant.voteCount);
 
       // Track successful tip
-      posthog.capture('tip_submitted', {
+      telemetryEvent('tip_submitted', {
         clip_id: clip.id,
         genre_name: genreName,
         series_title: seriesTitle,
@@ -107,22 +114,37 @@ export function ClipCard({ clip, genreName, seriesTitle, onTipSuccess, className
 
       // Reset success state after animation
       setTimeout(() => setTipSuccess(false), 2000);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Tip failed';
-      setError(message);
+    } catch (err: any) {
+      // Handle cancellations gracefully - keep panel open
+      if (err.type === 'auth_cancelled') {
+        // No error message needed for cancellation, just stop loading
+        setIsTipping(false);
+        return;
+      }
 
-      // Track tip failure
-      posthog.capture('tip_failed', {
+      if (err.type === 'insufficient_funds') {
+        setError('Insufficient balance on Base.');
+      } else {
+        const message = err.message || 'Tip failed';
+        setError(message);
+      }
+      
+      telemetryEvent('tip_failed', {
         clip_id: clip.id,
         genre_name: genreName,
         tip_amount_cents: selectedTip,
-        error_message: message,
+        error_message: err.message,
+        error_type: err.type,
       });
-      posthog.captureException(err);
+      if (err.type !== 'auth_cancelled' && err.type !== 'insufficient_funds') {
+        // posthog.captureException is not wrapped in telemetry.ts, so we keep it or rely on global error boundary
+        // For now, let's just log it as a warning in telemetry wrapper if available, or just skip manual exception tracking 
+        // as telemetryError handles safe logging.
+      }
     } finally {
       setIsTipping(false);
     }
-  }, [isConnected, connect, x402, clip.id, selectedTip, getSessionId, onTipSuccess, genreName, seriesTitle, clip.variantNumber]);
+  }, [x402, clip.id, selectedTip, getSessionId, onTipSuccess, genreName, seriesTitle, clip.variantNumber]);
 
   // Format tip amount
   const formatTip = (cents: number) => `$${(cents / 100).toFixed(2)}`;
@@ -256,16 +278,28 @@ export function ClipCard({ clip, genreName, seriesTitle, onTipSuccess, className
             size="sm"
             variant="outline"
             className="w-full border-green-500 text-green-400 hover:bg-green-500 hover:text-white"
-            onClick={() => isConnected ? setShowTipOptions(true) : connect()}
+            onClick={() => setShowTipOptions(true)}
           >
             <DollarSign className="h-4 w-4 mr-1" />
-            {isConnected ? 'Tip to Vote' : 'Connect to Vote'}
+            Tip to Vote
           </Button>
         )}
 
-        {/* Error message */}
+        {/* Error message & Recovery */}
         {error && (
-          <p className="mt-2 text-xs text-red-400 text-center">{error}</p>
+          <div className="mt-2 space-y-2">
+            <p className="text-xs text-red-400 text-center">{error}</p>
+            {error.includes('Insufficient balance') && (
+              <Button
+                size="sm"
+                variant="outline" 
+                className="w-full h-7 text-xs border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                onClick={() => openFunding({ asset: 'USDC', network: 'base' })}
+              >
+                Add USDC on Base
+              </Button>
+            )}
+          </div>
         )}
       </div>
     </div>

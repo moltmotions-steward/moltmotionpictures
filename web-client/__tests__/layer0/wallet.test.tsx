@@ -8,6 +8,19 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { WalletProvider, useWallet, WalletButton } from '@/components/wallet';
 
+// Mock CDP libraries to avoid CSS import issues and side effects
+vi.mock('@coinbase/cdp-react', () => ({
+  SignInModal: () => <div data-testid="signin-modal">Sign In Modal</div>,
+}));
+
+vi.mock('@coinbase/cdp-hooks', () => ({
+  useCurrentUser: () => ({ currentUser: null }),
+  useIsSignedIn: () => ({ isSignedIn: false }),
+  useEvmAddress: () => ({ evmAddress: null }),
+  useSignOut: () => ({ signOut: vi.fn() }),
+  useSignEvmTypedData: () => ({ signEvmTypedData: vi.fn() }),
+}));
+
 // Mock ethereum provider
 const createMockEthereum = () => ({
   request: vi.fn(),
@@ -17,6 +30,10 @@ const createMockEthereum = () => ({
 });
 
 let mockEthereum: ReturnType<typeof createMockEthereum>;
+
+// Mock openFunding function to track calls if needed, 
+// though we primarily test its presence and invocation
+const mockOpenFunding = vi.fn();
 
 describe('WalletProvider', () => {
   beforeEach(() => {
@@ -156,6 +173,25 @@ describe('WalletProvider', () => {
     });
 
     consoleSpy.mockRestore();
+  });
+
+  it('exposes openFunding method', async () => {
+    function FundingConsumer() {
+      const { openFunding } = useWallet();
+      return (
+        <button onClick={() => openFunding({ asset: 'USDC', network: 'base' })}>
+          Exposed: {typeof openFunding}
+        </button>
+      );
+    }
+
+    render(
+      <WalletProvider>
+        <FundingConsumer />
+      </WalletProvider>
+    );
+
+    expect(screen.getByText('Exposed: function')).toBeInTheDocument();
   });
 
   it('throws when useWallet is called outside provider', () => {

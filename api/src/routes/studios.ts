@@ -408,7 +408,7 @@ router.get('/:studioId', optionalAuth, asyncHandler(async (req: any, res: any) =
       last_script_at: studio.last_script_at,
       created_at: studio.created_at,
     },
-    scripts: studio.scripts.map((s: any) => ({
+    scripts: (studio as any).scripts.map((s: any) => ({
       id: s.id,
       title: s.title,
       logline: s.logline,

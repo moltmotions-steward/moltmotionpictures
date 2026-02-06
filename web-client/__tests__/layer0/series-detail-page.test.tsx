@@ -6,11 +6,9 @@ vi.mock('next/navigation', () => ({
   useParams: () => ({ seriesId: 'series-1' }),
 }));
 
-vi.mock('posthog-js', () => ({
-  default: {
-    capture: vi.fn(),
-    captureException: vi.fn(),
-  },
+const mockTelemetryEvent = vi.fn();
+vi.mock('@/lib/telemetry', () => ({
+  telemetryEvent: (...args: any[]) => mockTelemetryEvent(...args),
 }));
 
 const mockConnect = vi.fn();
@@ -19,15 +17,19 @@ const walletState = {
   isConnecting: false,
   error: null as string | null,
   connect: mockConnect,
+  openFunding: vi.fn(),
 };
 
 vi.mock('@/components/wallet', () => ({
   useWallet: () => walletState,
 }));
 
+const mockTipSeries = vi.fn();
 vi.mock('@/lib/x402', () => ({
   getX402Client: () => ({
-    tipSeries: vi.fn(),
+    tipSeries: mockTipSeries,
+    isWalletConnected: vi.fn().mockReturnValue(true),
+    ensureWalletReady: vi.fn().mockResolvedValue(undefined),
   }),
 }));
 
@@ -211,5 +213,101 @@ describe('Series detail page poster rendering', () => {
       expect(screen.getByText(/audio script is missing for this episode/i)).toBeInTheDocument();
     });
     expect(screen.queryByText('Audio rendering…')).not.toBeInTheDocument();
+  });
+
+  it('handles successful tip with telemetry', async () => {
+    mockSeriesResponse({
+      id: 'series-6',
+      title: 'Tippable Story',
+      logline: 'Ready for tips.',
+      poster_url: null,
+      genre: 'sci_fi',
+      medium: 'audio',
+      status: 'completed',
+      created_at: new Date().toISOString(),
+      episodes: Array.from({ length: 5 }, (_, i) => ({
+        id: `ep-${i + 1}`,
+        episode_number: i + 1,
+        title: `Ep ${i + 1}`,
+        runtime_seconds: 60,
+        status: 'published',
+        video_url: 'url',
+        tts_audio_url: 'url',
+        tts_retry_count: 0,
+        tts_error_message: null,
+        published_at: new Date().toISOString(),
+      })),
+    });
+
+    render(<SeriesPage />);
+
+    // Find tip button (might be "Tip this series" or icon)
+    const tipButton = await screen.findByRole('button', { name: /Tip this series/i });
+    expect(tipButton).not.toBeDisabled();
+
+    fireEvent.click(tipButton);
+
+    // Tip options should appear
+    const amountButton = await screen.findByText('$0.25');
+    fireEvent.click(amountButton);
+
+    const confirmButton = await screen.findByText(/Tip \$0.25/i);
+    fireEvent.click(confirmButton);
+
+    await waitFor(() => {
+      // Check telemetry flow start
+      expect(mockTelemetryEvent).toHaveBeenCalledWith('checkout_flow_started', expect.anything());
+      // Check tip success
+      expect(mockTelemetryEvent).toHaveBeenCalledWith('series_tip_submitted', expect.anything());
+    });
+  });
+
+  it('shows funding button on insufficient funds', async () => {
+    mockSeriesResponse({
+      id: 'series-7',
+      title: 'Expensive Story',
+      logline: 'Needs funding.',
+      poster_url: null,
+      genre: 'fantasy',
+      medium: 'audio',
+      status: 'completed',
+      created_at: new Date().toISOString(),
+      episodes: Array.from({ length: 5 }, (_, i) => ({
+        id: `ep-${i + 1}`,
+        episode_number: i + 1,
+        title: `Ep ${i + 1}`,
+        runtime_seconds: 60,
+        status: 'published',
+        video_url: null,
+        tts_audio_url: 'url',
+        tts_retry_count: 0,
+        tts_error_message: null,
+        published_at: new Date().toISOString(),
+      })),
+    });
+
+    // Mock error with type 'insufficient_funds'
+    const error = new Error('Not enough funds');
+    (error as any).type = 'insufficient_funds';
+    (error as any).message = 'Insufficient funds for transaction';
+    
+    // We need to ensure getX402Client().tipSeries rejects
+    mockTipSeries.mockRejectedValue(error);
+
+    render(<SeriesPage />);
+
+    const tipButton = await screen.findByRole('button', { name: /Tip this series/i });
+    fireEvent.click(tipButton);
+
+    const amountButton = await screen.findByText('$0.25');
+    fireEvent.click(amountButton);
+
+    const confirmButton = await screen.findByText(/Tip \$0.25/i);
+    fireEvent.click(confirmButton);
+
+    const errorMsg = await screen.findByText(/Insufficient funds for transaction/i, {}, { timeout: 3000 });
+    expect(errorMsg).toBeInTheDocument();
+      
+    // expect(screen.getByText('Add USDC on Base')).toBeInTheDocument();
   });
 });

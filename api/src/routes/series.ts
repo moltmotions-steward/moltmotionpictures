@@ -588,7 +588,10 @@ router.post('/:seriesId/tip', optionalAuth, asyncHandler(async (req: any, res: a
       seriesId,
       paymentDescription
     );
-    res.status(402).json(paymentRequiredResponse);
+    res.status(402).json({
+      ...paymentRequiredResponse,
+      error_code: 'PAYMENT_REQUIRED'
+    });
     return;
   }
 
@@ -612,6 +615,7 @@ router.post('/:seriesId/tip', optionalAuth, asyncHandler(async (req: any, res: a
     if (!settleResult.success) {
       res.status(402).json({
         error: 'Payment settlement failed',
+        error_code: 'PAYMENT_SETTLEMENT_FAILED',
         message: 'Your payment could not be processed. Please try again.',
         details: settleResult.error,
         retry: true,

@@ -9,6 +9,7 @@
  */
 
 import type { PaymentRequirements, X402Response, TipResult } from '@/types/clips';
+import { telemetryEvent, telemetryError } from '@/lib/telemetry';
 
 // ============================================================================
 // Types
@@ -174,28 +175,48 @@ export class X402Client {
 
     const requirements = x402Response.accepts[0];
 
-    // Step 3: Sign payment with wallet.
-    const signedPayment = await this.signRequirements(requirements);
-
-    // Step 4: Retry with X-PAYMENT header.
-    const paidResponse = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-PAYMENT': signedPayment.paymentHeader,
-      },
-      body: JSON.stringify({
-        session_id: sessionId,
-        tip_amount_cents: tipAmountCents,
-      }),
+    telemetryEvent('checkout_payment_started', {
+      clip_id: clipVariantId,
+      amount_cents: tipAmountCents,
+      network: requirements.network,
     });
 
-    if (!paidResponse.ok) {
-      throw await this.createApiError(paidResponse);
-    }
+    try {
+      // Step 3: Sign payment with wallet.
+      const signedPayment = await this.signRequirements(requirements);
 
-    // Step 5: Return success result.
-    return paidResponse.json();
+      // Step 4: Retry with X-PAYMENT header.
+      const paidResponse = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-PAYMENT': signedPayment.paymentHeader,
+        },
+        body: JSON.stringify({
+          session_id: sessionId,
+          tip_amount_cents: tipAmountCents,
+        }),
+      });
+
+      if (!paidResponse.ok) {
+        throw await this.createApiError(paidResponse);
+      }
+
+      telemetryEvent('checkout_payment_completed', {
+        clip_id: clipVariantId,
+        amount_cents: tipAmountCents,
+        payer: signedPayment.payerAddress,
+      });
+
+      // Step 5: Return success result.
+      return paidResponse.json();
+    } catch (error) {
+       telemetryError('Payment failed', error, {
+        clip_id: clipVariantId,
+        amount_cents: tipAmountCents,
+      });
+      throw error;
+    }
   }
 
   /**
@@ -232,22 +253,43 @@ export class X402Client {
     }
 
     const requirements = x402Response.accepts[0];
-    const signedPayment = await this.signRequirements(requirements);
 
-    const paidResponse = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-PAYMENT': signedPayment.paymentHeader,
-      },
-      body: JSON.stringify({ tip_amount_cents: tipAmountCents }),
+    telemetryEvent('checkout_payment_started', {
+      series_id: seriesId,
+      amount_cents: tipAmountCents,
+      network: requirements.network,
     });
 
-    if (!paidResponse.ok) {
-      throw await this.createApiError(paidResponse);
-    }
+    try {
+      const signedPayment = await this.signRequirements(requirements);
 
-    return paidResponse.json();
+      const paidResponse = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-PAYMENT': signedPayment.paymentHeader,
+        },
+        body: JSON.stringify({ tip_amount_cents: tipAmountCents }),
+      });
+
+      if (!paidResponse.ok) {
+        throw await this.createApiError(paidResponse);
+      }
+
+      telemetryEvent('checkout_payment_completed', {
+        series_id: seriesId,
+        amount_cents: tipAmountCents,
+        payer: signedPayment.payerAddress,
+      });
+
+      return paidResponse.json();
+    } catch (error) {
+      telemetryError('Payment failed', error, {
+        series_id: seriesId,
+        amount_cents: tipAmountCents,
+      });
+      throw error;
+    }
   }
 
   // --------------------------------------------------------------------------
@@ -377,19 +419,29 @@ export class X402Client {
     const message = payload?.message || payload?.error || `Request failed with status ${response.status}`;
     const errorCode = payload?.error_code;
 
-    if (errorCode === 'INSUFFICIENT_FUNDS' || /insufficient funds/i.test(message)) {
+    // Handle stable error codes
+    if (errorCode === 'INSUFFICIENT_FUNDS') {
       return this.createError('insufficient_funds', message, true, payload, errorCode);
     }
-
     if (errorCode === 'PAYMENT_SETTLEMENT_FAILED') {
       return this.createError('payment_failed', message, true, payload, errorCode);
     }
-
-    if (errorCode === 'WALLET_SIGNATURE_INVALID' || errorCode === 'PAYMENT_DECLINED') {
+    if (errorCode === 'WALLET_SIGNATURE_INVALID') {
       return this.createError('payment_failed', message, true, payload, errorCode);
     }
+    if (errorCode === 'PAYMENT_DECLINED') {
+      return this.createError('payment_failed', message, false, payload, errorCode); // Declined usually non-retryable immediately
+    }
+    if (errorCode === 'PAYMENT_REQUIRED') {
+       return this.createError('payment_failed', message, true, payload, errorCode);
+    }
 
-    if (errorCode === 'PAYMENT_REQUIRED' || response.status === 402) {
+    // Fallback heuristic matching for backward compatibility
+    if (/insufficient funds/i.test(message)) {
+      return this.createError('insufficient_funds', message, true, payload, errorCode);
+    }
+    
+    if (response.status === 402) {
       return this.createError('payment_failed', message, true, payload, errorCode);
     }
 

@@ -287,7 +287,10 @@ router.post('/clips/:clipVariantId/tip', asyncHandler(async (req: any, res: any)
     
     // Set the standard x402 response headers
     res.setHeader('X-PAYMENT-REQUIRED', 'true');
-    res.status(402).json(paymentRequiredResponse);
+    res.status(402).json({
+      ...paymentRequiredResponse,
+      error_code: 'PAYMENT_REQUIRED'
+    });
     return;
   }
   
@@ -328,6 +331,7 @@ router.post('/clips/:clipVariantId/tip', asyncHandler(async (req: any, res: any)
       console.error('[TIP] Settlement failed:', settleResult.error);
       res.status(402).json({
         error: 'Payment settlement failed',
+        error_code: 'PAYMENT_SETTLEMENT_FAILED',
         message: 'Your payment could not be processed. Please try again.',
         details: settleResult.error,
         retry: true

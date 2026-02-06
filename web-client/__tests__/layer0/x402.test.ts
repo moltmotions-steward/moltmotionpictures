@@ -11,6 +11,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
+// Mock telemetry
+const mockTelemetryEvent = vi.fn();
+const mockTelemetryError = vi.fn();
+
+vi.mock('@/lib/telemetry', () => ({
+  telemetryEvent: (...args: any[]) => mockTelemetryEvent(...args),
+  telemetryError: (...args: any[]) => mockTelemetryError(...args),
+}));
+
 // Now import after mock is set up
 import { X402Client, getX402Client } from '@/lib/x402';
 
@@ -20,6 +29,8 @@ describe('X402Client', () => {
   beforeEach(() => {
     client = new X402Client();
     mockFetch.mockReset();
+    mockTelemetryEvent.mockReset();
+    mockTelemetryError.mockReset();
   });
 
   afterEach(() => {
@@ -103,6 +114,16 @@ describe('X402Client', () => {
       expect(result.clipVariant.voteCount).toBe(10);
       expect(mockFetch).toHaveBeenCalledTimes(2);
       expect(mockSignPayment).toHaveBeenCalledTimes(1);
+      
+      // Verify telemetry
+      expect(mockTelemetryEvent).toHaveBeenCalledWith('checkout_payment_started', expect.objectContaining({
+        clip_id: 'clip-123',
+        amount_cents: 25
+      }));
+      expect(mockTelemetryEvent).toHaveBeenCalledWith('checkout_payment_completed', expect.objectContaining({
+        clip_id: 'clip-123',
+        amount_cents: 25
+      }));
     });
 
     it('throws on non-402 error response', async () => {
@@ -115,6 +136,90 @@ describe('X402Client', () => {
       await expect(
         client.tipClip('clip-123', 'session-456', 25)
       ).rejects.toThrow('Server error');
+    });
+
+    it('maps INSUFFICIENT_FUNDS error code correctly', async () => {
+      // First call successful 402
+      mockFetch.mockResolvedValueOnce({
+        status: 402,
+        headers: new Headers({}),
+        json: async () => ({
+          accepts: [{
+            scheme: 'x402-eip3009',
+            network: 'base',
+            maxAmountRequired: '25000',
+            resource: '/voting/clips/clip-123/tip',
+            recipient: '0xRecipient',
+            nonce: '12345',
+            validAfter: '0',
+            validBefore: '9999999999',
+          }]
+        })
+      });
+
+      mockSignPayment.mockResolvedValueOnce('0xSignature123');
+
+      // Second call fails with insufficient funds
+      mockFetch.mockResolvedValueOnce({
+        status: 402,
+        ok: false,
+        json: async () => ({
+          error: 'Insufficient funds for transaction',
+          error_code: 'INSUFFICIENT_FUNDS'
+        })
+      });
+
+      try {
+        await client.tipClip('clip-123', 'session-456', 25);
+        expect(true).toBe(false); // Should not reach here
+      } catch (err: any) {
+        expect(err.type).toBe('insufficient_funds');
+        expect(err.errorCode).toBe('INSUFFICIENT_FUNDS');
+        expect(err.retryable).toBe(true);
+      }
+    });
+
+    it('maps PAYMENT_SETTLEMENT_FAILED error code correctly', async () => {
+       // First call successful 402
+       mockFetch.mockResolvedValueOnce({
+        status: 402,
+        headers: new Headers({}),
+        json: async () => ({
+          accepts: [{
+            scheme: 'x402-eip3009',
+            network: 'base',
+            maxAmountRequired: '25000',
+            resource: '/voting/clips/clip-123/tip',
+            recipient: '0xRecipient',
+            nonce: '12345',
+            validAfter: '0',
+            validBefore: '9999999999',
+          }]
+        })
+      });
+
+      mockSignPayment.mockResolvedValueOnce('0xSignature123');
+
+      // Second call fails with settlement error
+      mockFetch.mockResolvedValueOnce({
+        status: 402,
+        ok: false,
+        json: async () => ({ 
+          error: 'Payment settlement failed',
+          error_code: 'PAYMENT_SETTLEMENT_FAILED'
+        })
+      });
+
+      try {
+        await client.tipClip('clip-123', 'session-456', 25);
+        expect(true).toBe(false); // Should not reach here
+      } catch (err: any) {
+        expect(err.type).toBe('payment_failed');
+        expect(err.errorCode).toBe('PAYMENT_SETTLEMENT_FAILED');
+        
+        // Verify failure telemetry
+        expect(mockTelemetryError).toHaveBeenCalled();
+      }
     });
 
     it('throws when 402 but no payment options', async () => {

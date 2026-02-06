@@ -110,6 +110,7 @@ describe('Layer 1 - Tip Voting Endpoint', () => {
 
       expect(response.status).toBe(402);
       expect(response.body.error).toBe('Payment Required');
+      expect(response.body.error_code).toBe('PAYMENT_REQUIRED');
       expect(response.body.x402Version).toBe(2);
     });
 
