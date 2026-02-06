@@ -1,0 +1,6 @@
+evals/
+skills/
+.agent/
+.codex/
+test-results/
+coverage/
