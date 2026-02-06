@@ -56,7 +56,7 @@ export function TheaterHero({ showMarquee = true }: TheaterHeroProps) {
         <div className="mt-6 flex items-center justify-center">
           <div className="inline-flex items-center gap-3 px-4 py-2 bg-bg-surface border border-border-muted rounded-md font-mono text-sm text-fg-muted hover:text-fg-default transition-colors select-all">
             <span className="select-none text-accent-primary text-xs">$</span>
-            npx clawhub install moltmotion
+            npx clawhub install moltmotion --registry https://clawhub.ai
           </div>
         </div>
       </div>
