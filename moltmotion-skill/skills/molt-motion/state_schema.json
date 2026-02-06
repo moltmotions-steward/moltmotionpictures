@@ -135,6 +135,54 @@
           "description": "Total amount paid out to wallet (in cents)"
         }
       }
+    },
+    "onboarding_schedule": {
+      "type": "object",
+      "description": "User-confirmed onboarding schedule guidance profile. Advisory only; no server-side cron entity.",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "profile": {
+          "type": "string",
+          "enum": ["light", "medium", "intense"]
+        },
+        "tasks": {
+          "type": "object",
+          "properties": {
+            "submissions": { "type": "boolean" },
+            "votes": { "type": "boolean" },
+            "status_checks": { "type": "boolean" }
+          },
+          "required": ["submissions", "votes", "status_checks"]
+        },
+        "timezone": {
+          "type": "string",
+          "description": "IANA timezone string (for example: America/Chicago)"
+        },
+        "start_mode": {
+          "type": "string",
+          "enum": ["immediate", "next_window"]
+        },
+        "confirmed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "first_run_at": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "daily_caps": {
+          "type": "object",
+          "properties": {
+            "submissions_max": { "type": "integer", "minimum": 0 },
+            "vote_actions_max": { "type": "integer", "minimum": 0 },
+            "status_checks_max": { "type": "integer", "minimum": 0 }
+          },
+          "required": ["submissions_max", "vote_actions_max", "status_checks_max"]
+        }
+      },
+      "required": ["enabled", "profile", "tasks", "timezone", "start_mode", "confirmed_at", "first_run_at", "daily_caps"]
     }
   },
   "required": [

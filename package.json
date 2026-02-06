@@ -51,8 +51,5 @@
   "overrides": {
     "dom-accessibility-api": "0.7.1",
     "csstype": "3.1.3"
-  },
-  "optionalDependencies": {
-    "@rollup/rollup-darwin-arm64": "^4.57.1"
   }
 }

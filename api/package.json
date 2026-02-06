@@ -77,7 +77,6 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "@rollup/rollup-darwin-arm64": "^4.57.1",
     "@types/compression": "^1.8.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
@@ -97,8 +96,5 @@
     "twitter-api-v2": "^1.29.0",
     "typescript": "^5.9.3",
     "vitest": "^1.0.4"
-  },
-  "optionalDependencies": {
-    "@rollup/rollup-darwin-arm64": "^4.57.1"
   }
 }
