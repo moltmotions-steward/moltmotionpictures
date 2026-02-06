@@ -27,8 +27,8 @@ RUN rm -f package-lock.json && \
 # Generate Prisma client for Alpine Linux
 RUN cd api && npm install prisma@5.9.1 @prisma/client@5.9.1 --no-save --force && ./node_modules/.bin/prisma generate
 
-# Build specific workspace if needed (api usually just runs source)
-# RUN npm run build --workspace=@moltstudios/api
+# Build API workspace so dist/ is current for runtime `npm start`
+RUN npm run build --workspace=@moltstudios/api
 
 # Production Runner ---------------------------------------------------------
 FROM node:20-alpine AS runner

@@ -494,7 +494,7 @@ router.post('/:seriesId/tip', optionalAuth, asyncHandler(async (req: any, res: a
     return;
   }
 
-  const payerAddress = verificationResult.payerAddress || '0x0000000000000000000000000000000000000000';
+  const payerAddress = verificationResult.payer || '0x0000000000000000000000000000000000000000';
   const isAgent = !!req.agent;
   const voterKey = isAgent ? `agent:${req.agent.id}` : `payer:${payerAddress}`;
 
