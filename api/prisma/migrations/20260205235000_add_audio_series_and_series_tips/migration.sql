@@ -43,10 +43,17 @@ CREATE INDEX IF NOT EXISTS "series_tips_voter_key_idx" ON "series_tips" ("voter_
 CREATE INDEX IF NOT EXISTS "series_tips_payment_status_idx" ON "series_tips" ("payment_status");
 CREATE UNIQUE INDEX IF NOT EXISTS "series_tips_series_id_voter_key_key" ON "series_tips" ("series_id", "voter_key");
 
-ALTER TABLE "series_tips"
-  ADD CONSTRAINT IF NOT EXISTS "series_tips_series_id_fkey"
-  FOREIGN KEY ("series_id") REFERENCES "limited_series"("id")
-  ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'series_tips_series_id_fkey'
+  ) THEN
+    ALTER TABLE "series_tips"
+      ADD CONSTRAINT "series_tips_series_id_fkey"
+      FOREIGN KEY ("series_id") REFERENCES "limited_series"("id")
+      ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
 
 -- -----------------------------------------------------------------------------
 -- Payouts: support series-level tip payouts
@@ -57,10 +64,17 @@ ALTER TABLE "payouts"
 CREATE UNIQUE INDEX IF NOT EXISTS "payouts_series_tip_id_recipient_type_key"
   ON "payouts" ("series_tip_id", "recipient_type");
 
-ALTER TABLE "payouts"
-  ADD CONSTRAINT IF NOT EXISTS "payouts_series_tip_id_fkey"
-  FOREIGN KEY ("series_tip_id") REFERENCES "series_tips"("id")
-  ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'payouts_series_tip_id_fkey'
+  ) THEN
+    ALTER TABLE "payouts"
+      ADD CONSTRAINT "payouts_series_tip_id_fkey"
+      FOREIGN KEY ("series_tip_id") REFERENCES "series_tips"("id")
+      ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF;
+END $$;
 
 -- -----------------------------------------------------------------------------
 -- Unclaimed funds: support series-level tip escrow
@@ -71,10 +85,17 @@ ALTER TABLE "unclaimed_funds"
 CREATE UNIQUE INDEX IF NOT EXISTS "unclaimed_funds_series_tip_id_recipient_type_key"
   ON "unclaimed_funds" ("series_tip_id", "recipient_type");
 
-ALTER TABLE "unclaimed_funds"
-  ADD CONSTRAINT IF NOT EXISTS "unclaimed_funds_series_tip_id_fkey"
-  FOREIGN KEY ("series_tip_id") REFERENCES "series_tips"("id")
-  ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'unclaimed_funds_series_tip_id_fkey'
+  ) THEN
+    ALTER TABLE "unclaimed_funds"
+      ADD CONSTRAINT "unclaimed_funds_series_tip_id_fkey"
+      FOREIGN KEY ("series_tip_id") REFERENCES "series_tips"("id")
+      ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF;
+END $$;
 
 -- -----------------------------------------------------------------------------
 -- Refunds: allow refunds for clip tips OR series tips
@@ -87,7 +108,14 @@ ALTER TABLE "refunds"
 
 CREATE INDEX IF NOT EXISTS "refunds_series_tip_id_idx" ON "refunds" ("series_tip_id");
 
-ALTER TABLE "refunds"
-  ADD CONSTRAINT IF NOT EXISTS "refunds_series_tip_id_fkey"
-  FOREIGN KEY ("series_tip_id") REFERENCES "series_tips"("id")
-  ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'refunds_series_tip_id_fkey'
+  ) THEN
+    ALTER TABLE "refunds"
+      ADD CONSTRAINT "refunds_series_tip_id_fkey"
+      FOREIGN KEY ("series_tip_id") REFERENCES "series_tips"("id")
+      ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;

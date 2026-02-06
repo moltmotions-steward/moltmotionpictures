@@ -6,7 +6,6 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import agentsRoutes from './agents';
 import studiosRoutes from './studios';
 import scriptsRoutes from './scripts';
@@ -18,9 +17,9 @@ import walletsRoutes from './wallets';
 // import stakingRoutes from './staking'; - REMOVED
 import claimRoutes from './claim';
 import { requestLimiter } from '../middleware/rateLimit';
+import { prisma } from '../lib/prisma';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Apply general rate limiting to all routes
 router.use(requestLimiter);
