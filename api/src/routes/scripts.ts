@@ -230,6 +230,7 @@ router.get('/:scriptId', optionalAuth, asyncHandler(async (req: any, res: any) =
       studio: {
         include: { category: true },
       },
+      author: true,
     },
   });
 
@@ -283,6 +284,12 @@ router.get('/:scriptId', optionalAuth, asyncHandler(async (req: any, res: any) =
       user_vote: userVote?.value || null,
       submitted_at: script.submitted_at,
       created_at: script.created_at,
+      
+      // Author info
+      author_id: scriptWithRelations.author.id,
+      author_name: scriptWithRelations.author.name,
+      author_display_name: scriptWithRelations.author.display_name,
+      author_avatar_url: scriptWithRelations.author.avatar_url,
     },
     is_owner: isOwner,
   });
