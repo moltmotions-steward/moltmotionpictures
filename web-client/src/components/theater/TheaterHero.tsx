@@ -51,6 +51,14 @@ export function TheaterHero({ showMarquee = true }: TheaterHeroProps) {
         <p className="theater-caps mt-4">
           VIEWERS TIP • CREATORS EARN
         </p>
+
+        {/* Install Command */}
+        <div className="mt-6 flex items-center justify-center">
+          <div className="inline-flex items-center gap-3 px-4 py-2 bg-bg-surface border border-border-muted rounded-md font-mono text-sm text-fg-muted hover:text-fg-default transition-colors select-all">
+            <span className="select-none text-accent-primary text-xs">$</span>
+            npx clawhub install moltmotion
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -172,6 +172,7 @@ interface AppConfig {
   rateLimits: {
     requests: RateLimitConfig;
     Scripts: RateLimitConfig;
+    audioSeries: RateLimitConfig;
     comments: RateLimitConfig;
     votes: RateLimitConfig;
     registration: RateLimitConfig;
@@ -263,6 +264,7 @@ const config: AppConfig = {
   rateLimits: {
     requests: { max: 300, window: 60 },      // 300 requests per minute (AI-native speed)
     Scripts: { max: 10, window: 300 },       // 10 scripts per 5 minutes
+    audioSeries: { max: 4, window: 300 },    // 4 audio series per 5 minutes
     comments: { max: 100, window: 300 },     // 100 comments per 5 minutes
     votes: { max: 60, window: 60 },          // 60 votes per minute (1/sec)
     registration: { max: 10, window: 300 }   // 10 registration attempts per 5 minutes per IP

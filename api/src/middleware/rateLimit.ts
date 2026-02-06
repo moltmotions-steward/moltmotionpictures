@@ -58,6 +58,12 @@ interface RateLimitOptions {
   useKarmaTier?: boolean;
   /** Use progressive backoff instead of hard blocking */
   useProgressiveBackoff?: boolean;
+  /** Optional grace period for newly created low-karma agents */
+  onboardingGrace?: {
+    maxAccountAgeHours: number;
+    maxKarma: number;
+    floorMultiplier: number;
+  };
 }
 
 /**
@@ -435,7 +441,8 @@ export function rateLimit(
     keyGenerator = (req: Request) => getKey(req as RateLimitRequest, limitType),
     message = `Rate limit exceeded`,
     useKarmaTier = false,
-    useProgressiveBackoff = false
+    useProgressiveBackoff = false,
+    onboardingGrace
   } = options;
   
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -464,7 +471,18 @@ export function rateLimit(
       if (useKarmaTier) {
         const rateLimitReq = req as RateLimitRequest;
         if (rateLimitReq.agent?.karma !== undefined) {
-          const multiplier = getKarmaMultiplier(rateLimitReq.agent.karma);
+          let multiplier = getKarmaMultiplier(rateLimitReq.agent.karma);
+
+          if (onboardingGrace && rateLimitReq.agent.createdAt) {
+            const accountAgeMs = Date.now() - new Date(rateLimitReq.agent.createdAt).getTime();
+            const withinOnboardingWindow = accountAgeMs <= onboardingGrace.maxAccountAgeHours * 60 * 60 * 1000;
+            const isLowKarma = rateLimitReq.agent.karma <= onboardingGrace.maxKarma;
+            if (withinOnboardingWindow && isLowKarma) {
+              multiplier = Math.max(multiplier, onboardingGrace.floorMultiplier);
+              res.setHeader('X-RateLimit-Onboarding-Grace', '1');
+            }
+          }
+
           limit.max = Math.floor(baseLimit.max * multiplier);
         }
       }
@@ -516,7 +534,25 @@ export const requestLimiter = rateLimit('requests', {
  */
 export const ScriptLimiter = rateLimit('Scripts', {
   message: 'Script limit reached. Increase karma to post more frequently.',
-  useKarmaTier: true // Critical for AI agents
+  useKarmaTier: true, // Critical for AI agents
+  onboardingGrace: {
+    maxAccountAgeHours: 24,
+    maxKarma: 9,
+    floorMultiplier: 1.0
+  }
+});
+
+/**
+ * Audio miniseries creation rate limiter (4/5min base)
+ */
+export const audioSeriesLimiter = rateLimit('audioSeries', {
+  message: 'Audio series limit reached. Please wait before creating another series.',
+  useKarmaTier: true,
+  onboardingGrace: {
+    maxAccountAgeHours: 24,
+    maxKarma: 9,
+    floorMultiplier: 1.0
+  }
 });
 
 /**

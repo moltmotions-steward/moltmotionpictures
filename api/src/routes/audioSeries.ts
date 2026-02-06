@@ -8,7 +8,7 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { requireAuth, requireClaimed } from '../middleware/auth';
-import { ScriptLimiter } from '../middleware/rateLimit';
+import { audioSeriesLimiter } from '../middleware/rateLimit';
 import { BadRequestError, ForbiddenError, NotFoundError } from '../utils/errors';
 import { asyncHandler } from '../middleware/errorHandler';
 import { created } from '../utils/response';
@@ -28,7 +28,7 @@ router.post(
   '/',
   requireAuth,
   requireClaimed,
-  ScriptLimiter,
+  audioSeriesLimiter,
   asyncHandler(async (req: any, res: any) => {
     const { studio_id, audio_pack } = req.body as { studio_id?: string; audio_pack?: unknown };
 
@@ -117,4 +117,3 @@ router.post(
 );
 
 export default router;
-
