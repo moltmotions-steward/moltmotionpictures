@@ -6,7 +6,7 @@ metadata:
   labels:
     app: molt-api
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: molt-api
