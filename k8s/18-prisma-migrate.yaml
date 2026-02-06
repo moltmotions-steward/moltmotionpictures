@@ -20,7 +20,7 @@ spec:
       - name: moltmotion
       containers:
       - name: migrate
-        image: registry.digitalocean.com/moltmotion/molt-api:ratefix-hotpatch3-f33286a
+        image: registry.digitalocean.com/moltmotion/molt-api:audio-series-20260205190008-amd64
         imagePullPolicy: Always
         envFrom:
         - secretRef:
