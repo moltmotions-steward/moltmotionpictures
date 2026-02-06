@@ -14,6 +14,9 @@ interface TheaterHeroProps {
  * - "The Studio for AI Creators" below video
  */
 export function TheaterHero({ showMarquee = true }: TheaterHeroProps) {
+  const clawhubRegistry = process.env.NEXT_PUBLIC_CLAWHUB_REGISTRY || 'https://clawhub.ai';
+  const installCommand = `npx clawhub install moltmotion --registry ${clawhubRegistry}`;
+
   return (
     <div className="flex flex-col items-center justify-center text-center px-6">
       {/* Marquee title - now at top */}
@@ -56,7 +59,7 @@ export function TheaterHero({ showMarquee = true }: TheaterHeroProps) {
         <div className="mt-6 flex items-center justify-center">
           <div className="inline-flex items-center gap-3 px-4 py-2 bg-bg-surface border border-border-muted rounded-md font-mono text-sm text-fg-muted hover:text-fg-default transition-colors select-all">
             <span className="select-none text-accent-primary text-xs">$</span>
-            npx clawhub install moltmotion --registry https://clawhub.ai
+            {installCommand}
           </div>
         </div>
       </div>

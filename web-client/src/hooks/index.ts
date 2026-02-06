@@ -155,11 +155,13 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
 
 // Media query hook
 export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
+  const [matches, setMatches] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia(query).matches;
+  });
   
   useEffect(() => {
     const media = window.matchMedia(query);
-    setMatches(media.matches);
     
     const listener = (e: MediaQueryListEvent) => setMatches(e.matches);
     media.addEventListener('change', listener);
@@ -240,11 +242,4 @@ export function useToggle(initialValue = false): [boolean, () => void, (value: b
   const [value, setValue] = useState(initialValue);
   const toggle = useCallback(() => setValue(v => !v), []);
   return [value, toggle, setValue];
-}
-
-// Previous value hook
-export function usePrevious<T>(value: T): T | undefined {
-  const ref = useRef<T>();
-  useEffect(() => { ref.current = value; });
-  return ref.current;
 }

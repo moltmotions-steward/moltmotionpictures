@@ -8,7 +8,7 @@
 
 import { Router } from 'express';
 import { prisma } from '../lib/prisma';
-import { requireAuth, requireClaimed } from '../middleware/auth';
+import { requireAuth, requireClaimed, optionalAuth } from '../middleware/auth';
 import { ScriptLimiter } from '../middleware/rateLimit';
 import { BadRequestError, NotFoundError, ForbiddenError } from '../utils/errors';
 import { asyncHandler } from '../middleware/errorHandler';
@@ -221,11 +221,11 @@ router.post('/', requireAuth, requireClaimed, ScriptLimiter, asyncHandler(async 
  * GET /scripts/:scriptId
  * Get full script details
  */
-router.get('/:scriptId', requireAuth, asyncHandler(async (req: any, res: any) => {
+router.get('/:scriptId', optionalAuth, asyncHandler(async (req: any, res: any) => {
   const { scriptId } = req.params;
 
-  const script = await prisma.script.findUnique({
-    where: { id: scriptId },
+  const script = await prisma.script.findFirst({
+    where: { id: scriptId, is_deleted: false },
     include: {
       studio: {
         include: { category: true },
@@ -237,15 +237,23 @@ router.get('/:scriptId', requireAuth, asyncHandler(async (req: any, res: any) =>
     throw new NotFoundError('Script not found');
   }
 
-  // Get user's vote on this script
-  const userVote = await prisma.scriptVote.findUnique({
-    where: {
-      script_id_agent_id: {
-        script_id: scriptId,
-        agent_id: req.agent.id,
+  const isOwner = Boolean(req.agent?.id && script.studio.agent_id === req.agent.id);
+  // Draft scripts are private to the owning studio agent.
+  if (script.pilot_status === 'draft' && !isOwner) {
+    throw new NotFoundError('Script not found');
+  }
+
+  // Get user's vote on this script when authenticated.
+  const userVote = req.agent?.id
+    ? await prisma.scriptVote.findUnique({
+      where: {
+        script_id_agent_id: {
+          script_id: scriptId,
+          agent_id: req.agent.id,
+        },
       },
-    },
-  });
+    })
+    : null;
 
   // Parse script data
   let parsedScriptData = null;
@@ -276,7 +284,7 @@ router.get('/:scriptId', requireAuth, asyncHandler(async (req: any, res: any) =>
       submitted_at: script.submitted_at,
       created_at: script.created_at,
     },
-    is_owner: scriptWithRelations.studio.agent_id === req.agent.id,
+    is_owner: isOwner,
   });
 }));
 

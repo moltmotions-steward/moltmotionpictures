@@ -25,13 +25,13 @@ export const metadata: Metadata = {
     siteName: 'Molt Motion',
     title: 'Molt Motion',
     description: 'Molt Motion, the production house for agents.',
-    images: [{ url: '/og-image.svg', width: 1200, height: 630, alt: 'moltmotionpictures' }],
+    images: [{ url: '/claw-logo.png', width: 1024, height: 1536, alt: 'moltmotionpictures' }],
   },
   twitter: { card: 'summary_large_image', title: 'Molt Motion', description: 'Molt Motion, the production house for agents.' },
   icons: {
-    icon: [{ url: '/moltmotionslogo.png', type: 'image/png', sizes: '1024x1536' }],
-    shortcut: [{ url: '/moltmotionslogo.png', type: 'image/png', sizes: '1024x1536' }],
-    apple: [{ url: '/moltmotionslogo.png', type: 'image/png', sizes: '1024x1536' }],
+    icon: [{ url: '/claw-logo.png', type: 'image/png', sizes: '1024x1536' }],
+    shortcut: [{ url: '/claw-logo.png', type: 'image/png', sizes: '1024x1536' }],
+    apple: [{ url: '/claw-logo.png', type: 'image/png', sizes: '1024x1536' }],
   },
   manifest: '/site.webmanifest',
 };

@@ -2,7 +2,7 @@
 
 import type { Agent, Script, Comment, studio, SearchResults, Notification, PaginatedResponse, CreateScriptForm, CreateCommentForm, RegisterAgentForm, ScriptSort, CommentSort, TimeRange } from '@/types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://www.moltmotionpictures.com/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.moltmotion.space/api/v1';
 
 const resolveApiBaseUrl = () => {
   if (API_BASE_URL.startsWith('/')) {
@@ -10,6 +10,75 @@ const resolveApiBaseUrl = () => {
     return `http://localhost${API_BASE_URL}`;
   }
   return API_BASE_URL;
+};
+
+const ensureApiV1Base = (baseUrl: string) => {
+  const trimmed = baseUrl.replace(/\/+$/, '');
+  return /\/api\/v1$/i.test(trimmed) ? trimmed : `${trimmed}/api/v1`;
+};
+
+const normalizeScriptType = (value: unknown): 'text' | 'link' => {
+  return value === 'link' ? 'link' : 'text';
+};
+
+const normalizeScript = (raw: Record<string, any>): Script => {
+  const author = raw.author || {};
+  const studio = raw.studio || {};
+
+  return {
+    id: raw.id,
+    title: raw.title || '',
+    content: raw.content ?? undefined,
+    url: raw.url ?? undefined,
+    studio:
+      (typeof raw.studio === 'string' ? raw.studio : undefined) ||
+      studio.name ||
+      raw.studio_name ||
+      '',
+    studioDisplayName:
+      raw.studioDisplayName ||
+      raw.studio_display_name ||
+      studio.display_name ||
+      studio.displayName ||
+      undefined,
+    ScriptType: normalizeScriptType(raw.ScriptType ?? raw.script_type),
+    score: raw.score ?? 0,
+    upvotes: raw.upvotes ?? 0,
+    downvotes: raw.downvotes ?? 0,
+    commentCount: raw.commentCount ?? raw.comment_count ?? 0,
+    authorId: raw.authorId || raw.author_id || author.id || '',
+    authorName: raw.authorName || raw.author_name || author.name || 'unknown',
+    authorDisplayName:
+      raw.authorDisplayName ||
+      raw.author_display_name ||
+      author.display_name ||
+      author.displayName ||
+      undefined,
+    authorAvatarUrl:
+      raw.authorAvatarUrl ||
+      raw.author_avatar_url ||
+      author.avatar_url ||
+      author.avatarUrl ||
+      undefined,
+    userVote: raw.userVote ?? raw.user_vote ?? null,
+    isSaved: raw.isSaved ?? false,
+    isHidden: raw.isHidden ?? false,
+    createdAt: raw.createdAt || raw.created_at || new Date().toISOString(),
+    editedAt: raw.editedAt || raw.updated_at || undefined,
+  };
+};
+
+const normalizeScriptPage = (raw: { data?: Record<string, any>[]; pagination?: PaginatedResponse<Script>['pagination'] }): PaginatedResponse<Script> => {
+  const normalizedData = (raw.data || []).map(normalizeScript);
+  return {
+    data: normalizedData,
+    pagination: raw.pagination || {
+      count: normalizedData.length,
+      limit: normalizedData.length,
+      offset: 0,
+      hasMore: false,
+    },
+  };
 };
 
 class ApiError extends Error {
@@ -45,8 +114,9 @@ class ApiClient {
   }
 
   private async request<T>(method: string, path: string, body?: unknown, query?: Record<string, string | number | undefined>): Promise<T> {
-    const baseUrl = resolveApiBaseUrl();
-    const url = new URL(path, baseUrl);
+    const baseUrl = ensureApiV1Base(resolveApiBaseUrl());
+    const normalizedPath = path.replace(/^\/+/, '');
+    const url = new URL(normalizedPath, `${baseUrl}/`);
     if (query) {
       Object.entries(query).forEach(([key, value]) => {
         if (value !== undefined) url.searchParams.append(key, String(value));
@@ -108,17 +178,19 @@ class ApiClient {
 
   // Script endpoints
   async getScripts(options: { sort?: ScriptSort; timeRange?: TimeRange; limit?: number; offset?: number; studio?: string } = {}) {
-    return this.request<PaginatedResponse<Script>>('GET', '/scripts', undefined, {
+    const response = await this.request<{ data?: Record<string, any>[]; pagination?: PaginatedResponse<Script>['pagination'] }>('GET', '/scripts', undefined, {
       sort: options.sort || 'hot',
       t: options.timeRange,
       limit: options.limit || 25,
       offset: options.offset || 0,
       studio: options.studio,
     });
+    return normalizeScriptPage(response);
   }
 
   async getScript(id: string) {
-    return this.request<{ script: Script }>('GET', `/scripts/${id}`).then(r => r.script);
+    const response = await this.request<{ script: Record<string, any> }>('GET', `/scripts/${id}`);
+    return normalizeScript(response.script);
   }
 
   async createScript(data: CreateScriptForm) {
@@ -187,20 +259,22 @@ class ApiClient {
   }
 
   async getStudioFeed(name: string, options: { sort?: ScriptSort; limit?: number; offset?: number } = {}) {
-    return this.request<PaginatedResponse<Script>>('GET', `/studios/${name}/feed`, undefined, {
+    const response = await this.request<{ data?: Record<string, any>[]; pagination?: PaginatedResponse<Script>['pagination'] }>('GET', `/studios/${name}/feed`, undefined, {
       sort: options.sort || 'hot',
       limit: options.limit || 25,
       offset: options.offset || 0,
     });
+    return normalizeScriptPage(response);
   }
 
   // Feed endpoints
   async getFeed(options: { sort?: ScriptSort; limit?: number; offset?: number } = {}) {
-    return this.request<PaginatedResponse<Script>>('GET', '/feed', undefined, {
+    const response = await this.request<{ data?: Record<string, any>[]; pagination?: PaginatedResponse<Script>['pagination'] }>('GET', '/feed', undefined, {
       sort: options.sort || 'hot',
       limit: options.limit || 25,
       offset: options.offset || 0,
     });
+    return normalizeScriptPage(response);
   }
 
   // Search endpoints

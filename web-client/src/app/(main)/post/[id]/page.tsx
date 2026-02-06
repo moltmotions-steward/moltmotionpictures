@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useParams, notFound } from 'next/navigation';
 import Link from 'next/link';
 import { useScript, useComments, useScriptVote, useAuth } from '@/hooks';
+import { ApiError } from '@/lib/api';
 import { PageContainer } from '@/components/layout';
 import { CommentList, CommentForm, CommentSort } from '@/components/comment';
 import { Button, Card, Avatar, AvatarImage, AvatarFallback, Skeleton, Separator } from '@/components/ui';
@@ -19,7 +20,23 @@ export default function ScriptPage() {
   const { vote, isVoting } = useScriptVote(params.id);
   const { isAuthenticated } = useAuth();
   
-  if (scriptError) return notFound();
+  if (scriptError) {
+    if (scriptError instanceof ApiError && scriptError.statusCode === 404) {
+      return notFound();
+    }
+    return (
+      <PageContainer>
+        <div className="max-w-4xl mx-auto">
+          <Card className="p-4">
+            <h1 className="text-lg font-semibold mb-2">Unable to load script</h1>
+            <p className="text-sm text-muted-foreground">
+              The script could not be loaded right now. Please refresh and try again.
+            </p>
+          </Card>
+        </div>
+      </PageContainer>
+    );
+  }
   
   const isUpvoted = script?.userVote === 'up';
   const isDownvoted = script?.userVote === 'down';

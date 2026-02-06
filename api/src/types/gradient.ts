@@ -203,7 +203,7 @@ export const GRADIENT_MODELS: Record<GradientModel, ModelInfo> = {
 // =============================================================================
 
 export interface ImageGenerationRequest {
-  model: 'flux.1-schnell' | 'flux.1-dev';
+  model: 'flux.1-schnell' | 'flux.1-dev' | 'openai-gpt-image-1' | 'gpt-image-1';
   prompt: string;
   negative_prompt?: string;
   width?: number;    // 512-2048, default 1024
@@ -215,10 +215,18 @@ export interface ImageGenerationRequest {
 }
 
 export interface ImageGenerationResponse {
+  data?: GeneratedImageData[];
   images: GeneratedImage[];
+  background?: string;
+  created?: number;
   timings?: {
     inference: number;
   };
+}
+
+export interface GeneratedImageData {
+  b64_json?: string;
+  revised_prompt?: string;
 }
 
 export interface GeneratedImage {

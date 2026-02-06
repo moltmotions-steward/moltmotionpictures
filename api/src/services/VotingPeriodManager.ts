@@ -22,6 +22,7 @@ import { getEpisodeProductionService } from './EpisodeProductionService';
 import { getAudioSeriesProductionService } from './AudioSeriesProductionService';
 import { finalizeEpisodeWithTtsAudio } from './EpisodeMediaFinalizer';
 import { getVotingRuntimeConfig } from './VotingRuntimeConfigService';
+import { getSeriesPosterService } from './SeriesPosterService';
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -56,6 +57,10 @@ export interface ProductionRequest {
   agentId: string;
   categoryId: string;
   priority: 'normal' | 'high';
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 // Default configuration
@@ -283,6 +288,7 @@ export async function runCronTick(): Promise<{
   created: number;
   production: { processed: number; completed: number };
   audioProduction: { processedEpisodes: number; completedEpisodes: number; completedSeries: number; failedEpisodes: number };
+  posterProduction: { processedSeries: number; generatedPosters: number; failedSeries: number; skippedSeries: number };
 }> {
   console.log(`[VotingPeriodManager] Cron tick at ${new Date().toISOString()}`);
   
@@ -306,6 +312,10 @@ export async function runCronTick(): Promise<{
   // 5b. Process pending audio productions (generate episode-level TTS for audio series)
   const audioService = getAudioSeriesProductionService();
   const audioResults = await audioService.processPendingAudioProductions();
+
+  // 5c. Process series poster generation/backfill in small batches
+  const posterService = getSeriesPosterService();
+  const posterResults = await posterService.processPendingSeriesPosters({ limit: 2 });
   
   // 6. Close expired clip voting
   await closeExpiredClipVoting();
@@ -323,6 +333,12 @@ export async function runCronTick(): Promise<{
       completedEpisodes: audioResults.completedEpisodes,
       completedSeries: audioResults.completedSeries,
       failedEpisodes: audioResults.failedEpisodes,
+    },
+    posterProduction: {
+      processedSeries: posterResults.processedSeries,
+      generatedPosters: posterResults.generatedPosters,
+      failedSeries: posterResults.failedSeries,
+      skippedSeries: posterResults.skippedSeries,
     },
   };
 }
@@ -360,13 +376,25 @@ export async function triggerProduction(scriptId: string): Promise<ProductionReq
     return null;
   }
   
-  // Parse script data for title
-  let scriptData: { title?: string } = {};
+  // Parse script data for title and poster metadata
+  let scriptData: {
+    title?: string;
+    series_bible?: unknown;
+    poster_spec?: unknown;
+    Scripter_spec?: unknown;
+  } = {};
   try {
     scriptData = JSON.parse(script.script_data || '{}');
   } catch {
     // Use script title as fallback
   }
+
+  const parsedSeriesBible = isRecord(scriptData.series_bible) ? scriptData.series_bible : {};
+  const parsedPosterSpec = isRecord(scriptData.poster_spec)
+    ? scriptData.poster_spec
+    : isRecord(scriptData.Scripter_spec)
+      ? scriptData.Scripter_spec
+      : {};
   
   const productionRequest: ProductionRequest = {
     scriptId: script.id,
@@ -393,8 +421,8 @@ export async function triggerProduction(scriptId: string): Promise<ProductionReq
       title: productionRequest.seriesTitle,
       logline: script.logline || '',
       genre: script.studio.category.slug,
-      series_bible: '{}',
-      poster_spec: '{}',
+      series_bible: JSON.stringify(parsedSeriesBible),
+      poster_spec: JSON.stringify(parsedPosterSpec),
       status: 'pending',
       episode_count: 0,
     },

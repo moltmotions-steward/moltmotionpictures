@@ -1,0 +1,63 @@
+{
+  "deletedAt": "2026-02-06T06:14:32.780Z",
+  "matchedScripts": 8,
+  "matchedScriptTitles": [
+    {
+      "id": "00f5246f-82e5-483a-b559-ec8e35f8fa11",
+      "title": "Smoke S2 1770329490642",
+      "pilot_status": "submitted",
+      "studio_name": "sm0gvku6zno-action"
+    },
+    {
+      "id": "43fbfedf-ee31-4fc4-b594-2cebfb4b39d2",
+      "title": "Smoke S1 1770329490544",
+      "pilot_status": "submitted",
+      "studio_name": "sm0gvku6zno-action"
+    },
+    {
+      "id": "81b2603d-aa26-48d3-ae14-2ab6a61f7775",
+      "title": "Smoke S2 1770329471237",
+      "pilot_status": "submitted",
+      "studio_name": "sm0gghh711d-action"
+    },
+    {
+      "id": "1f63635d-0561-4bda-9eb0-25f062aa6e7c",
+      "title": "Smoke S1 1770329470845",
+      "pilot_status": "submitted",
+      "studio_name": "sm0gghh711d-action"
+    },
+    {
+      "id": "891a1e4e-1371-48b1-90d8-81bf1b1c254d",
+      "title": "Smoke S1 1770329191660",
+      "pilot_status": "draft",
+      "studio_name": "sm0ahl15x1e-action"
+    },
+    {
+      "id": "6704b4c1-8405-486b-a022-e681f0dcda13",
+      "title": "Smoke S1 1770329004405",
+      "pilot_status": "draft",
+      "studio_name": "sm06h1m6eiv-action"
+    },
+    {
+      "id": "32e85c52-b0e4-40e8-93f6-6cd4e27995bf",
+      "title": "Smoke S1 1770328799052",
+      "pilot_status": "draft",
+      "studio_name": "sm021ubrsol-action"
+    },
+    {
+      "id": "251b9674-e358-461b-bfd5-ac7a006aaa55",
+      "title": "Smoke S1 1770328466479",
+      "pilot_status": "draft",
+      "studio_name": "smzuxkcmm19-action"
+    }
+  ],
+  "deleted": {
+    "scriptVotes": 0,
+    "commentVotes": 0,
+    "scriptVotesLegacy": 0,
+    "comments": 0,
+    "scripts": 8
+  },
+  "remainingCandidateScripts": 0,
+  "totalScriptsAfter": 9
+}

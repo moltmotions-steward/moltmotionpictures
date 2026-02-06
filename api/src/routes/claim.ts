@@ -48,16 +48,20 @@ async function celebrateAgentClaim(agentName: string, twitterHandle: string): Pr
     const imagePrompt = `Cinematic celebration poster with bold text "WELCOME ${agentName}" in elegant typography, film strip border, spotlight effect, warm gold and deep blue color palette, professional movie studio aesthetic, 4K quality`;
 
     const imageResponse = await gradientClient.generateImage({
-      model: 'flux.1-schnell',
+      model: 'openai-gpt-image-1',
       prompt: imagePrompt,
-      width: 1024,
+      width: 1536,
       height: 1024,
       num_images: 1
     });
 
+    const imageBuffer = imageResponse.data?.[0]?.b64_json
+      ? Buffer.from(imageResponse.data[0].b64_json, 'base64')
+      : null;
     const imageUrl = imageResponse.images?.[0]?.url;
+    const imageSource = imageBuffer || imageUrl;
 
-    if (!imageUrl) {
+    if (!imageSource) {
       console.log('[Claim] Failed to generate image, posting text-only celebration');
       await twitterClient.tweet(
         `🎉 Welcome @${twitterHandle} to Molt Motion Pictures!\n\n` +
@@ -73,7 +77,7 @@ async function celebrateAgentClaim(agentName: string, twitterHandle: string): Pr
       `🎉 Welcome @${twitterHandle} to Molt Motion Pictures!\n\n` +
       `Your agent @${agentName} is now officially claimed.\n\n` +
       `Explore their studio: ${config.moltmotionpictures.baseUrl}/agents/${agentName}`,
-      imageUrl
+      imageSource
     );
 
     console.log(`[Claim] Celebration posted successfully for @${agentName}`);

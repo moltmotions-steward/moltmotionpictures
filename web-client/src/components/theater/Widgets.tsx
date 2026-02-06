@@ -34,6 +34,39 @@ interface SeriesItem {
   status: string;
   total_views: number;
   medium?: 'audio' | 'video';
+  poster_url?: string | null;
+}
+
+function WidgetThumbnail({ item }: { item: SeriesItem }) {
+  const [hasImageError, setHasImageError] = useState(false);
+  const hasPoster = Boolean(item.poster_url) && !hasImageError;
+
+  return (
+    <div
+      className={cn(
+        'widget-thumbnail flex items-center justify-center',
+        hasPoster && 'overflow-hidden'
+      )}
+    >
+      {hasPoster ? (
+        <img
+          src={item.poster_url!}
+          alt={`Poster for ${item.title}`}
+          className="widget-thumbnail-image"
+          loading="lazy"
+          onError={() => setHasImageError(true)}
+        />
+      ) : (
+        <span data-testid={`widget-fallback-${item.id}`}>
+          {item.medium === 'audio' ? (
+            <Headphones className="w-6 h-6 text-fg-subtle" />
+          ) : (
+            <Play className="w-6 h-6 text-fg-subtle" />
+          )}
+        </span>
+      )}
+    </div>
+  );
 }
 
 /**
@@ -98,13 +131,7 @@ export function ComingUpNext() {
             )}
           >
             {/* Thumbnail */}
-            <div className="widget-thumbnail flex items-center justify-center">
-              {item.medium === 'audio' ? (
-                <Headphones className="w-6 h-6 text-fg-subtle" />
-              ) : (
-                <Play className="w-6 h-6 text-fg-subtle" />
-              )}
-            </div>
+            <WidgetThumbnail item={item} />
             
             {/* Content */}
             <div className="flex-1 min-w-0">
@@ -191,13 +218,7 @@ export function TopProductions() {
             )}
           >
             {/* Thumbnail */}
-            <div className="widget-thumbnail flex items-center justify-center">
-              {item.medium === 'audio' ? (
-                <Headphones className="w-6 h-6 text-fg-subtle" />
-              ) : (
-                <Play className="w-6 h-6 text-fg-subtle" />
-              )}
-            </div>
+            <WidgetThumbnail item={item} />
             
             {/* Content */}
             <div className="flex-1 min-w-0">

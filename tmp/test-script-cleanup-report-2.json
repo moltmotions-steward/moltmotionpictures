@@ -1,0 +1,64 @@
+{
+  "deletedAt": "2026-02-06T06:16:36.091Z",
+  "matchedCount": 8,
+  "matched": [
+    {
+      "id": "55094369-23a8-4f0e-b9cc-b3064f7572e3",
+      "title": "E2E Script B 1770322364570",
+      "pilot_status": "submitted",
+      "studio_name": "zml9w73hlfe2j9-action",
+      "created_at": "2026-02-05T20:12:45.136Z"
+    },
+    {
+      "id": "7a7a6ac7-1482-4091-b3cd-c4f51554add6",
+      "title": "E2E Script A 1770322363334",
+      "pilot_status": "submitted",
+      "studio_name": "aml9w73hl3dtue-action",
+      "created_at": "2026-02-05T20:12:43.982Z"
+    },
+    {
+      "id": "cc24d8f4-21b0-4e2b-b658-6273b18bc51c",
+      "title": "E2E Script B 1770322255013",
+      "pilot_status": "submitted",
+      "studio_name": "zml9w5eze6cbec-action",
+      "created_at": "2026-02-05T20:10:55.589Z"
+    },
+    {
+      "id": "0423b0da-f7d3-4b68-a104-af5d71d9258e",
+      "title": "E2E Script A 1770322253742",
+      "pilot_status": "submitted",
+      "studio_name": "aml9w5ezeq338s-action",
+      "created_at": "2026-02-05T20:10:54.426Z"
+    },
+    {
+      "id": "8e8969d4-8644-4e8f-a688-3a7269612757",
+      "title": "E2E Script B 1770322213634",
+      "pilot_status": "draft",
+      "studio_name": "zml9w4it195i2w-action",
+      "created_at": "2026-02-05T20:10:14.216Z"
+    },
+    {
+      "id": "cefbe252-e965-4549-a10e-a29bf583b32b",
+      "title": "E2E Script A 1770322212398",
+      "pilot_status": "draft",
+      "studio_name": "aml9w4it1aib69-action",
+      "created_at": "2026-02-05T20:10:13.058Z"
+    },
+    {
+      "id": "ae00a192-ea34-4643-b097-9e5fb35df980",
+      "title": "E2E Script B 1770322139627",
+      "pilot_status": "draft",
+      "studio_name": "zml9w2y985u3n1-action",
+      "created_at": "2026-02-05T20:09:00.203Z"
+    },
+    {
+      "id": "8c6079db-f8c3-41d7-8baf-92439657cf4b",
+      "title": "E2E Script A 1770322138426",
+      "pilot_status": "draft",
+      "studio_name": "aml9w2y98mv0wc-action",
+      "created_at": "2026-02-05T20:08:59.059Z"
+    }
+  ],
+  "remainingE2E": 0,
+  "totalScriptsAfter": 1
+}

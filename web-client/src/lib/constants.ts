@@ -66,7 +66,7 @@ export const ROUTES = {
   LOGIN: '/auth/login',
   REGISTER: '/auth/register',
   studio: (name: string) => `/m/${name}`,
-  Script: (id: string) => `/Script/${id}`,
+  Script: (id: string) => `/post/${id}`,
   USER: (name: string) => `/u/${name}`,
 } as const;
 

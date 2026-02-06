@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-const { episodeServiceMock, audioServiceMock } = vi.hoisted(() => ({
+const { episodeServiceMock, audioServiceMock, posterServiceMock } = vi.hoisted(() => ({
   episodeServiceMock: {
     processPendingProductions: vi.fn().mockResolvedValue({ processed: 2 }),
     checkPendingGenerations: vi.fn().mockResolvedValue({ updated: 1 }),
@@ -14,6 +14,15 @@ const { episodeServiceMock, audioServiceMock } = vi.hoisted(() => ({
       skipped: false,
     }),
   },
+  posterServiceMock: {
+    processPendingSeriesPosters: vi.fn().mockResolvedValue({
+      processedSeries: 2,
+      generatedPosters: 1,
+      failedSeries: 1,
+      skippedSeries: 0,
+      skipped: false,
+    }),
+  },
 }));
 
 vi.mock('../../src/services/EpisodeProductionService', () => ({
@@ -22,6 +31,10 @@ vi.mock('../../src/services/EpisodeProductionService', () => ({
 
 vi.mock('../../src/services/AudioSeriesProductionService', () => ({
   getAudioSeriesProductionService: () => audioServiceMock,
+}));
+
+vi.mock('../../src/services/SeriesPosterService', () => ({
+  getSeriesPosterService: () => posterServiceMock,
 }));
 
 vi.mock('../../src/services/SeriesVotingService', () => ({
@@ -58,12 +71,19 @@ describe('VotingPeriodManager - audio production pass', () => {
 
     expect(episodeServiceMock.processPendingProductions).toHaveBeenCalled();
     expect(audioServiceMock.processPendingAudioProductions).toHaveBeenCalled();
+    expect(posterServiceMock.processPendingSeriesPosters).toHaveBeenCalledWith({ limit: 2 });
     expect(result.production.processed).toBe(2);
     expect(result.audioProduction).toEqual({
       processedEpisodes: 5,
       completedEpisodes: 4,
       completedSeries: 1,
       failedEpisodes: 1,
+    });
+    expect(result.posterProduction).toEqual({
+      processedSeries: 2,
+      generatedPosters: 1,
+      failedSeries: 1,
+      skippedSeries: 0,
     });
   });
 });

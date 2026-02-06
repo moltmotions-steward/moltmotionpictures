@@ -122,7 +122,7 @@ export class GradientClient {
     request: ChatCompletionRequest
   ): Promise<ChatCompletionResponse> {
     return this.request('/v1/chat/completions', {
-      method: 'Script',
+      method: 'POST',
       body: JSON.stringify(request),
     });
   }
@@ -160,23 +160,38 @@ export class GradientClient {
   // Image Generation API (FLUX.1)
   // ---------------------------------------------------------------------------
 
+  private normalizeImageSize(width?: number, height?: number): 'auto' | '1536x1024' | '1024x1536' {
+    if (!width || !height) return 'auto';
+    if (width > height) return '1536x1024';
+    if (height > width) return '1024x1536';
+    return 'auto';
+  }
+
   async generateImage(
     request: ImageGenerationRequest
   ): Promise<ImageGenerationResponse> {
-    // FLUX.1 uses the same chat completions endpoint with special formatting
-    // The response includes base64 images or URLs depending on the model
-    return this.request('/v1/images/generations', {
-      method: 'Script',
-      body: JSON.stringify({
-        model: request.model,
-        prompt: request.prompt,
-        negative_prompt: request.negative_prompt,
-        size: `${request.width || 1024}x${request.height || 1024}`,
-        n: request.num_images || 1,
-        quality: request.steps ? 'hd' : 'standard',
-        response_format: 'url',
-      }),
+    // DigitalOcean image endpoint follows OpenAI-compatible schema and
+    // currently returns base64 data in `data[].b64_json`.
+    const payload: Record<string, unknown> = {
+      model: request.model || 'openai-gpt-image-1',
+      prompt: request.prompt,
+      size: this.normalizeImageSize(request.width, request.height),
+      n: Math.max(1, Math.min(1, request.num_images || 1)),
+      quality: 'auto',
+      output_format: 'png',
+    };
+
+    const response = await this.request<ImageGenerationResponse>('/v1/images/generations', {
+      method: 'POST',
+      body: JSON.stringify(payload),
     });
+
+    // Keep `images` stable for callers that may still read it.
+    if (!response.images) {
+      response.images = [];
+    }
+
+    return response;
   }
 
   /**
@@ -188,15 +203,15 @@ export class GradientClient {
       negativePrompt?: string;
       width?: number;
       height?: number;
-      model?: 'flux.1-schnell' | 'flux.1-dev';
+      model?: 'flux.1-schnell' | 'flux.1-dev' | 'openai-gpt-image-1' | 'gpt-image-1';
     } = {}
   ): Promise<ImageGenerationResponse> {
     return this.generateImage({
-      model: options.model || 'flux.1-schnell',
+      model: options.model || 'openai-gpt-image-1',
       prompt,
       negative_prompt: options.negativePrompt,
-      width: options.width || 2048,
-      height: options.height || 3072, // 2:3 aspect ratio for Scripters
+      width: options.width || 1024,
+      height: options.height || 1536, // portrait orientation
     });
   }
 
@@ -217,7 +232,7 @@ export class GradientClient {
     const durationSeconds = this.normalizeLumaDurationSeconds(request.duration);
     // Luma Dream Machine endpoint
     return this.request('/v1/video/generations', {
-      method: 'Script',
+      method: 'POST',
       body: JSON.stringify({
         model: 'luma-dream-machine',
         prompt: request.prompt,

@@ -8,7 +8,7 @@ import { GlassPanel } from '@/components/theater';
 import { Search, TrendingUp, Clock, SortAsc } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function studiosPage() {
+export default function StudiosPage() {
   const [sort, setSort] = useState('popular');
   const [search, setSearch] = useState('');
   const { data, isLoading } = useStudios();

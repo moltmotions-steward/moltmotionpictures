@@ -58,6 +58,7 @@ router.get('/feed', async (req: Request, res: Response) => {
     // Get submitted/voting scripts that are publicly viewable
     const scripts = await prisma.script.findMany({
       where: {
+        is_deleted: false,
         pilot_status: { in: ['submitted', 'voting', 'selected'] },
       },
       include: {
@@ -78,7 +79,10 @@ router.get('/feed', async (req: Request, res: Response) => {
     });
 
     const total = await prisma.script.count({
-      where: { pilot_status: { in: ['submitted', 'voting', 'selected'] } },
+      where: {
+        is_deleted: false,
+        pilot_status: { in: ['submitted', 'voting', 'selected'] },
+      },
     });
 
     res.json({

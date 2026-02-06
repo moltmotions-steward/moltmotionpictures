@@ -12,15 +12,17 @@ import { useState, useEffect } from 'react';
  * Enable with Ctrl+Shift+G or by setting NEXT_PUBLIC_DESIGN_QA=true
  */
 export function DesignQAOverlay() {
-  const [show, setShow] = useState(false);
-  const [viewportInfo, setViewportInfo] = useState({ w: 0, h: 0, scale: 1 });
+  const [show, setShow] = useState(process.env.NEXT_PUBLIC_DESIGN_QA === 'true');
+  const [viewportInfo, setViewportInfo] = useState(() => {
+    if (typeof window === 'undefined') return { w: 0, h: 0, scale: 1 };
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const sx = w / 2048;
+    const sy = h / 1365;
+    return { w, h, scale: Math.min(sx, sy) };
+  });
   
   useEffect(() => {
-    // Check env var
-    if (process.env.NEXT_PUBLIC_DESIGN_QA === 'true') {
-      setShow(true);
-    }
-    
     // Keyboard shortcut: Ctrl+Shift+G
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.shiftKey && e.key === 'G') {
@@ -40,7 +42,6 @@ export function DesignQAOverlay() {
     
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('resize', updateViewport);
-    updateViewport();
     
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
