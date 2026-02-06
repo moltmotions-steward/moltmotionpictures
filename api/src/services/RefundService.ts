@@ -55,7 +55,8 @@ const MAX_REFUND_RETRIES = 3;
 // ============================================================================
 
 export interface RefundRequest {
-  clipVoteId: string;
+  clipVoteId?: string;
+  seriesTipId?: string;
   payerAddress: string;
   amountCents: number;
   originalTxHash: string;
@@ -89,7 +90,21 @@ export interface RefundStats {
  * - BUT payout creation/execution failed
  */
 export async function createRefundRequest(request: RefundRequest): Promise<RefundResult> {
-  console.log(`[RefundService] Creating refund request for vote ${request.clipVoteId}`);
+  const target = request.clipVoteId
+    ? `clip_vote:${request.clipVoteId}`
+    : request.seriesTipId
+      ? `series_tip:${request.seriesTipId}`
+      : 'unknown';
+
+  if (!request.clipVoteId && !request.seriesTipId) {
+    return { success: false, error: 'Either clipVoteId or seriesTipId is required' };
+  }
+
+  if (request.clipVoteId && request.seriesTipId) {
+    return { success: false, error: 'Provide only one of clipVoteId or seriesTipId' };
+  }
+
+  console.log(`[RefundService] Creating refund request for ${target}`);
   console.log(`  Payer: ${request.payerAddress}`);
   console.log(`  Amount: ${request.amountCents} cents`);
   console.log(`  Reason: ${request.reason}`);
@@ -98,7 +113,8 @@ export async function createRefundRequest(request: RefundRequest): Promise<Refun
     // Check for existing refund to prevent duplicates
     const existing = await prisma.refund.findFirst({
       where: {
-        clip_vote_id: request.clipVoteId,
+        clip_vote_id: request.clipVoteId || undefined,
+        series_tip_id: request.seriesTipId || undefined,
         status: { in: ['pending', 'processing'] },
       },
     });
@@ -114,7 +130,8 @@ export async function createRefundRequest(request: RefundRequest): Promise<Refun
     // Create refund record
     const refund = await prisma.refund.create({
       data: {
-        clip_vote_id: request.clipVoteId,
+        clip_vote_id: request.clipVoteId || null,
+        series_tip_id: request.seriesTipId || null,
         payer_address: request.payerAddress,
         amount_cents: request.amountCents,
         original_tx_hash: request.originalTxHash,
@@ -124,11 +141,20 @@ export async function createRefundRequest(request: RefundRequest): Promise<Refun
       },
     });
     
-    // Update clip vote status to indicate refund pending
-    await prisma.clipVote.update({
-      where: { id: request.clipVoteId },
-      data: { payment_status: 'refund_pending' },
-    });
+    if (request.clipVoteId) {
+      // Update clip vote status to indicate refund pending
+      await prisma.clipVote.update({
+        where: { id: request.clipVoteId },
+        data: { payment_status: 'refund_pending' },
+      });
+    }
+
+    if (request.seriesTipId) {
+      await prisma.seriesTip.update({
+        where: { id: request.seriesTipId },
+        data: { payment_status: 'refund_pending' },
+      });
+    }
     
     // Track metric
     PaymentMetrics.recordRefundCreated(request.amountCents);
@@ -285,10 +311,19 @@ async function processSingleRefund(refund: any): Promise<boolean> {
       });
       
       // Update clip vote status
-      await prisma.clipVote.update({
-        where: { id: refund.clip_vote_id },
-        data: { payment_status: 'refunded' },
-      });
+      if (refund.clip_vote_id) {
+        await prisma.clipVote.update({
+          where: { id: refund.clip_vote_id },
+          data: { payment_status: 'refunded' },
+        });
+      }
+
+      if (refund.series_tip_id) {
+        await prisma.seriesTip.update({
+          where: { id: refund.series_tip_id },
+          data: { payment_status: 'refunded' },
+        });
+      }
       
       // Track metric
       PaymentMetrics.recordRefundCompleted(refund.amount_cents);
@@ -376,6 +411,26 @@ export async function getRefundStatus(clipVoteId: string) {
     return { hasRefund: false };
   }
   
+  return {
+    hasRefund: true,
+    status: refund.status,
+    amountCents: refund.amount_cents,
+    txHash: refund.tx_hash,
+    createdAt: refund.created_at,
+    processedAt: refund.processed_at,
+  };
+}
+
+export async function getSeriesTipRefundStatus(seriesTipId: string) {
+  const refund = await prisma.refund.findFirst({
+    where: { series_tip_id: seriesTipId },
+    orderBy: { created_at: 'desc' },
+  });
+
+  if (!refund) {
+    return { hasRefund: false };
+  }
+
   return {
     hasRefund: true,
     status: refund.status,

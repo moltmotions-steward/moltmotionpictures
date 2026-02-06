@@ -341,9 +341,9 @@ async function processSinglePayout(payout: PayoutBatch): Promise<TransferResult>
       // Track metric
       PaymentMetrics.recordPayoutFailed(payout.amount_cents, result.error || 'Unknown error');
       
-      // If permanently failed and has a clip vote, trigger refund
+      // If permanently failed and has a payment reference, trigger refund
       if (permanentlyFailed) {
-        // Get the payout with clip_vote_id
+        // Get the payout with clip_vote_id / series_tip_id
         const fullPayout = await prisma.payout.findUnique({
           where: { id: payout.id },
         });
@@ -363,6 +363,20 @@ async function processSinglePayout(payout: PayoutBatch): Promise<TransferResult>
                 : '0x0000000000000000000000000000000000000000',
               amountCents: vote.tip_amount_cents,
               originalTxHash: vote.payment_tx_hash,
+              reason: `Payout failed after ${MAX_RETRY_ATTEMPTS} attempts: ${result.error}`,
+            });
+          }
+        } else if (fullPayout?.series_tip_id) {
+          const tip = await prisma.seriesTip.findUnique({
+            where: { id: fullPayout.series_tip_id },
+          });
+
+          if (payout.recipient_type === 'creator' && tip?.payment_tx_hash) {
+            await RefundService.createRefundRequest({
+              seriesTipId: tip.id,
+              payerAddress: tip.payer_address,
+              amountCents: tip.tip_amount_cents,
+              originalTxHash: tip.payment_tx_hash,
               reason: `Payout failed after ${MAX_RETRY_ATTEMPTS} attempts: ${result.error}`,
             });
           }

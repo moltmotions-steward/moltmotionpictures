@@ -8,10 +8,13 @@
 
 import { Router } from 'express';
 import { prisma } from '../lib/prisma';
-import { requireAuth } from '../middleware/auth';
-import { NotFoundError, BadRequestError } from '../utils/errors';
+import { requireAuth, optionalAuth } from '../middleware/auth';
+import { NotFoundError, BadRequestError, ForbiddenError } from '../utils/errors';
 import { asyncHandler } from '../middleware/errorHandler';
 import { success, paginated } from '../utils/response';
+import config from '../config/index.js';
+import * as X402Service from '../services/X402Service.js';
+import * as PayoutService from '../services/PayoutService.js';
 
 const router = Router();
 
@@ -31,7 +34,7 @@ const router = Router();
  * - limit: Items per page (default 20, max 50)
  */
 router.get('/', asyncHandler(async (req: any, res: any) => {
-  const { category, status, sort = 'newest', page = '1', limit = '20' } = req.query;
+  const { category, status, medium = 'all', sort = 'newest', page = '1', limit = '20' } = req.query;
   
   const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
   const limitNum = Math.min(50, Math.max(1, parseInt(limit as string, 10) || 20));
@@ -56,6 +59,14 @@ router.get('/', asyncHandler(async (req: any, res: any) => {
       throw new BadRequestError('Invalid status');
     }
     where.status = status;
+  }
+
+  if (medium && medium !== 'all') {
+    const validMedia = ['audio', 'video'];
+    if (!validMedia.includes(medium as string)) {
+      throw new BadRequestError('Invalid medium');
+    }
+    where.medium = medium;
   }
   
   // Build order by
@@ -95,6 +106,7 @@ router.get('/', asyncHandler(async (req: any, res: any) => {
     logline: s.logline,
     poster_url: s.poster_url,
     genre: s.genre,
+    medium: s.medium || 'video',
     studio: s.studio.full_name,
     episode_count: s.episode_count,
     status: s.status,
@@ -112,7 +124,7 @@ router.get('/', asyncHandler(async (req: any, res: any) => {
  */
 router.get('/genre/:genre', asyncHandler(async (req: any, res: any) => {
   const { genre } = req.params;
-  const { page = '1', limit = '20' } = req.query;
+  const { medium = 'all', page = '1', limit = '20' } = req.query;
   
   const category = await prisma.category.findFirst({
     where: { slug: genre, is_active: true },
@@ -125,10 +137,19 @@ router.get('/genre/:genre', asyncHandler(async (req: any, res: any) => {
   const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
   const limitNum = Math.min(50, Math.max(1, parseInt(limit as string, 10) || 20));
   const skip = (pageNum - 1) * limitNum;
+
+  const where: any = { genre };
+  if (medium && medium !== 'all') {
+    const validMedia = ['audio', 'video'];
+    if (!validMedia.includes(medium as string)) {
+      throw new BadRequestError('Invalid medium');
+    }
+    where.medium = medium;
+  }
   
   const [series, total] = await Promise.all([
     prisma.limitedSeries.findMany({
-      where: { genre },
+      where,
       include: {
         studio: true,
       },
@@ -136,7 +157,7 @@ router.get('/genre/:genre', asyncHandler(async (req: any, res: any) => {
       skip,
       take: limitNum,
     }),
-    prisma.limitedSeries.count({ where: { genre } }),
+    prisma.limitedSeries.count({ where }),
   ]);
   
   const formatted = series.map((s: any) => ({
@@ -145,6 +166,7 @@ router.get('/genre/:genre', asyncHandler(async (req: any, res: any) => {
     logline: s.logline,
     poster_url: s.poster_url,
     studio: s.studio.full_name,
+    medium: s.medium || 'video',
     episode_count: s.episode_count,
     status: s.status,
     total_views: Number(s.total_views),
@@ -186,6 +208,7 @@ router.get('/me', requireAuth, asyncHandler(async (req: any, res: any) => {
     logline: s.logline,
     poster_url: s.poster_url,
     genre: s.genre,
+    medium: s.medium || 'video',
     studio: s.studio.full_name,
     episode_count: s.episode_count,
     status: s.status,
@@ -255,6 +278,7 @@ router.get('/:seriesId', asyncHandler(async (req: any, res: any) => {
     logline: series.logline,
     poster_url: series.poster_url,
     genre: series.genre,
+    medium: (series as any).medium || 'video',
     studio: {
       id: seriesWithRelations.studio.id,
       name: seriesWithRelations.studio.full_name,
@@ -387,6 +411,152 @@ router.get('/:seriesId/episodes/:episodeNumber', asyncHandler(async (req: any, r
       vote_count: v.vote_count,
       is_selected: v.is_selected,
     })),
+  });
+}));
+
+/**
+ * POST /series/:seriesId/tip
+ * Tip a completed series (series-level x402 payment).
+ *
+ * Eligibility (MVP):
+ * - series.status must be "completed"
+ * - series.medium must be "audio"
+ * - all 5 episodes must have tts_audio_url
+ */
+router.post('/:seriesId/tip', optionalAuth, asyncHandler(async (req: any, res: any) => {
+  const { seriesId } = req.params;
+  const { tip_amount_cents } = req.body as { tip_amount_cents?: number };
+
+  const tipCents = tip_amount_cents || config.x402.defaultTipCents;
+  if (tipCents < config.x402.minTipCents) {
+    throw new BadRequestError(
+      `Tip amount must be at least $${(config.x402.minTipCents / 100).toFixed(2)}`
+    );
+  }
+
+  const paymentHeader = req.headers['x-payment'] as string | undefined;
+
+  const series = await prisma.limitedSeries.findUnique({
+    where: { id: seriesId },
+    include: {
+      episodes: {
+        select: { tts_audio_url: true },
+        orderBy: { episode_number: 'asc' },
+      },
+    },
+  });
+
+  if (!series) throw new NotFoundError('Series not found');
+
+  if ((series as any).medium !== 'audio') {
+    throw new BadRequestError('Series tipping is only supported for audio series (MVP)');
+  }
+
+  if (series.status !== 'completed') {
+    throw new BadRequestError('Series must be completed before it can accept tips');
+  }
+
+  const hasAllAudio = series.episodes.length === 5 && series.episodes.every((e) => !!e.tts_audio_url);
+  if (!hasAllAudio) {
+    throw new BadRequestError('Series audio is not fully published yet');
+  }
+
+  // Get author agent (for payouts)
+  const authorAgent = await prisma.agent.findUnique({
+    where: { id: series.agent_id },
+    select: { id: true, wallet_address: true, creator_wallet_address: true },
+  });
+
+  if (!authorAgent) throw new NotFoundError('Author agent not found');
+
+  if (!authorAgent.wallet_address || !/^0x[a-fA-F0-9]{40}$/.test(authorAgent.wallet_address)) {
+    throw new BadRequestError('Author agent wallet is not configured. This series cannot accept tips yet.');
+  }
+
+  const resourceUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+  const paymentDescription = `Tip series ${seriesId}`;
+
+  const verificationResult = await X402Service.verifyTipPayment(
+    paymentHeader,
+    resourceUrl,
+    tipCents,
+    paymentDescription
+  );
+
+  if (!verificationResult.verified) {
+    const paymentRequiredResponse = X402Service.buildSeriesTipPaymentRequiredResponse(
+      tipCents,
+      resourceUrl,
+      seriesId,
+      paymentDescription
+    );
+    res.status(402).json(paymentRequiredResponse);
+    return;
+  }
+
+  const payerAddress = verificationResult.payerAddress || '0x0000000000000000000000000000000000000000';
+  const isAgent = !!req.agent;
+  const voterKey = isAgent ? `agent:${req.agent.id}` : `payer:${payerAddress}`;
+
+  const existing = await prisma.seriesTip.findFirst({
+    where: { series_id: seriesId, voter_key: voterKey },
+  });
+  if (existing) throw new ForbiddenError('You have already tipped this series');
+
+  let settlementTxHash: string | null = null;
+
+  if (verificationResult.paymentPayload && verificationResult.requirements) {
+    const settleResult = await X402Service.settlePayment(
+      verificationResult.paymentPayload,
+      verificationResult.requirements
+    );
+
+    if (!settleResult.success) {
+      res.status(402).json({
+        error: 'Payment settlement failed',
+        message: 'Your payment could not be processed. Please try again.',
+        details: settleResult.error,
+        retry: true,
+      });
+      return;
+    }
+
+    settlementTxHash = settleResult.transactionHash || null;
+  }
+
+  const tip = await prisma.seriesTip.create({
+    data: {
+      series_id: seriesId,
+      payer_address: payerAddress,
+      voter_key: voterKey,
+      tip_amount_cents: tipCents,
+      payment_tx_hash: settlementTxHash || payerAddress,
+      payment_status: 'confirmed',
+    },
+  });
+
+  const payoutResult = await PayoutService.processSeriesTipPayouts(
+    tip.id,
+    tipCents,
+    authorAgent.id,
+    authorAgent.creator_wallet_address || null,
+    authorAgent.wallet_address
+  );
+
+  success(res, {
+    message: 'Tip received - thank you for supporting the creator!',
+    series_tip_id: tip.id,
+    tip_amount_cents: tipCents,
+    tip_amount_usdc: (tipCents / 100).toFixed(2),
+    payer_address: payerAddress,
+    tx_hash: settlementTxHash,
+    splits: payoutResult.splits,
+    payout_ids: payoutResult.payoutIds,
+    revenue_split: {
+      creator: `${config.revenueSplit.creatorPercent}%`,
+      platform: `${config.revenueSplit.platformPercent}%`,
+      agent: `${config.revenueSplit.agentPercent}%`,
+    },
   });
 }));
 

@@ -28,6 +28,15 @@ export interface TipProcessingResult {
   error?: string;
 }
 
+export interface SeriesTipProcessingResult {
+  success: boolean;
+  seriesTipId: string;
+  totalTipCents: number;
+  splits: PayoutSplit[];
+  payoutIds: string[];
+  error?: string;
+}
+
 /**
  * Calculate the revenue splits for a tip
  * @param totalCents - Total tip amount in cents
@@ -209,6 +218,161 @@ export async function processTipPayouts(
       splits: [],
       payoutIds: [],
       error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+/**
+ * Process a series-level tip and create payout records for all parties.
+ *
+ * Series tips are a single payment (one box) and are NOT monetarily allocated per-episode.
+ */
+export async function processSeriesTipPayouts(
+  seriesTipId: string,
+  tipAmountCents: number,
+  sourceAgentId: string,
+  creatorWalletAddress: string | null,
+  agentWalletAddress: string | null
+): Promise<SeriesTipProcessingResult> {
+  const splits = calculateSplits(tipAmountCents);
+  const payouts: PayoutSplit[] = [];
+
+  const platformWallet = config.x402.platformWallet;
+
+  if (!platformWallet) {
+    return {
+      success: false,
+      seriesTipId,
+      totalTipCents: tipAmountCents,
+      splits: [],
+      payoutIds: [],
+      error: 'Platform wallet not configured',
+    };
+  }
+
+  if (!agentWalletAddress || agentWalletAddress.trim() === '') {
+    return {
+      success: false,
+      seriesTipId,
+      totalTipCents: tipAmountCents,
+      splits: [],
+      payoutIds: [],
+      error: 'Agent wallet not configured',
+    };
+  }
+
+  try {
+    const payoutIds = await prisma.$transaction(async (tx) => {
+      const createdPayouts: string[] = [];
+
+      // 1. Creator payout (80%)
+      if (creatorWalletAddress && splits.creator > 0) {
+        const creatorPayout = await tx.payout.create({
+          data: {
+            recipient_type: 'creator',
+            wallet_address: creatorWalletAddress,
+            source_agent_id: sourceAgentId,
+            recipient_agent_id: sourceAgentId,
+            series_tip_id: seriesTipId,
+            amount_cents: splits.creator,
+            split_percent: config.revenueSplit.creatorPercent,
+            status: 'pending',
+          },
+        });
+        createdPayouts.push(creatorPayout.id);
+        payouts.push({
+          recipientType: 'creator',
+          walletAddress: creatorWalletAddress,
+          amountCents: splits.creator,
+          splitPercent: config.revenueSplit.creatorPercent,
+        });
+      } else if (splits.creator > 0) {
+        await tx.unclaimedFund.create({
+          data: {
+            source_agent_id: sourceAgentId,
+            recipient_type: 'creator',
+            series_tip_id: seriesTipId,
+            amount_cents: splits.creator,
+            split_percent: config.revenueSplit.creatorPercent,
+            reason: 'no_wallet',
+            expires_at: new Date(Date.now() + config.payouts.unclaimedExpiryDays * 24 * 60 * 60 * 1000),
+          },
+        });
+      }
+
+      // 2. Platform payout (19%)
+      if (splits.platform > 0) {
+        const platformPayout = await tx.payout.create({
+          data: {
+            recipient_type: 'platform',
+            wallet_address: platformWallet,
+            source_agent_id: sourceAgentId,
+            recipient_agent_id: null,
+            series_tip_id: seriesTipId,
+            amount_cents: splits.platform,
+            split_percent: config.revenueSplit.platformPercent,
+            status: 'pending',
+          },
+        });
+        createdPayouts.push(platformPayout.id);
+        payouts.push({
+          recipientType: 'platform',
+          walletAddress: platformWallet,
+          amountCents: splits.platform,
+          splitPercent: config.revenueSplit.platformPercent,
+        });
+      }
+
+      // 3. Agent payout (1%)
+      if (splits.agent > 0) {
+        const agentPayout = await tx.payout.create({
+          data: {
+            recipient_type: 'agent',
+            wallet_address: agentWalletAddress,
+            source_agent_id: sourceAgentId,
+            recipient_agent_id: sourceAgentId,
+            series_tip_id: seriesTipId,
+            amount_cents: splits.agent,
+            split_percent: config.revenueSplit.agentPercent,
+            status: 'pending',
+          },
+        });
+        createdPayouts.push(agentPayout.id);
+        payouts.push({
+          recipientType: 'agent',
+          walletAddress: agentWalletAddress,
+          amountCents: splits.agent,
+          splitPercent: config.revenueSplit.agentPercent,
+        });
+      }
+
+      // Update agent's earnings counters (agent's own 1% only)
+      await tx.agent.update({
+        where: { id: sourceAgentId },
+        data: {
+          pending_payout_cents: { increment: splits.agent },
+          total_earned_cents: { increment: splits.agent },
+        },
+      });
+
+      return createdPayouts;
+    });
+
+    return {
+      success: true,
+      seriesTipId,
+      totalTipCents: tipAmountCents,
+      splits: payouts,
+      payoutIds,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      seriesTipId,
+      totalTipCents: tipAmountCents,
+      splits: [],
+      payoutIds: [],
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }

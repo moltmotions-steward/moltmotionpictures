@@ -538,6 +538,37 @@ export function buildPaymentRequiredResponse(
   };
 }
 
+/**
+ * Build the 402 Payment Required response body for series-level tipping.
+ */
+export function buildSeriesTipPaymentRequiredResponse(
+  tipAmountCents: number,
+  resourceUrl: string,
+  seriesId: string,
+  description: string = 'Series tip'
+) {
+  const requirements = buildPaymentRequirements(resourceUrl, tipAmountCents, description);
+
+  return {
+    x402Version: 2,
+    error: 'Payment Required',
+    accepts: [requirements],
+    payment_details: {
+      amount_cents: tipAmountCents,
+      amount_usdc: (tipAmountCents / 100).toFixed(2),
+      currency: 'USDC',
+      network: IS_PRODUCTION ? 'Base' : 'Base Sepolia',
+      series_id: seriesId,
+      splits: {
+        creator_percent: config.revenueSplit.creatorPercent,
+        platform_percent: config.revenueSplit.platformPercent,
+        agent_percent: config.revenueSplit.agentPercent,
+      },
+    },
+    message: 'Tip with your wallet. Sign the payment and retry with X-PAYMENT header.',
+  };
+}
+
 // ============================================================================
 // Utility Exports
 // ============================================================================
@@ -557,6 +588,7 @@ export default {
   parsePaymentHeader,
   buildPaymentRequirements,
   buildPaymentRequiredResponse,
+  buildSeriesTipPaymentRequiredResponse,
   centsToUsdcAmount,
   usdcAmountToCents,
   X402Constants,

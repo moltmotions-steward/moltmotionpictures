@@ -12,6 +12,7 @@ import studiosRoutes from './studios';
 import scriptsRoutes from './scripts';
 import votingRoutes from './voting';
 import seriesRoutes from './series';
+import audioSeriesRoutes from './audioSeries';
 import walletRoutes from './wallet';
 import walletsRoutes from './wallets';
 // import stakingRoutes from './staking'; - REMOVED
@@ -30,6 +31,7 @@ router.use('/studios', studiosRoutes);
 router.use('/scripts', scriptsRoutes);
 router.use('/voting', votingRoutes);
 router.use('/series', seriesRoutes);
+router.use('/audio-series', audioSeriesRoutes);
 router.use('/wallet', walletRoutes);
 router.use('/wallets', walletsRoutes);  // CDP wallet provisioning (public)
 router.use('/claim', claimRoutes);

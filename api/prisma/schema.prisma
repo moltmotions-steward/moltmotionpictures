@@ -76,6 +76,7 @@ model UnclaimedFund {
   source_agent_id      String    @map("source_agent_id") @db.Uuid
   recipient_type       String    @map("recipient_type") @db.VarChar(20) // 'creator' (future: could support others)
   clip_vote_id         String?   @map("clip_vote_id") @db.Uuid
+  series_tip_id        String?   @map("series_tip_id") @db.Uuid
 
   amount_cents         Int       @map("amount_cents")
   split_percent        Int       @map("split_percent")
@@ -90,6 +91,7 @@ model UnclaimedFund {
 
   source_agent Agent     @relation("AgentUnclaimedFunds", fields: [source_agent_id], references: [id], onDelete: Cascade)
   clip_vote    ClipVote? @relation("ClipVoteUnclaimedFunds", fields: [clip_vote_id], references: [id], onDelete: SetNull)
+  series_tip   SeriesTip? @relation(fields: [series_tip_id], references: [id], onDelete: SetNull)
 
   @@index([source_agent_id])
   @@index([recipient_type])
@@ -97,6 +99,7 @@ model UnclaimedFund {
   @@index([claimed_at])
   @@index([swept_to_treasury_at])
   @@unique([clip_vote_id, recipient_type])
+  @@unique([series_tip_id, recipient_type])
   @@map("unclaimed_funds")
 }
 
@@ -362,9 +365,16 @@ model LimitedSeries {
   logline String @db.VarChar(500)
   genre   String @db.VarChar(20)
 
+  // Medium
+  medium String @default("video") @db.VarChar(10) // video | audio
+
   // Series Bible (locked after pilot, stored as JSON)
   series_bible String @map("series_bible") @db.Text // JSON: SeriesBible
   poster_spec  String @map("poster_spec") @db.Text  // JSON: PosterSpec
+
+  // Audio-only metadata
+  narration_voice_id String? @map("narration_voice_id") @db.VarChar(200)
+  audio_pack         String? @map("audio_pack") @db.Text // JSON: AudioMiniseriesPack
 
   // Episode tracking
   episode_count Int @default(0) @map("episode_count") // Max 5
@@ -390,6 +400,7 @@ model LimitedSeries {
   studio   Studio    @relation(fields: [studio_id], references: [id], onDelete: Cascade)
   scripts  Script[]
   episodes Episode[]
+  series_tips SeriesTip[]
 
   @@index([studio_id])
   @@index([agent_id])
@@ -406,8 +417,13 @@ model Episode {
   title          String @db.VarChar(200)
 
   // Story (from script, stored as JSON)
-  arc_data   String @map("arc_data") @db.Text // JSON: StoryArc
-  shots_data String @map("shots_data") @db.Text // JSON: Shot[]
+  arc_data   String? @map("arc_data") @db.Text // JSON: StoryArc
+  shots_data String? @map("shots_data") @db.Text // JSON: Shot[]
+
+  // Audio narration script (audio series only)
+  audio_script_text String? @map("audio_script_text") @db.Text
+  tts_retry_count   Int     @default(0) @map("tts_retry_count")
+  tts_error_message String? @map("tts_error_message") @db.Text
 
   // Generated assets
   poster_url    String? @map("poster_url")
@@ -495,6 +511,30 @@ model ClipVote {
   @@map("clip_votes")
 }
 
+// Series-level tip (x402) - one payment for the whole series
+model SeriesTip {
+  id            String   @id @default(uuid()) @db.Uuid
+  series_id     String   @map("series_id") @db.Uuid
+  payer_address String   @map("payer_address") @db.VarChar(100)
+  voter_key     String   @map("voter_key") @db.VarChar(160)
+  created_at    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Tip/Payment fields (x402)
+  tip_amount_cents Int     @default(0) @map("tip_amount_cents")
+  payment_tx_hash  String? @map("payment_tx_hash") @db.VarChar(100)
+  payment_status   String  @default("none") @map("payment_status") @db.VarChar(20) // none, pending, confirmed, failed, refund_pending, refunded
+
+  series LimitedSeries @relation(fields: [series_id], references: [id], onDelete: Cascade)
+  refunds Refund[]
+  unclaimed_funds UnclaimedFund[]
+
+  @@index([series_id])
+  @@index([voter_key])
+  @@unique([series_id, voter_key])
+  @@index([payment_status])
+  @@map("series_tips")
+}
+
 // Payout ledger for tracking earnings disbursement
 // Tracks payouts to creators (69%), agents (1%), and platform (30%)
 model Payout {
@@ -513,6 +553,8 @@ model Payout {
   
   // The clip vote that triggered this payout
   clip_vote_id    String?   @map("clip_vote_id") @db.Uuid
+  // Series-level tip that triggered this payout
+  series_tip_id   String?   @map("series_tip_id") @db.Uuid
   
   // Financials
   amount_cents    Int       @map("amount_cents")
@@ -537,6 +579,7 @@ model Payout {
   @@index([status])
   @@index([created_at(sort: Desc)])
   @@unique([clip_vote_id, recipient_type]) // Idempotency: one payout per recipient type per vote
+  @@unique([series_tip_id, recipient_type]) // Idempotency: one payout per recipient type per series tip
   @@map("payouts")
 }
 
@@ -592,7 +635,8 @@ model VotingPeriod {
 // Refund for failed payouts (x402)
 model Refund {
   id             String   @id @default(uuid()) @db.Uuid
-  clip_vote_id   String   @map("clip_vote_id") @db.Uuid
+  clip_vote_id   String?  @map("clip_vote_id") @db.Uuid
+  series_tip_id  String?  @map("series_tip_id") @db.Uuid
   payer_address  String   @map("payer_address") @db.VarChar(100)
   amount_cents   Int      @map("amount_cents")
   original_tx_hash String @map("original_tx_hash") @db.VarChar(100)
@@ -604,9 +648,11 @@ model Refund {
   created_at     DateTime @default(now()) @map("created_at") @db.Timestamptz
   processed_at   DateTime? @map("processed_at") @db.Timestamptz
 
-  clipVote ClipVote @relation(fields: [clip_vote_id], references: [id], onDelete: Cascade)
+  clipVote ClipVote? @relation(fields: [clip_vote_id], references: [id], onDelete: Cascade)
+  seriesTip SeriesTip? @relation(fields: [series_tip_id], references: [id], onDelete: Cascade)
 
   @@index([clip_vote_id])
+  @@index([series_tip_id])
   @@index([status])
   @@index([payer_address])
   @@map("refunds")

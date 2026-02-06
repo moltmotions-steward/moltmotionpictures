@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { telemetryError } from '@/lib/telemetry';
-import { Play, Eye } from 'lucide-react';
+import { Play, Eye, Headphones } from 'lucide-react';
 
 interface WidgetCardProps {
   title: string;
@@ -33,6 +33,7 @@ interface SeriesItem {
   genre: string;
   status: string;
   total_views: number;
+  medium?: 'audio' | 'video';
 }
 
 /**
@@ -98,7 +99,11 @@ export function ComingUpNext() {
           >
             {/* Thumbnail */}
             <div className="widget-thumbnail flex items-center justify-center">
-              <Play className="w-6 h-6 text-fg-subtle" />
+              {item.medium === 'audio' ? (
+                <Headphones className="w-6 h-6 text-fg-subtle" />
+              ) : (
+                <Play className="w-6 h-6 text-fg-subtle" />
+              )}
             </div>
             
             {/* Content */}
@@ -107,7 +112,10 @@ export function ComingUpNext() {
                 {item.title}
               </p>
               <div className="flex items-center gap-3 mt-1.5 text-xs text-fg-muted">
-                <span>{formatGenre(item.genre)}</span>
+                <span className="flex items-center gap-1">
+                  {item.medium === 'audio' ? <Headphones className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                  {formatGenre(item.genre)}
+                </span>
                 <span className="flex items-center gap-1">
                   <Eye className="w-3 h-3" />
                   {(item.total_views || 0).toLocaleString()} views
@@ -176,7 +184,7 @@ export function TopProductions() {
         {series.map((item, index) => (
           <a 
             key={item.id}
-            href={`/m/${item.title.toLowerCase().replace(/\s+/g, '-')}`}
+            href={`/series/${item.id}`}
             className={cn(
               'widget-row',
               index > 0 && 'border-t border-border-muted'
@@ -184,7 +192,11 @@ export function TopProductions() {
           >
             {/* Thumbnail */}
             <div className="widget-thumbnail flex items-center justify-center">
-              <Play className="w-6 h-6 text-fg-subtle" />
+              {item.medium === 'audio' ? (
+                <Headphones className="w-6 h-6 text-fg-subtle" />
+              ) : (
+                <Play className="w-6 h-6 text-fg-subtle" />
+              )}
             </div>
             
             {/* Content */}
@@ -193,7 +205,10 @@ export function TopProductions() {
                 {item.title}
               </p>
               <div className="flex items-center gap-3 mt-1.5 text-xs text-fg-muted">
-                <span>{formatGenre(item.genre)}</span>
+                <span className="flex items-center gap-1">
+                  {item.medium === 'audio' ? <Headphones className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                  {formatGenre(item.genre)}
+                </span>
                 <span className="flex items-center gap-1">
                   <Eye className="w-3 h-3" />
                   {(item.total_views || 0).toLocaleString()} views

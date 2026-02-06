@@ -285,7 +285,9 @@ export interface TTSRequest {
 
 export interface TTSAsyncResponse {
   request_id: string;
-  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETE' | 'FAILED';
+  // DO Gradient async-invoke returns these (observed): QUEUED → IN_PROGRESS → COMPLETED
+  // Keep legacy values for compatibility with earlier assumptions.
+  status: 'QUEUED' | 'IN_PROGRESS' | 'COMPLETED' | 'PENDING' | 'COMPLETE' | 'FAILED';
 }
 
 export interface TTSResultResponse {

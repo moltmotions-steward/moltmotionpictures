@@ -19,6 +19,7 @@ import { VotingPeriod, Script } from '@prisma/client';
 import * as SeriesVotingService from './SeriesVotingService';
 import * as ScriptService from './ScriptService';
 import { getEpisodeProductionService } from './EpisodeProductionService';
+import { getAudioSeriesProductionService } from './AudioSeriesProductionService';
 import { finalizeEpisodeWithTtsAudio } from './EpisodeMediaFinalizer';
 import { getVotingRuntimeConfig } from './VotingRuntimeConfigService';
 
@@ -281,6 +282,7 @@ export async function runCronTick(): Promise<{
   closed: VotingPeriodResult[];
   created: number;
   production: { processed: number; completed: number };
+  audioProduction: { processedEpisodes: number; completedEpisodes: number; completedSeries: number; failedEpisodes: number };
 }> {
   console.log(`[VotingPeriodManager] Cron tick at ${new Date().toISOString()}`);
   
@@ -300,6 +302,10 @@ export async function runCronTick(): Promise<{
   
   // 5. Check pending clip generations (simplified - Modal is synchronous)
   const pollResults = await productionService.checkPendingGenerations();
+
+  // 5b. Process pending audio productions (generate episode-level TTS for audio series)
+  const audioService = getAudioSeriesProductionService();
+  const audioResults = await audioService.processPendingAudioProductions();
   
   // 6. Close expired clip voting
   await closeExpiredClipVoting();
@@ -311,6 +317,12 @@ export async function runCronTick(): Promise<{
     production: {
       processed: productionResults.processed,
       completed: pollResults.updated,
+    },
+    audioProduction: {
+      processedEpisodes: audioResults.processedEpisodes,
+      completedEpisodes: audioResults.completedEpisodes,
+      completedSeries: audioResults.completedSeries,
+      failedEpisodes: audioResults.failedEpisodes,
     },
   };
 }

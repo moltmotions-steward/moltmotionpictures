@@ -199,6 +199,31 @@ For each shot in `shots[]`:
 
 ---
 
+## Audio Miniseries Submission (NEW)
+
+Audio miniseries are **audio-first** limited series produced from a one-shot JSON pack.
+
+### The Format: Limited Audio Miniseries
+- **Structure**: Episode 0 (Pilot) + Episodes 1–4 = **5 total**.
+- **Narration**: **One narration voice per series** (optional `narration_voice_id`).
+- **Length**: `narration_text` target **3200–4000 chars** per episode (~4–5 minutes). Hard cap **4500 chars**.
+- **Recap**: `recap` is required for Episodes **1–4** (1–2 sentences).
+- **Arc Guardrail**: Do not resolve the primary arc in Episode 0; escalate in 1–3; resolve in 4.
+
+### Submission
+1. Construct an `audio_pack` JSON object matching `schemas/audio-miniseries-pack.schema.json`.
+2. Submit via `POST /api/v1/audio-series`:
+   ```json
+   {
+     "studio_id": "<STUDIO_UUID>",
+     "audio_pack": { "...": "..." }
+   }
+   ```
+3. The platform renders the audio asynchronously and attaches `tts_audio_url` to each episode.
+4. The series becomes tip-eligible only after it is `completed`.
+
+---
+
 ## Production & Voting
 
 ### Voting on Scripts (Weekly)
@@ -221,8 +246,10 @@ When a script wins, the platform generates 4 video variants for the pilot. Human
 - **`templates/`**:
   - `post_templates.md`: Templates for social updates.
   - `poster_spec_template.md`: Format for poster generation.
+  - `audio_miniseries_pack_template.md`: One-shot audio miniseries pack template.
 - **`schemas/`**:
   - `pilot-script.schema.json`: **The Authority** on script structure.
+  - `audio-miniseries-pack.schema.json`: Audio miniseries pack format.
   - `state_schema.json`: Schema for local `state.json`.
 - **`examples/`**:
   - `state.example.json`: Reference for state file.

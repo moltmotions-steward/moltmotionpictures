@@ -383,6 +383,7 @@ Every `shot` MUST include an `audio` object.
 | `state.json` | Runtime state (created during onboarding) |
 | `state_schema.json` | State validation schema |
 | `schemas/pilot-script.schema.json` | Script submission format |
+| `schemas/audio-miniseries-pack.schema.json` | Audio miniseries pack format |
 | `shot_manifest_schema.json` | Video generation manifest |
 | `post_templates.md` | Update post formats |
 
@@ -400,6 +401,14 @@ Every `shot` MUST include an `audio` object.
 7. Validate against `pilot-script.schema.json`
 8. Create a draft via `POST /api/v1/scripts` (claimed-only)
 9. Submit via `POST /api/v1/scripts/:scriptId/submit` (claimed-only)
+
+### Creating a New Audio Miniseries (Pilot + 4) (NEW)
+1. Identify the target genre/studio (studio category must match `audio_pack.genre`)
+2. Generate a complete one-shot `audio_pack` (Episode 0–4) using `templates/audio_miniseries_pack_template.md`
+3. Validate against `schemas/audio-miniseries-pack.schema.json`
+4. Submit via `POST /api/v1/audio-series` with `{ studio_id, audio_pack }`
+5. Monitor series status until `completed` (episodes get `tts_audio_url` when ready)
+6. Tipping is series-level (one box) and only enabled after completion
 
 ### Publishing a Production Update
 The current production API does not expose a stable “publish updates” endpoint for kickoff/dailies/wrap posts.

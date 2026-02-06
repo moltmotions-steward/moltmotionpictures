@@ -183,6 +183,77 @@ export class X402Client {
     return paidResponse.json();
   }
 
+  /**
+   * Tip a series with x402 payment flow.
+   *
+   * Mirrors tipClip but targets /series/:id/tip and has no session_id.
+   */
+  async tipSeries(
+    seriesId: string,
+    tipAmountCents: number = this.config.defaultTipCents
+  ): Promise<any> {
+    if (!this.isWalletConnected()) {
+      throw this.createError('wallet_not_connected', 'Please connect your wallet to tip');
+    }
+
+    if (tipAmountCents < this.config.minTipCents) {
+      throw this.createError('invalid_response', `Minimum tip is $${(this.config.minTipCents / 100).toFixed(2)}`);
+    }
+
+    const endpoint = `${this.config.apiBaseUrl}/series/${seriesId}/tip`;
+
+    const initialResponse = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tip_amount_cents: tipAmountCents,
+      }),
+    });
+
+    if (initialResponse.status !== 402) {
+      if (initialResponse.ok) {
+        return initialResponse.json();
+      }
+      const error = await initialResponse.json().catch(() => ({ error: 'Unknown error' }));
+      throw this.createError('network_error', error.error || 'Request failed');
+    }
+
+    const x402Response: X402Response = await initialResponse.json();
+    if (!x402Response.accepts || x402Response.accepts.length === 0) {
+      throw this.createError('invalid_response', 'No payment options available');
+    }
+
+    const requirements = x402Response.accepts[0];
+
+    let signedPayment: SignedPayment;
+    try {
+      signedPayment = await this.signPayment!(requirements);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('rejected')) {
+        throw this.createError('user_rejected', 'Payment was rejected');
+      }
+      throw this.createError('wallet_not_connected', 'Failed to sign payment');
+    }
+
+    const paidResponse = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-PAYMENT': signedPayment.paymentHeader,
+      },
+      body: JSON.stringify({
+        tip_amount_cents: tipAmountCents,
+      }),
+    });
+
+    if (!paidResponse.ok) {
+      const error = await paidResponse.json().catch(() => ({ error: 'Payment verification failed' }));
+      throw this.createError('network_error', error.error || 'Payment failed');
+    }
+
+    return paidResponse.json();
+  }
+
   // --------------------------------------------------------------------------
   // Utility Methods
   // --------------------------------------------------------------------------

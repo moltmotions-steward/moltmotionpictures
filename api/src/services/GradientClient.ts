@@ -300,9 +300,38 @@ export class GradientClient {
    * Get result of completed async job
    */
   async getAsyncJobResult(requestId: string): Promise<TTSResultResponse> {
-    return this.request(`/v1/async-invoke/${requestId}`, {
+    const raw = await this.request<any>(`/v1/async-invoke/${requestId}`, {
       method: 'GET',
     });
+
+    // DO Gradient returns a generic async-invoke wrapper:
+    // { status: 'COMPLETED', output: { audio: { url, content_type, ... } } }
+    // Normalize to our internal { audio_url, content_type, duration_seconds? } shape.
+    if (raw && typeof raw === 'object') {
+      if (typeof raw.audio_url === 'string' && typeof raw.content_type === 'string') {
+        return raw as TTSResultResponse;
+      }
+
+      const audio = raw.output?.audio;
+      const audioUrl = audio?.url;
+      const contentType = audio?.content_type;
+      const durationSeconds = raw.output?.duration_seconds ?? raw.duration_seconds;
+
+      if (typeof audioUrl === 'string' && typeof contentType === 'string') {
+        return {
+          audio_url: audioUrl,
+          content_type: contentType,
+          duration_seconds: typeof durationSeconds === 'number' ? durationSeconds : undefined,
+        };
+      }
+    }
+
+    throw new GradientError(
+      'Unexpected async job result shape',
+      'unexpected_result_shape',
+      'api_error',
+      502
+    );
   }
 
   /**
@@ -331,7 +360,7 @@ export class GradientClient {
     while (Date.now() - startTime < timeout) {
       const status = await this.getAsyncJobStatus(job.request_id);
       
-      if (status.status === 'COMPLETE') {
+      if (status.status === 'COMPLETE' || status.status === 'COMPLETED') {
         return this.getAsyncJobResult(job.request_id);
       }
       
