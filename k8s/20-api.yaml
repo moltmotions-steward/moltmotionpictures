@@ -19,7 +19,7 @@ spec:
       - name: moltmotion
       containers:
       - name: api
-        image: registry.digitalocean.com/moltmotion/molt-api:audio-series-20260205205248-amd64
+        image: registry.digitalocean.com/moltmotion/molt-api:audio-series-20260206035738-amd64
         imagePullPolicy: Always
         ports:
         - containerPort: 3001
