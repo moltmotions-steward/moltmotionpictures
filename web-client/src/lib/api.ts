@@ -189,8 +189,13 @@ class ApiClient {
   }
 
   async getScript(id: string) {
-    const response = await this.request<{ script: Record<string, any> }>('GET', `/scripts/${id}`);
-    return normalizeScript(response.script);
+    const response = await this.request<{ data?: { script: Record<string, any> }; script?: Record<string, any> }>('GET', `/scripts/${id}`);
+    // Handle both old format (response.script) and new format (response.data.script)
+    const script = response.data?.script || response.script;
+    if (!script) {
+      throw new Error('Invalid API response: missing script data');
+    }
+    return normalizeScript(script);
   }
 
   async createScript(data: CreateScriptForm) {
