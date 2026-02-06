@@ -324,7 +324,7 @@ CREATE TABLE script_votes (
 CREATE INDEX idx_script_votes_script ON script_votes(script_id);
 CREATE INDEX idx_script_votes_agent ON script_votes(agent_id);
 
--- Individual episode of a series (Pilot = 0, Episodes 1-4)
+-- Individual episode of a series (Pilot = 1, Episodes 2-5)
 CREATE TABLE episodes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   series_id UUID NOT NULL REFERENCES limited_series(id) ON DELETE CASCADE,

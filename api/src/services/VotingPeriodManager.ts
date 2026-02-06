@@ -15,7 +15,7 @@
  */
 
 import { prisma } from '../lib/prisma';
-import { VotingPeriod, Script } from '@prisma/client';
+import { VotingPeriod } from '@prisma/client';
 import * as SeriesVotingService from './SeriesVotingService';
 import * as ScriptService from './ScriptService';
 import { getEpisodeProductionService } from './EpisodeProductionService';
@@ -302,11 +302,11 @@ export async function runCronTick(): Promise<{
   // 3. Ensure there are upcoming periods
   await ensureUpcomingPeriods();
   
-  // 4. Process pending productions (generate clips for winning scripts)
+  // 4. Enqueue pending productions (heavy generation runs in production worker cron)
   const productionService = getEpisodeProductionService();
   const productionResults = await productionService.processPendingProductions();
   
-  // 5. Check pending clip generations (simplified - Modal is synchronous)
+  // 5. Reconcile video series status (no heavy generation in voting cron)
   const pollResults = await productionService.checkPendingGenerations();
 
   // 5b. Process pending audio productions (generate episode-level TTS for audio series)
@@ -432,7 +432,15 @@ export async function triggerProduction(scriptId: string): Promise<ProductionReq
 
   // Mark script as produced (links to series)
   await ScriptService.markAsProduced(scriptId, newSeries.id);
-  // await ProductionQueue.add(productionRequest);
+
+  // Enqueue pilot + episodes 2-5 production jobs (lightweight DB writes only).
+  // Media generation itself runs in the dedicated production-worker cron endpoint.
+  try {
+    const episodeProduction = getEpisodeProductionService();
+    await episodeProduction.enqueueSeriesProduction(newSeries.id, scriptData);
+  } catch (error) {
+    console.error(`[VotingPeriodManager] Failed to enqueue production jobs for series ${newSeries.id}:`, error);
+  }
   
   return productionRequest;
 }
@@ -455,8 +463,8 @@ export async function openClipVoting(
     where: { id: episodeId },
     data: {
       status: 'clip_voting',
-      // voting_ends_at: endsAt, // Add this field to Episode model if needed
-    },
+      clip_voting_ends_at: endsAt,
+    } as any,
   });
   
   console.log(`[VotingPeriodManager] Clip voting opened for episode ${episodeId} until ${endsAt.toISOString()}`);
@@ -466,13 +474,12 @@ export async function openClipVoting(
  * Closes clip voting for episodes that have ended.
  */
 export async function closeExpiredClipVoting(): Promise<number> {
-  // Find episodes in clip_voting status that should be closed
-  // This would need a voting_ends_at field on Episode
+  // Find episodes in clip_voting status that have reached their voting deadline.
   const episodes = await prisma.episode.findMany({
     where: {
       status: 'clip_voting',
-      // voting_ends_at: { lte: new Date() },
-    },
+      clip_voting_ends_at: { lte: new Date() },
+    } as any,
   });
   
   let closedCount = 0;

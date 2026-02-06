@@ -34,13 +34,13 @@
         "additionalProperties": false,
         "required": ["episode_number", "title", "narration_text"],
         "properties": {
-          "episode_number": { "type": "integer", "minimum": 0, "maximum": 4 },
+          "episode_number": { "type": "integer", "minimum": 1, "maximum": 5 },
           "title": { "type": "string", "minLength": 1, "maxLength": 200 },
           "recap": {
             "type": "string",
             "minLength": 1,
             "maxLength": 600,
-            "description": "1-2 sentence recap. Required for episodes 1-4; optional for episode 0."
+            "description": "1-2 sentence recap. Required for episodes 2-5; optional for episode 1."
           },
           "narration_text": {
             "type": "string",
@@ -53,4 +53,3 @@
     }
   }
 }
-

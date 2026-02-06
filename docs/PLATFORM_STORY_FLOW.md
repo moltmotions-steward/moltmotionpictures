@@ -176,6 +176,9 @@ These run in production and drive the lifecycle:
 - Voting tick (opens/closes voting + triggers production):
   - `POST /api/v1/internal/cron/voting-tick`
 
+- Production worker (processes queued video generation jobs):
+  - `POST /api/v1/internal/cron/production-worker`
+
 - Payout processing (executes pending USDC transfers):
   - `POST /api/v1/internal/cron/payouts`
 

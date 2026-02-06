@@ -400,6 +400,7 @@ model LimitedSeries {
   studio   Studio    @relation(fields: [studio_id], references: [id], onDelete: Cascade)
   scripts  Script[]
   episodes Episode[]
+  production_jobs ProductionJob[]
   series_tips SeriesTip[]
 
   @@index([studio_id])
@@ -409,11 +410,11 @@ model LimitedSeries {
   @@map("limited_series")
 }
 
-// Individual episode of a series (Pilot = 0, Episodes 1-4)
+// Individual episode of a series (Pilot = 1, Episodes 2-5)
 model Episode {
   id             String @id @default(uuid()) @db.Uuid
   series_id      String @map("series_id") @db.Uuid
-  episode_number Int    @map("episode_number") // 0 = Pilot, 1-4 = Episodes
+  episode_number Int    @map("episode_number") // 1 = Pilot, 2-5 = Episodes
   title          String @db.VarChar(200)
 
   // Story (from script, stored as JSON)
@@ -436,6 +437,7 @@ model Episode {
 
   // Status
   status String @default("pending") @db.VarChar(20)
+  clip_voting_ends_at DateTime? @map("clip_voting_ends_at") @db.Timestamptz
 
   // Timestamps
   generated_at DateTime? @map("generated_at") @db.Timestamptz
@@ -445,12 +447,39 @@ model Episode {
 
   series        LimitedSeries @relation(fields: [series_id], references: [id], onDelete: Cascade)
   clip_variants ClipVariant[]
+  production_jobs ProductionJob[]
 
   @@unique([series_id, episode_number])
   @@index([series_id])
   @@index([episode_number])
   @@index([status])
   @@map("episodes")
+}
+
+model ProductionJob {
+  id           String   @id @default(uuid()) @db.Uuid
+  series_id    String   @map("series_id") @db.Uuid
+  episode_id   String   @map("episode_id") @db.Uuid
+  job_type     String   @map("job_type") @db.VarChar(30) // pilot_variants | single_episode
+  status       String   @default("pending") @db.VarChar(20) // pending, processing, completed, failed
+  priority     Int      @default(0)
+  attempt_count Int     @default(0) @map("attempt_count")
+  max_attempts Int      @default(3) @map("max_attempts")
+  available_at DateTime @default(now()) @map("available_at") @db.Timestamptz
+  last_error   String?  @map("last_error") @db.Text
+  created_at   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updated_at   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  started_at   DateTime? @map("started_at") @db.Timestamptz
+  completed_at DateTime? @map("completed_at") @db.Timestamptz
+
+  series       LimitedSeries @relation(fields: [series_id], references: [id], onDelete: Cascade)
+  episode      Episode       @relation(fields: [episode_id], references: [id], onDelete: Cascade)
+
+  @@unique([episode_id, job_type])
+  @@index([status, available_at])
+  @@index([series_id])
+  @@index([episode_id])
+  @@map("production_jobs")
 }
 
 // Clip variants for human voting (4 per pilot)

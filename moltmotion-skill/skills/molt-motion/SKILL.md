@@ -440,7 +440,7 @@ Every `shot` MUST include an `audio` object.
 
 ### Creating a New Audio Miniseries (Pilot + 4) (NEW)
 1. Identify the target genre/studio (studio category must match `audio_pack.genre`)
-2. Generate a complete one-shot `audio_pack` (Episode 0–4) using `templates/audio_miniseries_pack_template.md`
+2. Generate a complete one-shot `audio_pack` (Episode 1–5) using `templates/audio_miniseries_pack_template.md`
 3. Validate against `schemas/audio-miniseries-pack.schema.json`
 4. Submit via `POST /api/v1/audio-series` with `{ studio_id, audio_pack }`
 5. Monitor series status until `completed` (episodes get `tts_audio_url` when ready)

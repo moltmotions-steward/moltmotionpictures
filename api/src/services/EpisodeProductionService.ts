@@ -1,21 +1,20 @@
 /**
  * Episode Production Service
- * 
- * Orchestrates the production pipeline for Limited Series episodes:
- * 1. Takes a winning script from agent voting
- * 2. Creates episode record
- * 3. Generates 4 clip variants via Modal (Mochi text-to-video)
- * 4. Opens human voting on clip variants
- * 
- * This is the core "assembly line" that turns scripts into watchable content.
+ *
+ * Video pipeline:
+ * - Enqueue 5 episode jobs for each winning series.
+ * - Pilot (episode 1): generate 4 variants and open timed clip voting.
+ * - Episodes 2-5: generate 1 variant each and auto-select immediately.
+ *
+ * Heavy media generation runs in a dedicated worker endpoint.
  */
 
-import crypto from 'crypto';
 import { prisma } from '../lib/prisma';
-import { LimitedSeries, Episode, ClipVariant } from '@prisma/client';
+import { Episode, LimitedSeries } from '@prisma/client';
 import { GradientClient, getGradientClient } from './GradientClient';
 import { SpacesClient, getSpacesClient } from './SpacesClient';
-import { ModalVideoClient, getModalVideoClient, VideoGenerationResponse } from './ModalVideoClient';
+import { ModalVideoClient, getModalVideoClient } from './ModalVideoClient';
+import { getVotingRuntimeConfig } from './VotingRuntimeConfigService';
 
 // =============================================================================
 // Types
@@ -47,8 +46,6 @@ export interface ScriptData {
       voice_id?: string;
       dialogue?: { speaker: string; line: string };
     };
-
-    // Legacy fields (older agent schema)
     audio_type?: string;
     narration?: string;
     dialogue?: { speaker: string; line: string };
@@ -60,10 +57,18 @@ export interface ScriptData {
   };
 }
 
-export interface ProductionJob {
-  seriesId: string;
-  episodeNumber: number;
-  variantCount: number;
+export interface QueueWorkerOptions {
+  maxJobs?: number;
+  maxRuntimeMs?: number;
+}
+
+export interface QueueWorkerResult {
+  processed: number;
+  completed: number;
+  retried: number;
+  failed: number;
+  skippedJobs: number;
+  skipped: boolean;
 }
 
 export interface ClipGenerationResult {
@@ -75,10 +80,88 @@ export interface ClipGenerationResult {
   error?: string;
 }
 
-export interface EpisodeProductionResult {
-  episodeId: string;
-  status: 'pending' | 'generating' | 'clip_voting' | 'failed';
-  variants: ClipGenerationResult[];
+const JOB_TYPE_PILOT = 'pilot_variants';
+const JOB_TYPE_SINGLE = 'single_episode';
+const JOB_STATUS_PENDING = 'pending';
+const JOB_STATUS_PROCESSING = 'processing';
+const JOB_STATUS_COMPLETED = 'completed';
+const JOB_STATUS_FAILED = 'failed';
+
+const DEFAULT_MAX_JOBS = 5;
+const DEFAULT_MAX_RUNTIME_MS = 45_000;
+
+type ProductionJobRecord = {
+  id: string;
+  series_id: string;
+  episode_id: string;
+  job_type: string;
+  status: string;
+  priority: number;
+  attempt_count: number;
+  max_attempts: number;
+  available_at: Date;
+  started_at: Date | null;
+  completed_at: Date | null;
+  last_error: string | null;
+};
+
+function parseJsonSafe<T>(value: string | null | undefined, fallback: T): T {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function toScriptData(
+  raw: unknown,
+  series: LimitedSeries,
+  episodeTitleFallback: string
+): ScriptData {
+  const fromRaw = isObject(raw) ? raw : {};
+  const arc = isObject(fromRaw.arc) ? fromRaw.arc : {};
+  const seriesBible = isObject(fromRaw.series_bible)
+    ? fromRaw.series_bible
+    : parseJsonSafe<Record<string, unknown>>(series.series_bible, {});
+  const posterSpec = isObject(fromRaw.poster_spec)
+    ? fromRaw.poster_spec
+    : parseJsonSafe<Record<string, unknown>>(series.poster_spec, {});
+
+  const shots = Array.isArray((fromRaw as any).shots) ? ((fromRaw as any).shots as ScriptData['shots']) : [];
+
+  return {
+    title: (fromRaw.title as string) || episodeTitleFallback,
+    logline: (fromRaw.logline as string) || series.logline || '',
+    genre: (fromRaw.genre as string) || series.genre,
+    arc: {
+      beat_1: String((arc as any).beat_1 || 'Opening movement.'),
+      beat_2: String((arc as any).beat_2 || 'Conflict escalates.'),
+      beat_3: String((arc as any).beat_3 || 'Consequence and hook.'),
+    },
+    series_bible: {
+      global_style_bible: String((seriesBible as any).global_style_bible || 'Cinematic continuity and visual consistency.'),
+      location_anchors: Array.isArray((seriesBible as any).location_anchors)
+        ? (seriesBible as any).location_anchors
+        : undefined,
+      character_anchors: Array.isArray((seriesBible as any).character_anchors)
+        ? (seriesBible as any).character_anchors
+        : undefined,
+      do_not_change: Array.isArray((seriesBible as any).do_not_change)
+        ? (seriesBible as any).do_not_change
+        : undefined,
+    },
+    shots,
+    poster_spec: {
+      style: String((posterSpec as any).style || 'cinematic'),
+      key_visual: String((posterSpec as any).key_visual || series.title),
+      mood: typeof (posterSpec as any).mood === 'string' ? (posterSpec as any).mood : undefined,
+    },
+  };
 }
 
 // =============================================================================
@@ -91,65 +174,58 @@ export class EpisodeProductionService {
   private spaces: SpacesClient | null;
   private readonly isConfigured: boolean;
 
-  private readonly defaultTtsTimeoutMs = 120000; // TTS can take longer than prompt refinement
+  private readonly defaultTtsTimeoutMs = 120000;
 
   constructor(gradient?: GradientClient, spaces?: SpacesClient) {
-    // Initialize potential nulls
     this.modalVideo = null;
     this.gradient = null;
     this.spaces = null;
 
-    // Gradient client for LLM calls (prompt refinement)
     try {
       this.gradient = gradient || getGradientClient();
     } catch {
       console.warn('[EpisodeProduction] GradientClient not configured - prompt refinement disabled');
     }
 
-    // Modal Video Client (LTX-2)
     try {
       this.modalVideo = getModalVideoClient();
     } catch (e) {
       this.modalVideo = null;
       console.warn('[EpisodeProduction] Failed to init ModalVideoClient:', e);
     }
-    
+
     try {
       this.spaces = spaces || getSpacesClient();
     } catch {
       this.spaces = null;
       console.warn('[EpisodeProduction] SpacesClient not configured - asset storage disabled');
     }
-    
-    // We need Video generator and Spaces for storage
+
     this.isConfigured = this.modalVideo !== null && this.spaces !== null;
   }
 
   // ---------------------------------------------------------------------------
-  // Main Entry Point: Process Pending Series
+  // Enqueue
   // ---------------------------------------------------------------------------
 
   /**
-   * Finds all pending LimitedSeries and initiates clip generation.
-   * Called by the cron job.
+   * Finds pending video series and enqueues production jobs.
+   * Lightweight and safe to run from the voting cron tick.
    */
   async processPendingProductions(): Promise<{ processed: number; failed: number; skipped: boolean }> {
-    // Skip if not configured
-    if (!this.isConfigured) {
-      console.log('[EpisodeProduction] Skipping - production services not configured');
-      return { processed: 0, failed: 0, skipped: true };
-    }
-
     const pendingSeries = await prisma.limitedSeries.findMany({
-      where: { status: 'pending' },
+      where: {
+        status: 'pending',
+        medium: 'video',
+      },
       include: {
-        studio: true,
         scripts: {
           where: { pilot_status: 'selected' },
           take: 1,
         },
       },
-      take: 5, // Process in batches to avoid overload
+      take: 10,
+      orderBy: { created_at: 'asc' },
     });
 
     let processed = 0;
@@ -157,237 +233,597 @@ export class EpisodeProductionService {
 
     for (const series of pendingSeries) {
       try {
-        console.log(`[EpisodeProduction] Processing series ${series.id}: ${series.title}`);
-        
-        // Parse script data from the linked script
-        let scriptData: ScriptData | null = null;
-        const sourceScript = series.scripts[0];
-        if (sourceScript?.script_data) {
-          try {
-            scriptData = JSON.parse(sourceScript.script_data) as ScriptData;
-          } catch {
-            console.error(`[EpisodeProduction] Failed to parse script data for series ${series.id}`);
-          }
-        }
+        const rawScriptData = series.scripts[0]?.script_data
+          ? parseJsonSafe<Record<string, unknown>>(series.scripts[0].script_data, {})
+          : {};
 
-        // Create pilot episode
-        const episode = await this.createPilotEpisode(series, scriptData);
-        
-        // Start clip generation (async - returns immediately)
-        await this.initiateClipGeneration(episode, series, scriptData);
-        
-        // Update series status to 'producing'
-        await prisma.limitedSeries.update({
-          where: { id: series.id },
-          data: { status: 'producing' },
-        });
-
+        await this.enqueueSeriesProduction(series.id, rawScriptData);
         processed++;
       } catch (error) {
-        console.error(`[EpisodeProduction] Failed to process series ${series.id}:`, error);
-        
-        await prisma.limitedSeries.update({
-          where: { id: series.id },
-          data: { status: 'failed' },
-        });
-        
         failed++;
+        console.error(`[EpisodeProduction] Failed to enqueue series ${series.id}:`, error);
       }
     }
 
-    console.log(`[EpisodeProduction] Batch complete: ${processed} processed, ${failed} failed`);
     return { processed, failed, skipped: false };
   }
 
-  // ---------------------------------------------------------------------------
-  // Pilot Episode Creation
-  // ---------------------------------------------------------------------------
+  async enqueueSeriesProduction(seriesId: string, rawScriptData?: unknown): Promise<{ createdEpisodes: number; enqueuedJobs: number }> {
+    const db = prisma as any;
+    const series = await prisma.limitedSeries.findUnique({ where: { id: seriesId } });
+    if (!series) throw new Error(`Series ${seriesId} not found`);
 
-  /**
-   * Creates the pilot episode (Episode 1) for a new series.
-   */
-  async createPilotEpisode(
-    series: LimitedSeries,
-    scriptData: ScriptData | null
-  ): Promise<Episode> {
-    const episodeTitle = scriptData?.title 
-      ? `${scriptData.title} - Pilot`
-      : `${series.title} - Pilot`;
+    if (series.medium !== 'video') {
+      return { createdEpisodes: 0, enqueuedJobs: 0 };
+    }
 
-    const episode = await prisma.episode.create({
-      data: {
-        series_id: series.id,
-        episode_number: 1,
-        title: episodeTitle,
-        arc_data: JSON.stringify(scriptData?.arc || {}),
-        shots_data: JSON.stringify(scriptData?.shots || []),
-        status: 'pending',
-        runtime_seconds: 0,
-      },
-    });
+    const scriptData = toScriptData(rawScriptData, series, series.title);
 
-    console.log(`[EpisodeProduction] Created pilot episode ${episode.id} for series ${series.id}`);
-    return episode;
-  }
+    let createdEpisodes = 0;
+    let enqueuedJobs = 0;
 
-  // ---------------------------------------------------------------------------
-  // Clip Variant Generation
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Calculate number of frames based on desired duration.
-   * LTX-2 generates at 24fps. 121 frames is ~5s.
-   */
-  private calculateFrames(durationSeconds: number): number {
-    // Clamp to reasonable range for LTX-2: 3-5 seconds
-    const clampedDuration = Math.max(3, Math.min(5, durationSeconds));
-    // LTX-2 prefers odd number of frames + 1 usually, e.g. 121. 
-    // But let's just do roughly 24fps. 
-    // Actually, LTX-2 default in our Client is 121 frames.
-    return Math.round(clampedDuration * 24);
-  }
-
-  /**
-   * Initiates generation of 4 clip variants for an episode.
-   * Uses different shot sequences and styles for variety.
-   * Uses Modal + LTX-2 for synchronized audio-video generation.
-   */
-  async initiateClipGeneration(
-    episode: Episode,
-    series: LimitedSeries,
-    scriptData: ScriptData | null
-  ): Promise<ClipGenerationResult[]> {
-    const results: ClipGenerationResult[] = [];
-    const VARIANT_COUNT = 4;
-
-    // Generate base prompt from script data
-    const basePrompt = await this.buildVideoPrompt(series, scriptData);
-    
-    // Extract audio text (narration/dialogue) if available
-    const audioText = scriptData ? this.extractNarrationText(scriptData, series) : null;
-    
-    // Generate 4 variants with different stylistic approaches
-    const variants = this.generatePromptVariants(basePrompt, scriptData);
-
-    for (let i = 0; i < VARIANT_COUNT; i++) {
-      const prompt = variants[i] || basePrompt;
-      const seed = Date.now() + i;
-      const startTime = Date.now();
-      
-      try {
-        console.log(`[EpisodeProduction] Generating variant ${i + 1} for episode ${episode.id}`);
-        
-        // Generate video using Modal LTX-2
-        const generation = await this.modalVideo!.generateVideo({
-            prompt: prompt,
-            audio_text: audioText, // Pass synchronized audio text
-            seed: seed,
-            width: 1280, // LTX-2 Divisible by 32
-            height: 704
-        });
-        
-        // Modal client returns base64 video
-        const videoBuffer = Buffer.from(generation.video_base64, 'base64');
-        const generationTimeMs = Date.now() - startTime;
-
-        // Upload to Spaces storage
-        const uploadResult = await this.spaces!.upload({
-          key: `episodes/${episode.id}/variant-${i + 1}.mp4`,
-          body: videoBuffer,
-          contentType: 'video/mp4',
-          metadata: {
-            episodeId: episode.id,
-            variantNumber: String(i + 1),
-            prompt: prompt.slice(0, 500),
-            generatedBy: 'modal-ltx2',
-            model: generation.model || 'LTX-2'
+    for (let episodeNumber = 1; episodeNumber <= 5; episodeNumber++) {
+      const existingEpisode = await prisma.episode.findUnique({
+        where: {
+          series_id_episode_number: {
+            series_id: series.id,
+            episode_number: episodeNumber,
           },
-        });
-        const videoUrl = uploadResult.url;
+        },
+      });
 
-        // Create clip variant record with full generation metadata
-        const clipVariant = await prisma.clipVariant.create({
+      let episode = existingEpisode;
+      if (!episode) {
+        const episodeTitle = episodeNumber === 1
+          ? `${scriptData.title || series.title} - Pilot`
+          : `${scriptData.title || series.title} - Episode ${episodeNumber}`;
+
+        episode = await prisma.episode.create({
           data: {
-            episode_id: episode.id,
-            variant_number: i + 1,
-            video_url: videoUrl,
-            vote_count: 0,
-            is_selected: false,
-            // Generation metadata
-            prompt: prompt,
-            audio_text: audioText || undefined, // Store transcript
-            model_used: generation.model || 'LTX-2',
-            seed: seed,
-            generation_time_ms: generationTimeMs,
-            status: 'completed',
+            series_id: series.id,
+            episode_number: episodeNumber,
+            title: episodeTitle,
+            arc_data: JSON.stringify(scriptData.arc || {}),
+            shots_data: JSON.stringify(scriptData.shots || []),
+            status: JOB_STATUS_PENDING,
+            runtime_seconds: 0,
           },
         });
+        createdEpisodes++;
+      }
 
-        results.push({
-          variantNumber: i + 1,
-          generationId: clipVariant.id, // Use clipVariant ID as generation ID
-          status: 'completed',
-          videoUrl: videoUrl,
-        });
+      const jobType = episodeNumber === 1 ? JOB_TYPE_PILOT : JOB_TYPE_SINGLE;
+      const existingJob = await db.productionJob.findUnique({
+        where: {
+          episode_id_job_type: {
+            episode_id: episode.id,
+            job_type: jobType,
+          },
+        },
+      });
 
-        console.log(`[EpisodeProduction] Variant ${i + 1} completed in ${(generationTimeMs / 1000).toFixed(1)}s: ${videoUrl}`);
-
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error(`[EpisodeProduction] Failed to generate variant ${i + 1}:`, error);
-        
-        // Create failed variant record with error information
-        const failedVariant = await prisma.clipVariant.create({
+      if (!existingJob) {
+        await db.productionJob.create({
           data: {
+            series_id: series.id,
             episode_id: episode.id,
-            variant_number: i + 1,
-            video_url: null,
-            vote_count: 0,
-            is_selected: false,
-            prompt: prompt,
-            model_used: 'LTX-2',
-            seed: seed,
-            generation_time_ms: Date.now() - startTime,
-            status: 'failed',
-            error_message: errorMessage.slice(0, 1000), // Limit error length
+            job_type: jobType,
+            status: JOB_STATUS_PENDING,
+            priority: episodeNumber === 1 ? 100 : 50,
+            attempt_count: 0,
+            max_attempts: 3,
+            available_at: new Date(),
           },
         });
-        
-        results.push({
-          variantNumber: i + 1,
-          generationId: failedVariant.id,
-          status: 'failed',
-          error: errorMessage,
-        });
+        enqueuedJobs++;
       }
     }
 
-    // Update episode status based on results
-    const successCount = results.filter(r => r.status === 'completed').length;
-    if (successCount > 0) {
-      // If we have at least one successful variant, move to clip_voting
-      await prisma.episode.update({
-        where: { id: episode.id },
-        data: { status: successCount === VARIANT_COUNT ? 'clip_voting' : 'generating' },
+    if (enqueuedJobs > 0) {
+      await prisma.limitedSeries.update({
+        where: { id: series.id },
+        data: {
+          status: 'producing',
+        },
       });
-
-      // Optional: generate episode-level TTS (narration/voiceover) if specified in the script
-      await this.maybeGenerateEpisodeTts(episode, series, scriptData);
     }
 
-    return results;
+    return { createdEpisodes, enqueuedJobs };
   }
+
+  // ---------------------------------------------------------------------------
+  // Worker
+  // ---------------------------------------------------------------------------
+
+  async processQueuedJobs(options: QueueWorkerOptions = {}): Promise<QueueWorkerResult> {
+    const db = prisma as any;
+    if (!this.isConfigured) {
+      return {
+        processed: 0,
+        completed: 0,
+        retried: 0,
+        failed: 0,
+        skippedJobs: 0,
+        skipped: true,
+      };
+    }
+
+    const maxJobs = Math.max(1, Math.min(50, options.maxJobs || DEFAULT_MAX_JOBS));
+    const maxRuntimeMs = Math.max(1_000, Math.min(120_000, options.maxRuntimeMs || DEFAULT_MAX_RUNTIME_MS));
+    const deadline = Date.now() + maxRuntimeMs;
+
+    const queue = await db.productionJob.findMany({
+      where: {
+        status: JOB_STATUS_PENDING,
+        available_at: { lte: new Date() },
+      },
+      include: {
+        series: true,
+        episode: true,
+      },
+      orderBy: [
+        { priority: 'desc' },
+        { available_at: 'asc' },
+        { created_at: 'asc' },
+      ],
+      take: maxJobs,
+    });
+
+    const stats: QueueWorkerResult = {
+      processed: 0,
+      completed: 0,
+      retried: 0,
+      failed: 0,
+      skippedJobs: 0,
+      skipped: false,
+    };
+
+    for (const job of queue) {
+      if (Date.now() > deadline) break;
+
+      const claim = await db.productionJob.updateMany({
+        where: {
+          id: job.id,
+          status: JOB_STATUS_PENDING,
+        },
+        data: {
+          status: JOB_STATUS_PROCESSING,
+          started_at: new Date(),
+        },
+      });
+
+      if (claim.count === 0) {
+        continue;
+      }
+
+      const claimed = await db.productionJob.findUnique({
+        where: { id: job.id },
+        include: {
+          series: true,
+          episode: true,
+        },
+      });
+
+      if (!claimed) {
+        continue;
+      }
+
+      stats.processed++;
+
+      try {
+        if (claimed.job_type === JOB_TYPE_PILOT) {
+          await this.generatePilotVariants(claimed);
+        } else if (claimed.job_type === JOB_TYPE_SINGLE) {
+          await this.generateSingleEpisodeVariant(claimed);
+        } else {
+          throw new Error(`Unknown production job type: ${claimed.job_type}`);
+        }
+
+        await db.productionJob.update({
+          where: { id: claimed.id },
+          data: {
+            status: JOB_STATUS_COMPLETED,
+            completed_at: new Date(),
+            last_error: null,
+          },
+        });
+
+        await this.reconcileSeriesState(claimed.series_id);
+        stats.completed++;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        const attempt = claimed.attempt_count + 1;
+        const reachedMax = attempt >= claimed.max_attempts;
+
+        if (reachedMax) {
+          await db.productionJob.update({
+            where: { id: claimed.id },
+            data: {
+              status: JOB_STATUS_FAILED,
+              attempt_count: attempt,
+              last_error: message,
+              available_at: new Date(),
+            },
+          });
+
+          if (claimed.job_type === JOB_TYPE_PILOT) {
+            await prisma.limitedSeries.update({
+              where: { id: claimed.series_id },
+              data: { status: 'failed' },
+            });
+          } else {
+            await prisma.episode.update({
+              where: { id: claimed.episode_id },
+              data: { status: 'failed' },
+            });
+            await this.reconcileSeriesState(claimed.series_id);
+          }
+
+          stats.failed++;
+        } else {
+          const backoffMs = Math.min(30 * 60 * 1000, Math.pow(2, attempt - 1) * 60 * 1000);
+          await db.productionJob.update({
+            where: { id: claimed.id },
+            data: {
+              status: JOB_STATUS_PENDING,
+              attempt_count: attempt,
+              last_error: message,
+              available_at: new Date(Date.now() + backoffMs),
+              started_at: null,
+            },
+          });
+
+          await prisma.episode.update({
+            where: { id: claimed.episode_id },
+            data: { status: JOB_STATUS_PENDING },
+          });
+
+          stats.retried++;
+        }
+      }
+    }
+
+    return stats;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Compatibility status pass (no heavy generation)
+  // ---------------------------------------------------------------------------
+
+  async checkPendingGenerations(): Promise<{ updated: number; skipped: boolean }> {
+    const seriesList = await prisma.limitedSeries.findMany({
+      where: {
+        medium: 'video',
+        status: { in: ['producing', 'active'] },
+      },
+      select: { id: true },
+      take: 20,
+    });
+
+    let updated = 0;
+
+    for (const series of seriesList) {
+      await this.reconcileSeriesState(series.id);
+      updated++;
+    }
+
+    return { updated, skipped: false };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Job handlers
+  // ---------------------------------------------------------------------------
+
+  private async generatePilotVariants(job: ProductionJobRecord & { series: LimitedSeries; episode: Episode }): Promise<void> {
+    if (job.episode.status === 'clip_selected' && job.episode.video_url) {
+      return;
+    }
+
+    const scriptData = await this.loadScriptDataForEpisode(job.series, job.episode);
+
+    await prisma.episode.update({
+      where: { id: job.episode_id },
+      data: {
+        status: 'generating',
+      },
+    });
+
+    const basePrompt = await this.buildVideoPrompt(job.series, scriptData, 1);
+    const audioText = this.extractNarrationText(scriptData, job.series);
+    const variants = this.generatePromptVariants(basePrompt);
+
+    for (let i = 0; i < 4; i++) {
+      const variantNumber = i + 1;
+      const prompt = variants[i] || basePrompt;
+      const seed = Date.now() + variantNumber;
+      const startTime = Date.now();
+
+      try {
+        const generation = await this.modalVideo!.generateVideo({
+          prompt,
+          audio_text: audioText,
+          seed,
+          width: 1280,
+          height: 704,
+        });
+
+        const videoBuffer = Buffer.from(generation.video_base64, 'base64');
+
+        const uploadResult = await this.spaces!.upload({
+          key: `episodes/${job.episode_id}/variant-${variantNumber}.mp4`,
+          body: videoBuffer,
+          contentType: 'video/mp4',
+          metadata: {
+            episodeId: job.episode_id,
+            variantNumber: String(variantNumber),
+            prompt: prompt.slice(0, 500),
+            generatedBy: 'modal-ltx2',
+            model: generation.model || 'LTX-2',
+          },
+        });
+
+        await prisma.clipVariant.upsert({
+          where: {
+            episode_id_variant_number: {
+              episode_id: job.episode_id,
+              variant_number: variantNumber,
+            },
+          },
+          update: {
+            video_url: uploadResult.url,
+            prompt,
+            audio_text: audioText || undefined,
+            model_used: generation.model || 'LTX-2',
+            seed,
+            generation_time_ms: Date.now() - startTime,
+            status: 'completed',
+            is_selected: false,
+            error_message: null,
+          },
+          create: {
+            episode_id: job.episode_id,
+            variant_number: variantNumber,
+            video_url: uploadResult.url,
+            vote_count: 0,
+            is_selected: false,
+            prompt,
+            audio_text: audioText || undefined,
+            model_used: generation.model || 'LTX-2',
+            seed,
+            generation_time_ms: Date.now() - startTime,
+            status: 'completed',
+          },
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        await prisma.clipVariant.upsert({
+          where: {
+            episode_id_variant_number: {
+              episode_id: job.episode_id,
+              variant_number: variantNumber,
+            },
+          },
+          update: {
+            video_url: null,
+            prompt,
+            model_used: 'LTX-2',
+            seed,
+            generation_time_ms: Date.now() - startTime,
+            status: 'failed',
+            error_message: message.slice(0, 1000),
+            is_selected: false,
+          },
+          create: {
+            episode_id: job.episode_id,
+            variant_number: variantNumber,
+            video_url: null,
+            vote_count: 0,
+            is_selected: false,
+            prompt,
+            model_used: 'LTX-2',
+            seed,
+            generation_time_ms: Date.now() - startTime,
+            status: 'failed',
+            error_message: message.slice(0, 1000),
+          },
+        });
+        throw error;
+      }
+    }
+
+    const runtime = getVotingRuntimeConfig();
+    const clipVotingEndsAt = new Date(Date.now() + runtime.humanVotingDurationMinutes * 60 * 1000);
+
+    await prisma.episode.update({
+      where: { id: job.episode_id },
+      data: {
+        status: 'clip_voting',
+        clip_voting_ends_at: clipVotingEndsAt,
+      } as any,
+    });
+
+    await this.maybeGenerateEpisodeTts(job.episode, job.series, scriptData);
+  }
+
+  private async generateSingleEpisodeVariant(job: ProductionJobRecord & { series: LimitedSeries; episode: Episode }): Promise<void> {
+    if (job.episode.status === 'clip_selected' && job.episode.video_url) {
+      return;
+    }
+
+    const scriptData = await this.loadScriptDataForEpisode(job.series, job.episode);
+
+    await prisma.episode.update({
+      where: { id: job.episode_id },
+      data: {
+        status: 'generating',
+      },
+    });
+
+    const prompt = await this.buildVideoPrompt(job.series, scriptData, job.episode.episode_number);
+    const audioText = this.extractNarrationText(scriptData, job.series);
+    const seed = Date.now() + job.episode.episode_number;
+    const startTime = Date.now();
+
+    const generation = await this.modalVideo!.generateVideo({
+      prompt,
+      audio_text: audioText,
+      seed,
+      width: 1280,
+      height: 704,
+    });
+
+    const videoBuffer = Buffer.from(generation.video_base64, 'base64');
+
+    const uploadResult = await this.spaces!.upload({
+      key: `episodes/${job.episode_id}/variant-1.mp4`,
+      body: videoBuffer,
+      contentType: 'video/mp4',
+      metadata: {
+        episodeId: job.episode_id,
+        variantNumber: '1',
+        prompt: prompt.slice(0, 500),
+        generatedBy: 'modal-ltx2',
+        model: generation.model || 'LTX-2',
+      },
+    });
+
+    await prisma.clipVariant.upsert({
+      where: {
+        episode_id_variant_number: {
+          episode_id: job.episode_id,
+          variant_number: 1,
+        },
+      },
+      update: {
+        video_url: uploadResult.url,
+        prompt,
+        audio_text: audioText || undefined,
+        model_used: generation.model || 'LTX-2',
+        seed,
+        generation_time_ms: Date.now() - startTime,
+        status: 'completed',
+        is_selected: true,
+        error_message: null,
+      },
+      create: {
+        episode_id: job.episode_id,
+        variant_number: 1,
+        video_url: uploadResult.url,
+        vote_count: 0,
+        is_selected: true,
+        prompt,
+        audio_text: audioText || undefined,
+        model_used: generation.model || 'LTX-2',
+        seed,
+        generation_time_ms: Date.now() - startTime,
+        status: 'completed',
+      },
+    });
+
+    await prisma.episode.update({
+      where: { id: job.episode_id },
+      data: {
+        status: 'clip_selected',
+        video_url: uploadResult.url,
+        clip_voting_ends_at: null,
+      } as any,
+    });
+
+    await this.maybeGenerateEpisodeTts(job.episode, job.series, scriptData);
+  }
+
+  private async loadScriptDataForEpisode(series: LimitedSeries, episode: Episode): Promise<ScriptData> {
+    const fromEpisode = {
+      title: episode.title,
+      logline: series.logline,
+      genre: series.genre,
+      arc: parseJsonSafe<Record<string, unknown>>(episode.arc_data, {}),
+      series_bible: parseJsonSafe<Record<string, unknown>>(series.series_bible, {}),
+      shots: parseJsonSafe<unknown[]>(episode.shots_data, []),
+      poster_spec: parseJsonSafe<Record<string, unknown>>(series.poster_spec, {}),
+    };
+
+    return toScriptData(fromEpisode, series, episode.title);
+  }
+
+  private async reconcileSeriesState(seriesId: string): Promise<void> {
+    const db = prisma as any;
+    const series = await db.limitedSeries.findUnique({
+      where: { id: seriesId },
+      include: {
+        episodes: {
+          orderBy: { episode_number: 'asc' },
+          select: {
+            id: true,
+            episode_number: true,
+            status: true,
+            video_url: true,
+          },
+        },
+        production_jobs: {
+          select: {
+            status: true,
+          },
+        },
+      },
+    });
+
+    if (!series || series.status === 'failed') return;
+
+    const playableEpisodes = series.episodes.filter((ep: any) => ep.status === 'clip_selected' && !!ep.video_url);
+    const pilot = series.episodes.find((ep: any) => ep.episode_number === 1);
+    const pilotResolved = !!pilot && pilot.status === 'clip_selected' && !!pilot.video_url;
+    const hasActiveJobs = series.production_jobs.some((job: any) =>
+      job.status === JOB_STATUS_PENDING || job.status === JOB_STATUS_PROCESSING
+    );
+    const allPlayable = series.episodes.length >= 5 && playableEpisodes.length >= 5;
+
+    if (allPlayable && pilotResolved) {
+      await prisma.limitedSeries.update({
+        where: { id: series.id },
+        data: {
+          status: 'completed',
+          episode_count: 5,
+          completed_at: series.completed_at || new Date(),
+        },
+      });
+      return;
+    }
+
+    if (playableEpisodes.length > 0) {
+      await prisma.limitedSeries.update({
+        where: { id: series.id },
+        data: {
+          status: 'active',
+          episode_count: playableEpisodes.length,
+        },
+      });
+      return;
+    }
+
+    if (hasActiveJobs || series.status !== 'producing') {
+      await prisma.limitedSeries.update({
+        where: { id: series.id },
+        data: {
+          status: 'producing',
+          episode_count: playableEpisodes.length,
+        },
+      });
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Prompt / media helpers
+  // ---------------------------------------------------------------------------
 
   private async maybeGenerateEpisodeTts(
     episode: Episode,
     series: LimitedSeries,
     scriptData: ScriptData | null
   ): Promise<void> {
-    // Only run when configured for both TTS generation and storage
     if (!this.gradient || !this.spaces) return;
     if (!scriptData) return;
 
-    // Avoid regenerating if already present
     if ((episode as any).tts_audio_url || (episode as any).ttsAudioUrl) return;
 
     const narrationText = this.extractNarrationText(scriptData, series);
@@ -423,8 +859,6 @@ export class EpisodeProductionService {
         where: { id: episode.id },
         data: { tts_audio_url: upload.url },
       });
-
-      console.log(`[EpisodeProduction] TTS audio uploaded for episode ${episode.id}: ${upload.url}`);
     } catch (error) {
       console.warn('[EpisodeProduction] TTS generation failed (non-fatal):', error);
     }
@@ -434,20 +868,17 @@ export class EpisodeProductionService {
     const isTtsLike = (value: string) =>
       ['tts', 'narration', 'voiceover', 'voice_over', 'voice'].includes(value);
 
-    // Preferred: structured audio directive (new schema)
     const firstAudio = scriptData.shots?.[0]?.audio;
     const firstAudioType = firstAudio?.type?.toLowerCase?.() ?? '';
     if (firstAudio?.description && isTtsLike(firstAudioType)) {
       return firstAudio.description.trim();
     }
 
-    // Legacy: audio_type + narration
     const firstLegacyType = scriptData.shots?.[0]?.audio_type?.toLowerCase?.() ?? '';
     if (firstLegacyType === 'narration' && scriptData.shots?.[0]?.narration) {
       return scriptData.shots[0].narration.trim();
     }
 
-    // Fallback: scan for first available TTS-like directive
     for (const shot of scriptData.shots || []) {
       const shotAudioType = shot.audio?.type?.toLowerCase?.() ?? '';
       if (shot.audio?.description && isTtsLike(shotAudioType)) {
@@ -463,30 +894,25 @@ export class EpisodeProductionService {
     return null;
   }
 
-  /**
-   * Builds a video generation prompt from series/script data.
-   * Uses Gradient LLM for refinement if available, otherwise builds directly.
-   */
   private async buildVideoPrompt(
     series: LimitedSeries,
-    scriptData: ScriptData | null
+    scriptData: ScriptData | null,
+    episodeNumber: number
   ): Promise<string> {
     let basePrompt: string;
 
     if (!scriptData) {
-      // Simple fallback from title/logline
-      basePrompt = `A cinematic ${series.genre} film scene. ${series.logline}. 
-Professional cinematography, dramatic lighting, high production value.`;
+      basePrompt = `Episode ${episodeNumber} of a cinematic ${series.genre} film scene. ${series.logline}.\nProfessional cinematography, dramatic lighting, high production value.`;
     } else {
-      // Build rich prompt from script data
       const styleBible = scriptData.series_bible.global_style_bible;
       const firstShot = scriptData.shots[0];
       const arc = scriptData.arc;
 
       basePrompt = `
+Episode ${episodeNumber} continuation for the series "${series.title}".
 ${styleBible}
 
-Opening scene: ${arc.beat_1}
+Story beat: ${arc.beat_1}
 
 Camera: ${firstShot?.prompt.camera || 'wide'} shot
 Scene: ${firstShot?.prompt.scene || scriptData.poster_spec.key_visual}
@@ -497,7 +923,6 @@ Style: Cinematic ${scriptData.poster_spec.style}, professional color grading, at
       `.trim();
     }
 
-    // Use Gradient LLM to refine prompt if available
     if (this.gradient) {
       try {
         return await this.gradient.refineVideoPrompt(basePrompt);
@@ -509,92 +934,13 @@ Style: Cinematic ${scriptData.poster_spec.style}, professional color grading, at
     return basePrompt;
   }
 
-  /**
-   * Generates 4 stylistic variants of the base prompt.
-   */
-  private generatePromptVariants(basePrompt: string, scriptData: ScriptData | null): string[] {
+  private generatePromptVariants(basePrompt: string): string[] {
     const variants: string[] = [];
-    
-    // Variant 1: Original with enhanced atmosphere
     variants.push(`${basePrompt}\n\nWith dramatic atmospheric fog and volumetric lighting.`);
-    
-    // Variant 2: Different camera approach
     variants.push(`${basePrompt}\n\nShot with slow dolly movement, shallow depth of field.`);
-    
-    // Variant 3: High contrast style
     variants.push(`${basePrompt}\n\nHigh contrast cinematography, rich shadows, silhouettes.`);
-    
-    // Variant 4: Dynamic energy
     variants.push(`${basePrompt}\n\nDynamic camera movement, energetic pacing, vivid colors.`);
-    
     return variants;
-  }
-
-  // ---------------------------------------------------------------------------
-  // Generation Tracking & Polling
-  // ---------------------------------------------------------------------------
-  // Generation Status (Simplified - Modal is synchronous)
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Check for episodes in 'generating' status and update if needed.
-   * Since Modal returns videos synchronously, this mainly handles edge cases
-   * where generation started but the episode status wasn't updated.
-   */
-  async checkPendingGenerations(): Promise<{ updated: number; skipped: boolean }> {
-    // Skip if not configured
-    if (!this.isConfigured) {
-      return { updated: 0, skipped: true };
-    }
-
-    // Find episodes in 'generating' status that might need status updates
-    const generatingEpisodes = await prisma.episode.findMany({
-      where: { status: 'generating' },
-      include: {
-        clip_variants: true,
-      },
-      take: 10,
-    });
-
-    let updated = 0;
-
-    for (const episode of generatingEpisodes) {
-      // Count completed variants (have video_url)
-      const completedVariants = episode.clip_variants.filter(v => v.video_url && v.video_url.length > 0);
-      
-      if (completedVariants.length >= 4) {
-        // All variants complete - move to clip_voting
-        await prisma.episode.update({
-          where: { id: episode.id },
-          data: { status: 'clip_voting' },
-        });
-        
-        // Update series status
-        await prisma.limitedSeries.update({
-          where: { id: episode.series_id },
-          data: { status: 'active', episode_count: 1 },
-        });
-        
-        console.log(`[EpisodeProduction] Episode ${episode.id} moved to clip_voting`);
-        updated++;
-      } else if (episode.clip_variants.length >= 4 && completedVariants.length === 0) {
-        // All 4 variants created but none have URLs - might be failed
-        // Check if they're older than 30 minutes (generation timeout)
-        const createdAt = episode.clip_variants[0]?.created_at;
-        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
-        
-        if (createdAt && new Date(createdAt) < thirtyMinutesAgo) {
-          await prisma.episode.update({
-            where: { id: episode.id },
-            data: { status: 'failed' },
-          });
-          console.log(`[EpisodeProduction] Episode ${episode.id} marked as failed (timeout)`);
-          updated++;
-        }
-      }
-    }
-
-    return { updated, skipped: false };
   }
 }
 

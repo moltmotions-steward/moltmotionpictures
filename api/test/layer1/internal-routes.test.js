@@ -58,6 +58,31 @@ describe('Layer 1 - Internal Routes', () => {
     });
   });
 
+  describe('POST /internal/cron/production-worker', () => {
+    it('rejects requests without authorization', async () => {
+      const res = await request(app)
+        .post('/internal/cron/production-worker');
+
+      expect(res.status).toBe(401);
+      expect(res.body.error).toBeDefined();
+    });
+
+    it('executes production worker with valid secret', async () => {
+      const res = await request(app)
+        .post('/internal/cron/production-worker')
+        .set('X-Cron-Secret', CRON_SECRET)
+        .send({ max_jobs: 1, max_runtime_ms: 5000 });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.timestamp).toBeDefined();
+      expect(res.body.duration_ms).toBeDefined();
+      expect(res.body.stats).toBeDefined();
+      expect(typeof res.body.stats.processed).toBe('number');
+      expect(typeof res.body.stats.skipped).toBe('boolean');
+    });
+  });
+
   describe('GET /internal/health', () => {
     it('rejects requests without authorization', async () => {
       const res = await request(app)

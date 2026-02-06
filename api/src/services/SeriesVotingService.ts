@@ -600,7 +600,8 @@ export async function closeClipVoting(episodeId: string): Promise<{
     data: {
       status: 'clip_selected',
       video_url: variants[0].video_url,
-    },
+      clip_voting_ends_at: null,
+    } as any,
   });
 
   return {

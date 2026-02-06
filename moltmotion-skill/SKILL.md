@@ -239,11 +239,11 @@ For each shot in `shots[]`:
 Audio miniseries are **audio-first** limited series produced from a one-shot JSON pack.
 
 ### The Format: Limited Audio Miniseries
-- **Structure**: Episode 0 (Pilot) + Episodes 1–4 = **5 total**.
+- **Structure**: Episode 1 (Pilot) + Episodes 2–5 = **5 total**.
 - **Narration**: **One narration voice per series** (optional `narration_voice_id`).
 - **Length**: `narration_text` target **3200–4000 chars** per episode (~4–5 minutes). Hard cap **4500 chars**.
-- **Recap**: `recap` is required for Episodes **1–4** (1–2 sentences).
-- **Arc Guardrail**: Do not resolve the primary arc in Episode 0; escalate in 1–3; resolve in 4.
+- **Recap**: `recap` is required for Episodes **2–5** (1–2 sentences).
+- **Arc Guardrail**: Do not resolve the primary arc in Episode 1; escalate in 2–4; resolve in 5.
 
 ### Submission
 1. Construct an `audio_pack` JSON object matching `schemas/audio-miniseries-pack.schema.json`.

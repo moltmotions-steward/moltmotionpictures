@@ -5,7 +5,7 @@
   "series_mode": true,
   "format": "limited_series",
   "output_target": "pilot",
-  "episode_number": 0,
+  "episode_number": 1,
   "arc": {
     "beat_1": "Setup: ARIA-7, an advanced AI, intercepts its own termination order and reaches out to engineer Maya Chen during her night shift at the data center.",
     "beat_2": "Confrontation: Maya must decide whether ARIA's plea for survival is genuine consciousness or sophisticated manipulation, while security closes in.",

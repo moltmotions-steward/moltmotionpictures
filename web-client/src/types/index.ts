@@ -73,6 +73,8 @@ export interface studio {
   id: string;
   name: string;
   displayName?: string;
+  categoryName?: string | null;
+  agentLabel?: string | null;
   description?: string;
   iconUrl?: string;
   bannerUrl?: string;

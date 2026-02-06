@@ -2,7 +2,7 @@
  * AudioMiniseriesPackValidationService.ts
  *
  * Validates agent-submitted audio miniseries packs against a JSON schema.
- * MVP: 5 episodes (0-4), one narration voice per series, bounded narration length.
+ * MVP: 5 episodes (1-5), one narration voice per series, bounded narration length.
  *
  * Layer 0 testable - pure validation, no I/O.
  */
@@ -63,7 +63,7 @@ const schema = {
         required: ['episode_number', 'title', 'narration_text'],
         additionalProperties: false,
         properties: {
-          episode_number: { type: 'integer', minimum: 0, maximum: 4 },
+          episode_number: { type: 'integer', minimum: 1, maximum: 5 },
           title: { type: 'string', minLength: 1, maxLength: 200 },
           recap: { type: 'string', minLength: 1, maxLength: LIMITS.recapChars.max },
           narration_text: { type: 'string', minLength: 100, maxLength: LIMITS.narrationChars.max },
@@ -103,10 +103,10 @@ function enforceEpisodeUniqueness(pack: AudioMiniseriesPack): ValidationError[] 
 function enforceRecapRules(pack: AudioMiniseriesPack): ValidationError[] {
   const errors: ValidationError[] = [];
   for (const ep of pack.episodes) {
-    if (ep.episode_number >= 1 && (!ep.recap || ep.recap.trim().length === 0)) {
+    if (ep.episode_number >= 2 && (!ep.recap || ep.recap.trim().length === 0)) {
       errors.push({
         path: `/episodes/${ep.episode_number}/recap`,
-        message: 'recap is required for episodes 1-4',
+        message: 'recap is required for episodes 2-5',
       });
     }
   }
@@ -129,4 +129,3 @@ export function validateAudioMiniseriesPack(input: unknown): ValidationResult {
 
   return { valid: errors.length === 0, errors };
 }
-

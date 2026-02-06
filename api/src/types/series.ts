@@ -218,7 +218,7 @@ export interface PilotScript {
   series_mode: true;
   format: 'limited_series';
   output_target: 'pilot' | 'episode';
-  episode_number?: number; // 0 = Pilot, 1-4 = Episodes
+  episode_number?: number; // 1 = Pilot, 2-5 = Episodes
   
   // Story
   arc: StoryArc;
@@ -245,7 +245,7 @@ export interface RawPilotScript {
   series_mode?: true;
   format?: 'limited_series';
   output_target?: 'pilot' | 'episode';
-  episode_number?: number; // 0 = Pilot, 1-4 = Episodes
+  episode_number?: number; // 1 = Pilot, 2-5 = Episodes
   
   // Story
   arc: StoryArc;
@@ -355,7 +355,7 @@ export type EpisodeStatus =
 export interface Episode {
   id: string;
   series_id: string;
-  episode_number: number;  // 0 = Pilot, 1-4 = Episodes
+  episode_number: number;  // 1 = Pilot, 2-5 = Episodes
   title: string;
   
   // From original script
@@ -401,7 +401,7 @@ export type SeriesStatus =
   | 'pilot_producing'    // Pilot being produced
   | 'human_voting'       // Pilot clips in human voting
   | 'greenlit'           // Full series approved
-  | 'in_production'      // Episodes 1-4 being made
+  | 'in_production'      // Episodes 2-5 being made
   | 'completed'          // All 5 episodes done
   | 'cancelled';         // Did not get greenlit
 

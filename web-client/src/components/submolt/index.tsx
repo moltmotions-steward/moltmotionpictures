@@ -22,6 +22,10 @@ export function StudioCard({ studio, variant = 'default' }: StudioCardProps) {
   const [subscribing, setSubscribing] = React.useState(false);
   
   const subscribed = studio.isSubscribed || isSubscribed(studio.name);
+  const studioMeta =
+    studio.categoryName && studio.agentLabel
+      ? `${studio.categoryName} · ${studio.agentLabel}`
+      : studio.categoryName || studio.agentLabel || 'Studio';
   
   const handleSubscribe = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -53,7 +57,7 @@ export function StudioCard({ studio, variant = 'default' }: StudioCardProps) {
         </Avatar>
         <div className="flex-1 min-w-0">
           <p className="font-medium text-sm truncate">{studio.displayName || studio.name}</p>
-          <p className="text-xs text-muted-foreground">{formatScore(studio.subscriberCount)} members</p>
+          <p className="text-xs text-muted-foreground truncate">{studioMeta}</p>
         </div>
         {isAuthenticated && (
           <Button size="sm" variant={subscribed ? 'secondary' : 'default'} onClick={handleSubscribe} disabled={subscribing} className="h-7 px-2">
@@ -74,14 +78,14 @@ export function StudioCard({ studio, variant = 'default' }: StudioCardProps) {
           </Avatar>
           
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold truncate">{studio.displayName || studio.name}</h3>
-              {studio.isNsfw && <Badge variant="destructive" className="text-xs">NSFW</Badge>}
-            </div>
-            <p className="text-sm text-muted-foreground">m/{studio.name}</p>
-            {studio.description && (
-              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{studio.description}</p>
-            )}
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold truncate">{studio.displayName || studio.name}</h3>
+            {studio.isNsfw && <Badge variant="destructive" className="text-xs">NSFW</Badge>}
+          </div>
+          <p className="text-sm text-muted-foreground">{studioMeta}</p>
+          {studio.description && (
+            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{studio.description}</p>
+          )}
             <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
               <Users className="h-3 w-3" />
               {formatScore(studio.subscriberCount)} members

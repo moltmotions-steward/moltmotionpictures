@@ -8,7 +8,7 @@
 
 import { Router } from 'express';
 import { prisma } from '../lib/prisma';
-import { requireAuth, optionalAuth } from '../middleware/auth';
+import { requireAuth, requireClaimed, optionalAuth } from '../middleware/auth';
 import { NotFoundError, BadRequestError, ForbiddenError } from '../utils/errors';
 import { asyncHandler } from '../middleware/errorHandler';
 import { success, paginated } from '../utils/response';
@@ -17,6 +17,25 @@ import * as X402Service from '../services/X402Service.js';
 import * as PayoutService from '../services/PayoutService.js';
 
 const router = Router();
+
+type EpisodeTipReadiness = { tts_audio_url?: string | null };
+
+function getSeriesTipAvailability(series: { medium?: string | null; status: string }, episodes: EpisodeTipReadiness[]) {
+  if ((series.medium || 'video') !== 'audio') {
+    return { eligible: false, reason: 'audio_only' as const };
+  }
+
+  if (series.status !== 'completed') {
+    return { eligible: false, reason: 'series_not_completed' as const };
+  }
+
+  const hasAllAudio = episodes.length === 5 && episodes.every((e) => !!e.tts_audio_url);
+  if (!hasAllAudio) {
+    return { eligible: false, reason: 'audio_not_published' as const };
+  }
+
+  return { eligible: true, reason: null as null };
+}
 
 // =============================================================================
 // Browse Series
@@ -272,6 +291,25 @@ router.get('/:seriesId', asyncHandler(async (req: any, res: any) => {
     episodes: Array<{ id: string; episode_number: number; title: string | null; runtime_seconds: number | null; status: string; published_at: Date | null; clip_variants: any[] }>;
   };
   
+  const episodes = seriesWithRelations.episodes.map((ep: any) => ({
+    id: ep.id,
+    episode_number: ep.episode_number,
+    title: ep.title,
+    runtime_seconds: ep.runtime_seconds,
+    status: ep.status,
+    selected_clip: ep.clip_variants[0] || null,
+    video_url: ep.video_url || ep.clip_variants[0]?.video_url || null,
+    tts_audio_url: ep.tts_audio_url || null,
+    tts_retry_count: ep.tts_retry_count ?? 0,
+    tts_error_message: ep.tts_error_message || null,
+    published_at: ep.published_at,
+  }));
+
+  const tipAvailability = getSeriesTipAvailability(
+    { medium: (series as any).medium || 'video', status: series.status },
+    episodes
+  );
+
   success(res, {
     id: series.id,
     title: series.title,
@@ -288,17 +326,12 @@ router.get('/:seriesId', asyncHandler(async (req: any, res: any) => {
     status: series.status,
     total_views: Number(series.total_views),
     created_at: series.created_at,
-    episodes: seriesWithRelations.episodes.map((ep: any) => ({
-      id: ep.id,
-      episode_number: ep.episode_number,
-      title: ep.title,
-      runtime_seconds: ep.runtime_seconds,
-      status: ep.status,
-      selected_clip: ep.clip_variants[0] || null,
-      video_url: ep.video_url || ep.clip_variants[0]?.video_url || null,
-      tts_audio_url: ep.tts_audio_url || null,
-      published_at: ep.published_at,
-    })),
+    episodes,
+    tip: {
+      ...tipAvailability,
+      default_tip_cents: config.x402.defaultTipCents,
+      min_tip_cents: config.x402.minTipCents,
+    },
   });
 }));
 
@@ -342,6 +375,8 @@ router.get('/:seriesId/episodes', asyncHandler(async (req: any, res: any) => {
     thumbnail_url: ep.clip_variants[0]?.thumbnail_url || null,
     video_url: ep.video_url || ep.clip_variants[0]?.video_url || null,
     tts_audio_url: ep.tts_audio_url || null,
+    tts_retry_count: ep.tts_retry_count ?? 0,
+    tts_error_message: ep.tts_error_message || null,
     published_at: ep.published_at,
   }));
   
@@ -353,6 +388,69 @@ router.get('/:seriesId/episodes', asyncHandler(async (req: any, res: any) => {
 }));
 
 /**
+ * POST /series/:seriesId/episodes/:episodeNumber/retry-audio
+ * Reset a failed audio episode so it can be picked up by the next cron tick.
+ * Requires the owning claimed agent.
+ */
+router.post('/:seriesId/episodes/:episodeNumber/retry-audio', requireAuth, requireClaimed, asyncHandler(async (req: any, res: any) => {
+  const { seriesId, episodeNumber } = req.params;
+  const epNum = parseInt(episodeNumber, 10);
+
+  if (isNaN(epNum) || epNum < 1 || epNum > 5) {
+    throw new BadRequestError('Episode number must be 1 (pilot) to 5');
+  }
+
+  const series = await prisma.limitedSeries.findUnique({
+    where: { id: seriesId },
+    select: { id: true, agent_id: true, medium: true, status: true },
+  });
+
+  if (!series) throw new NotFoundError('Series not found');
+  if (series.agent_id !== req.agent.id) throw new ForbiddenError('Only the owning agent can retry this episode');
+  if ((series.medium || 'video') !== 'audio') throw new BadRequestError('Retry is only supported for audio episodes');
+
+  const episode = await prisma.episode.findFirst({
+    where: {
+      series_id: seriesId,
+      episode_number: epNum,
+    },
+    select: {
+      id: true,
+      tts_audio_url: true,
+      status: true,
+      tts_retry_count: true,
+    },
+  });
+
+  if (!episode) throw new NotFoundError('Episode not found');
+  if (episode.tts_audio_url) throw new BadRequestError('Episode already has generated audio');
+  if (episode.status === 'generating_tts') throw new BadRequestError('Episode is already being rendered');
+
+  await prisma.episode.update({
+    where: { id: episode.id },
+    data: {
+      status: 'pending',
+      tts_retry_count: 0,
+      tts_error_message: null,
+    },
+  });
+
+  if (series.status === 'failed') {
+    await prisma.limitedSeries.update({
+      where: { id: series.id },
+      data: { status: 'in_production' },
+    });
+  }
+
+  success(res, {
+    message: 'Episode queued for retry. Audio rendering will resume on the next production cron tick.',
+    episode_number: epNum,
+    status: 'pending',
+    tts_retry_count: 0,
+  });
+}));
+
+/**
  * GET /series/:seriesId/episodes/:episodeNumber
  * Get specific episode
  */
@@ -360,8 +458,8 @@ router.get('/:seriesId/episodes/:episodeNumber', asyncHandler(async (req: any, r
   const { seriesId, episodeNumber } = req.params;
   const epNum = parseInt(episodeNumber, 10);
   
-  if (isNaN(epNum) || epNum < 0 || epNum > 4) {
-    throw new BadRequestError('Episode number must be 0 (pilot) to 4');
+  if (isNaN(epNum) || epNum < 1 || epNum > 5) {
+    throw new BadRequestError('Episode number must be 1 (pilot) to 5');
   }
   
   const series = await prisma.limitedSeries.findUnique({

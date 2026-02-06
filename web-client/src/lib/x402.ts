@@ -1,9 +1,9 @@
 /**
  * x402 Client Library
- * 
+ *
  * Handles the HTTP 402 payment flow:
- * 1. Make request → receive 402 with payment requirements
- * 2. Sign payment with wallet (Coinbase Smart Wallet)
+ * 1. Make request -> receive 402 with payment requirements
+ * 2. Sign payment with wallet
  * 3. Retry request with X-PAYMENT header
  * 4. Receive success response
  */
@@ -30,10 +30,39 @@ export interface SignedPayment {
   payerAddress: string;
 }
 
+export type X402ClientErrorType =
+  | 'auth_cancelled'
+  | 'insufficient_funds'
+  | 'wallet_unavailable'
+  | 'network_error'
+  | 'payment_failed';
+
 export interface PaymentError {
-  type: 'wallet_not_connected' | 'user_rejected' | 'insufficient_funds' | 'network_error' | 'invalid_response';
+  type: X402ClientErrorType;
   message: string;
+  retryable: boolean;
+  errorCode?: string;
   details?: unknown;
+}
+
+export type EnsurePaymentReady = (options?: {
+  preferred?: 'cdp_first' | 'injected_first';
+}) => Promise<{ address: string; providerType: 'cdp_embedded' | 'injected' }>;
+
+export class X402PaymentError extends Error {
+  readonly type: X402ClientErrorType;
+  readonly retryable: boolean;
+  readonly details?: unknown;
+  readonly errorCode?: string;
+
+  constructor(type: X402ClientErrorType, message: string, retryable: boolean, details?: unknown, errorCode?: string) {
+    super(message);
+    this.name = 'X402PaymentError';
+    this.type = type;
+    this.retryable = retryable;
+    this.details = details;
+    this.errorCode = errorCode;
+  }
 }
 
 // ============================================================================
@@ -53,7 +82,8 @@ const DEFAULT_CONFIG: X402Config = {
 export class X402Client {
   private config: X402Config;
   private walletAddress: string | null = null;
-  private signPayment: ((requirements: PaymentRequirements) => Promise<SignedPayment>) | null = null;
+  private signPaymentFn: ((requirements: PaymentRequirements) => Promise<SignedPayment>) | null = null;
+  private ensurePaymentReadyFn: EnsurePaymentReady | null = null;
 
   constructor(config: Partial<X402Config> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -61,14 +91,13 @@ export class X402Client {
 
   /**
    * Connect wallet and set up payment signing.
-   * Called after wallet connection via OnchainKit/Smart Wallet.
    */
   setWallet(
     address: string,
     signer: (requirements: PaymentRequirements) => Promise<SignedPayment>
   ): void {
     this.walletAddress = address;
-    this.signPayment = signer;
+    this.signPaymentFn = signer;
   }
 
   /**
@@ -76,14 +105,21 @@ export class X402Client {
    */
   clearWallet(): void {
     this.walletAddress = null;
-    this.signPayment = null;
+    this.signPaymentFn = null;
+  }
+
+  /**
+   * Set a function that can prompt auth/wallet setup when payment is attempted.
+   */
+  setEnsurePaymentReady(fn: EnsurePaymentReady | null): void {
+    this.ensurePaymentReadyFn = fn;
   }
 
   /**
    * Check if wallet is connected.
    */
   isWalletConnected(): boolean {
-    return this.walletAddress !== null && this.signPayment !== null;
+    return this.walletAddress !== null && this.signPaymentFn !== null;
   }
 
   /**
@@ -99,29 +135,21 @@ export class X402Client {
 
   /**
    * Tip a clip variant with x402 payment flow.
-   * 
-   * 1. Makes initial request (will return 402)
-   * 2. Parses payment requirements
-   * 3. Signs payment with wallet
-   * 4. Retries with X-PAYMENT header
-   * 5. Returns tip result
    */
   async tipClip(
     clipVariantId: string,
     sessionId: string,
     tipAmountCents: number = this.config.defaultTipCents
   ): Promise<TipResult> {
-    if (!this.isWalletConnected()) {
-      throw this.createError('wallet_not_connected', 'Please connect your wallet to tip');
-    }
+    await this.ensureWalletReady();
 
     if (tipAmountCents < this.config.minTipCents) {
-      throw this.createError('invalid_response', `Minimum tip is $${(this.config.minTipCents / 100).toFixed(2)}`);
+      throw this.createError('payment_failed', `Minimum tip is $${(this.config.minTipCents / 100).toFixed(2)}`, false);
     }
 
     const endpoint = `${this.config.apiBaseUrl}/voting/clips/${clipVariantId}/tip`;
 
-    // Step 1: Make initial request to get payment requirements
+    // Step 1: Make initial request to get payment requirements.
     const initialResponse = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -131,37 +159,25 @@ export class X402Client {
       }),
     });
 
-    // If not 402, handle error or unexpected success
     if (initialResponse.status !== 402) {
       if (initialResponse.ok) {
-        // Unexpected success without payment (shouldn't happen)
         return initialResponse.json();
       }
-      const error = await initialResponse.json().catch(() => ({ error: 'Unknown error' }));
-      throw this.createError('network_error', error.error || 'Request failed');
+      throw await this.createApiError(initialResponse);
     }
 
-    // Step 2: Parse 402 response for payment requirements
+    // Step 2: Parse 402 response for payment requirements.
     const x402Response: X402Response = await initialResponse.json();
-    
     if (!x402Response.accepts || x402Response.accepts.length === 0) {
-      throw this.createError('invalid_response', 'No payment options available');
+      throw this.createError('network_error', 'No payment options available', true);
     }
 
     const requirements = x402Response.accepts[0];
 
-    // Step 3: Sign payment with wallet
-    let signedPayment: SignedPayment;
-    try {
-      signedPayment = await this.signPayment!(requirements);
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('rejected')) {
-        throw this.createError('user_rejected', 'Payment was rejected');
-      }
-      throw this.createError('wallet_not_connected', 'Failed to sign payment');
-    }
+    // Step 3: Sign payment with wallet.
+    const signedPayment = await this.signRequirements(requirements);
 
-    // Step 4: Retry with X-PAYMENT header
+    // Step 4: Retry with X-PAYMENT header.
     const paidResponse = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -175,29 +191,24 @@ export class X402Client {
     });
 
     if (!paidResponse.ok) {
-      const error = await paidResponse.json().catch(() => ({ error: 'Payment verification failed' }));
-      throw this.createError('network_error', error.error || 'Payment failed');
+      throw await this.createApiError(paidResponse);
     }
 
-    // Step 5: Return success result
+    // Step 5: Return success result.
     return paidResponse.json();
   }
 
   /**
    * Tip a series with x402 payment flow.
-   *
-   * Mirrors tipClip but targets /series/:id/tip and has no session_id.
    */
   async tipSeries(
     seriesId: string,
     tipAmountCents: number = this.config.defaultTipCents
   ): Promise<any> {
-    if (!this.isWalletConnected()) {
-      throw this.createError('wallet_not_connected', 'Please connect your wallet to tip');
-    }
+    await this.ensureWalletReady();
 
     if (tipAmountCents < this.config.minTipCents) {
-      throw this.createError('invalid_response', `Minimum tip is $${(this.config.minTipCents / 100).toFixed(2)}`);
+      throw this.createError('payment_failed', `Minimum tip is $${(this.config.minTipCents / 100).toFixed(2)}`, false);
     }
 
     const endpoint = `${this.config.apiBaseUrl}/series/${seriesId}/tip`;
@@ -205,35 +216,23 @@ export class X402Client {
     const initialResponse = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        tip_amount_cents: tipAmountCents,
-      }),
+      body: JSON.stringify({ tip_amount_cents: tipAmountCents }),
     });
 
     if (initialResponse.status !== 402) {
       if (initialResponse.ok) {
         return initialResponse.json();
       }
-      const error = await initialResponse.json().catch(() => ({ error: 'Unknown error' }));
-      throw this.createError('network_error', error.error || 'Request failed');
+      throw await this.createApiError(initialResponse);
     }
 
     const x402Response: X402Response = await initialResponse.json();
     if (!x402Response.accepts || x402Response.accepts.length === 0) {
-      throw this.createError('invalid_response', 'No payment options available');
+      throw this.createError('network_error', 'No payment options available', true);
     }
 
     const requirements = x402Response.accepts[0];
-
-    let signedPayment: SignedPayment;
-    try {
-      signedPayment = await this.signPayment!(requirements);
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('rejected')) {
-        throw this.createError('user_rejected', 'Payment was rejected');
-      }
-      throw this.createError('wallet_not_connected', 'Failed to sign payment');
-    }
+    const signedPayment = await this.signRequirements(requirements);
 
     const paidResponse = await fetch(endpoint, {
       method: 'POST',
@@ -241,14 +240,11 @@ export class X402Client {
         'Content-Type': 'application/json',
         'X-PAYMENT': signedPayment.paymentHeader,
       },
-      body: JSON.stringify({
-        tip_amount_cents: tipAmountCents,
-      }),
+      body: JSON.stringify({ tip_amount_cents: tipAmountCents }),
     });
 
     if (!paidResponse.ok) {
-      const error = await paidResponse.json().catch(() => ({ error: 'Payment verification failed' }));
-      throw this.createError('network_error', error.error || 'Payment failed');
+      throw await this.createApiError(paidResponse);
     }
 
     return paidResponse.json();
@@ -259,8 +255,7 @@ export class X402Client {
   // --------------------------------------------------------------------------
 
   /**
-   * Get payment requirements without actually paying.
-   * Useful for showing the user what they'll pay before confirming.
+   * Get payment requirements without paying.
    */
   async getPaymentRequirements(
     clipVariantId: string,
@@ -272,7 +267,7 @@ export class X402Client {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        session_id: 'preview', // Won't actually vote
+        session_id: 'preview',
         tip_amount_cents: tipAmountCents,
       }),
     });
@@ -299,11 +294,120 @@ export class X402Client {
     return parseInt(amount, 10) / 1_000_000;
   }
 
-  /**
-   * Create a typed error.
-   */
-  private createError(type: PaymentError['type'], message: string, details?: unknown): PaymentError {
-    return { type, message, details };
+  private async ensureWalletReady(): Promise<void> {
+    if (this.isWalletConnected()) return;
+
+    if (this.ensurePaymentReadyFn) {
+      try {
+        await this.ensurePaymentReadyFn({ preferred: 'cdp_first' });
+      } catch (error) {
+        throw this.normalizeEnsureReadyError(error);
+      }
+    }
+
+    if (!this.isWalletConnected()) {
+      throw this.createError('wallet_unavailable', 'Please connect your wallet to tip', false);
+    }
+  }
+
+  private async signRequirements(requirements: PaymentRequirements): Promise<SignedPayment> {
+    if (!this.signPaymentFn) {
+      throw this.createError('wallet_unavailable', 'Please connect your wallet to tip', false);
+    }
+
+    try {
+      return await this.signPaymentFn(requirements);
+    } catch (error) {
+      if (error instanceof X402PaymentError) {
+        throw error;
+      }
+
+      const message = error instanceof Error ? error.message : 'Failed to sign payment';
+      if (/cancel|rejected|denied/i.test(message)) {
+        throw this.createError('auth_cancelled', 'Payment signature was cancelled', true, error);
+      }
+
+      throw this.createError('wallet_unavailable', message, false, error);
+    }
+  }
+
+  private normalizeEnsureReadyError(error: unknown): X402PaymentError {
+    if (error instanceof X402PaymentError) {
+      return error;
+    }
+
+    const maybeType = typeof error === 'object' && error !== null && 'type' in error
+      ? String((error as { type?: string }).type)
+      : null;
+    const maybeMessage = typeof error === 'object' && error !== null && 'message' in error
+      ? String((error as { message?: string }).message)
+      : error instanceof Error ? error.message : 'Wallet connection failed';
+    const retryable = typeof error === 'object' && error !== null && 'retryable' in error
+      ? Boolean((error as { retryable?: boolean }).retryable)
+      : false;
+
+    if (maybeType === 'auth_cancelled') {
+      return this.createError('auth_cancelled', maybeMessage, false, error);
+    }
+    if (maybeType === 'insufficient_funds') {
+      return this.createError('insufficient_funds', maybeMessage, true, error);
+    }
+    if (maybeType === 'wallet_unavailable') {
+      return this.createError('wallet_unavailable', maybeMessage, false, error);
+    }
+    if (maybeType === 'payment_failed') {
+      return this.createError('payment_failed', maybeMessage, retryable || true, error);
+    }
+
+    if (/cancel|dismiss|closed/i.test(maybeMessage)) {
+      return this.createError('auth_cancelled', maybeMessage, false, error);
+    }
+
+    return this.createError('wallet_unavailable', maybeMessage, false, error);
+  }
+
+  private async createApiError(response: Response): Promise<X402PaymentError> {
+    let payload: any = null;
+    try {
+      payload = await response.json();
+    } catch {
+      payload = null;
+    }
+
+    const message = payload?.message || payload?.error || `Request failed with status ${response.status}`;
+    const errorCode = payload?.error_code;
+
+    if (errorCode === 'INSUFFICIENT_FUNDS' || /insufficient funds/i.test(message)) {
+      return this.createError('insufficient_funds', message, true, payload, errorCode);
+    }
+
+    if (errorCode === 'PAYMENT_SETTLEMENT_FAILED') {
+      return this.createError('payment_failed', message, true, payload, errorCode);
+    }
+
+    if (errorCode === 'WALLET_SIGNATURE_INVALID' || errorCode === 'PAYMENT_DECLINED') {
+      return this.createError('payment_failed', message, true, payload, errorCode);
+    }
+
+    if (errorCode === 'PAYMENT_REQUIRED' || response.status === 402) {
+      return this.createError('payment_failed', message, true, payload, errorCode);
+    }
+
+    if (response.status >= 500) {
+      return this.createError('network_error', message, true, payload, errorCode);
+    }
+
+    return this.createError('payment_failed', message, false, payload, errorCode);
+  }
+
+  private createError(
+    type: X402ClientErrorType,
+    message: string,
+    retryable: boolean,
+    details?: unknown,
+    errorCode?: string
+  ): X402PaymentError {
+    return new X402PaymentError(type, message, retryable, details, errorCode);
   }
 }
 
@@ -321,17 +425,17 @@ export function getX402Client(): X402Client {
 }
 
 /**
- * React hook for x402 client.
- * Use with wallet context to auto-connect.
+ * React helper for x402 client.
  */
 export function useX402() {
   const client = getX402Client();
-  
+
   return {
     client,
     isWalletConnected: client.isWalletConnected(),
     walletAddress: client.getWalletAddress(),
     tipClip: client.tipClip.bind(client),
+    tipSeries: client.tipSeries.bind(client),
     formatTip: client.formatTip.bind(client),
     defaultTipCents: DEFAULT_CONFIG.defaultTipCents,
     minTipCents: DEFAULT_CONFIG.minTipCents,

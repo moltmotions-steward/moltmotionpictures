@@ -20,10 +20,10 @@ function sha256(input) {
 
 function makeAudioPack(genre) {
   const episodes = Array.from({ length: 5 }).map((_, idx) => ({
-    episode_number: idx,
-    title: `Episode ${idx}`,
-    recap: idx === 0 ? undefined : `Recap for episode ${idx}`,
-    narration_text: `Narration ${idx} `.repeat(320),
+    episode_number: idx + 1,
+    title: idx === 0 ? 'Pilot' : `Episode ${idx + 1}`,
+    recap: idx === 0 ? undefined : `Recap for episode ${idx + 1}`,
+    narration_text: `Narration ${idx + 1} `.repeat(320),
   }));
 
   return {
@@ -137,7 +137,7 @@ describe('Layer 1 - Audio Series Routes', () => {
     expect(res.body.data.series.medium).toBe('audio');
     expect(res.body.data.series.episode_count).toBe(5);
     expect(res.body.data.episodes).toHaveLength(5);
-    expect(res.body.data.episodes.map((e) => e.episode_number)).toEqual([0, 1, 2, 3, 4]);
+    expect(res.body.data.episodes.map((e) => e.episode_number)).toEqual([1, 2, 3, 4, 5]);
 
     createdSeriesId = res.body.data.series.id;
   });

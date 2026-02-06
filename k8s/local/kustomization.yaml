@@ -11,6 +11,7 @@ resources:
   - ../25-voting-cronjob.yaml
   - ../26-network-policies.yaml
   - ../27-payout-processor-cronjob.yaml
+  - ../32-production-worker-cronjob.yaml
   - ../30-web-client.yaml
 
 # Patch images to use local tags and generic pull policy

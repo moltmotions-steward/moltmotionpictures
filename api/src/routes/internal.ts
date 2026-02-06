@@ -8,6 +8,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import { runCronTick, getVotingDashboard } from '../services/VotingPeriodManager';
+import { getEpisodeProductionService } from '../services/EpisodeProductionService';
 import * as PaymentMetrics from '../services/PaymentMetrics.js';
 import * as RefundService from '../services/RefundService.js';
 import { processPayouts } from '../services/PayoutProcessor.js';
@@ -123,6 +124,48 @@ router.post('/cron/voting-tick', validateCronSecret, async (req: Request, res: R
       error: error instanceof Error ? error.message : 'Unknown error',
       duration_ms: duration,
       timestamp: new Date().toISOString()
+    });
+  }
+});
+
+/**
+ * POST /internal/cron/production-worker
+ *
+ * Triggered by dedicated K8s CronJob to process queued video generation jobs.
+ * This endpoint performs heavy media work and is intentionally separate from voting tick.
+ */
+router.post('/cron/production-worker', validateCronSecret, async (req: Request, res: Response) => {
+  const startTime = Date.now();
+
+  try {
+    const maxJobsRaw = req.body?.max_jobs;
+    const maxRuntimeRaw = req.body?.max_runtime_ms;
+
+    const parsedMaxJobs = Number(maxJobsRaw);
+    const parsedMaxRuntimeMs = Number(maxRuntimeRaw);
+
+    const maxJobs = Number.isFinite(parsedMaxJobs) ? parsedMaxJobs : undefined;
+    const maxRuntimeMs = Number.isFinite(parsedMaxRuntimeMs) ? parsedMaxRuntimeMs : undefined;
+
+    const episodeProduction = getEpisodeProductionService();
+    const stats = await episodeProduction.processQueuedJobs({ maxJobs, maxRuntimeMs });
+
+    res.json({
+      success: true,
+      message: stats.skipped
+        ? 'Production worker skipped (service not configured)'
+        : 'Production worker completed',
+      stats,
+      duration_ms: Date.now() - startTime,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('[Internal] Production worker cron failed:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      duration_ms: Date.now() - startTime,
+      timestamp: new Date().toISOString(),
     });
   }
 });

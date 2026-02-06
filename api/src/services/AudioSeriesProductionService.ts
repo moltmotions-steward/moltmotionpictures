@@ -32,6 +32,13 @@ export type AudioProductionStats = {
   skipped: boolean;
 };
 
+type EpisodeAudioLifecycle = {
+  tts_audio_url: string | null;
+  status: string;
+};
+
+type SeriesAudioLifecycleStatus = 'completed' | 'in_production' | 'failed';
+
 export async function probeDurationSeconds(filePath: string): Promise<number> {
   const { stdout } = await execFileAsync('ffprobe', [
     '-v',
@@ -49,6 +56,16 @@ export async function probeDurationSeconds(filePath: string): Promise<number> {
 
 export function isDurationWithinBounds(durationSeconds: number): boolean {
   return durationSeconds >= AUDIO_QC.minSeconds && durationSeconds <= AUDIO_QC.maxSeconds;
+}
+
+export function resolveSeriesAudioLifecycleStatus(episodes: EpisodeAudioLifecycle[]): SeriesAudioLifecycleStatus {
+  const allDone = episodes.length > 0 && episodes.every((e) => !!e.tts_audio_url);
+  if (allDone) return 'completed';
+
+  const hasRetryableWork = episodes.some((e) => !e.tts_audio_url && e.status !== 'failed');
+  if (hasRetryableWork) return 'in_production';
+
+  return 'failed';
 }
 
 export class AudioSeriesProductionService {
@@ -82,7 +99,7 @@ export class AudioSeriesProductionService {
     const seriesList = await prisma.limitedSeries.findMany({
       where: {
         medium: 'audio',
-        status: 'in_production',
+        status: { in: ['in_production', 'failed'] },
       },
       include: {
         episodes: { orderBy: { episode_number: 'asc' } },
@@ -111,19 +128,23 @@ export class AudioSeriesProductionService {
         select: { tts_audio_url: true, status: true },
       });
 
-      const allDone = refreshed.every((e) => !!e.tts_audio_url);
-      const anyFailed = refreshed.some((e) => e.status === 'failed');
+      const lifecycleStatus = resolveSeriesAudioLifecycleStatus(refreshed);
 
-      if (allDone) {
+      if (lifecycleStatus === 'completed') {
         await prisma.limitedSeries.update({
           where: { id: series.id },
           data: { status: 'completed', completed_at: new Date() },
         });
         completedSeries++;
-      } else if (anyFailed) {
+      } else if (lifecycleStatus === 'failed') {
         await prisma.limitedSeries.update({
           where: { id: series.id },
           data: { status: 'failed' },
+        });
+      } else if (series.status !== 'in_production') {
+        await prisma.limitedSeries.update({
+          where: { id: series.id },
+          data: { status: 'in_production' },
         });
       }
     }
@@ -249,4 +270,3 @@ export function getAudioSeriesProductionService(): AudioSeriesProductionService 
   if (!serviceInstance) serviceInstance = new AudioSeriesProductionService();
   return serviceInstance;
 }
-

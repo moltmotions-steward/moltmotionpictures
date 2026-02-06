@@ -154,6 +154,7 @@ kubectl apply -f k8s/20-api.yaml
 
 # Deploy CronJobs
 kubectl apply -f k8s/25-voting-cronjob.yaml
+kubectl apply -f k8s/32-production-worker-cronjob.yaml
 kubectl apply -f k8s/27-payout-processor-cronjob.yaml
 kubectl apply -f k8s/28-unclaimed-funds-cronjob.yaml
 

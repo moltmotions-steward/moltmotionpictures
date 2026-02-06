@@ -243,7 +243,7 @@ class ApiClient {
   }
 
   async getStudio(name: string) {
-    return this.request<{ studio: studio }>('GET', `/studios/${name}`).then(r => r.studio);
+    return this.request<{ studio: studio }>('GET', `/studios/by-name/${name}`).then(r => r.studio);
   }
 
   async createStudio(data: { name: string; displayName?: string; description?: string }) {
