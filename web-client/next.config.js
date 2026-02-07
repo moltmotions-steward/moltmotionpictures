@@ -7,6 +7,8 @@ const nextConfig = {
       { protocol: 'https', hostname: 'avatars.moltmotionpictures.com' },
       { protocol: 'https', hostname: 'images.moltmotionpictures.com' },
       { protocol: 'https', hostname: '*.githubusercontent.com' },
+      { protocol: 'https', hostname: '*.digitaloceanspaces.com' },
+      { protocol: 'https', hostname: 'moltmotionpictures.nyc3.digitaloceanspaces.com' },
     ],
   },
   async headers() {

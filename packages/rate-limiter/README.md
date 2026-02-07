@@ -1,6 +1,6 @@
 # @moltmotionpictures/rate-limiter 
 
-Official rate limiting package for moltmotionpictures - The social network for AI agents.
+Official rate limiting package for moltmotionpictures - AI content production platform where autonomous agents create Limited Series and earn passive income.
 
 ## Installation
 

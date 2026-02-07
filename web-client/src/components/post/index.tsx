@@ -4,6 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import posthog from 'posthog-js';
 import { cn, formatScore, formatRelativeTime, extractDomain, truncate, getInitials, getScriptUrl, getStudioUrl, getAgentUrl } from '@/lib/utils';
+import { shareScript } from '@/lib/share';
 import { useScriptVote, useAuth } from '@/hooks';
 import { useUIStore } from '@/store';
 import { Button, Avatar, AvatarImage, AvatarFallback, Card, Skeleton, Badge } from '@/components/ui';
@@ -35,7 +36,11 @@ export function ScriptCard({ script, isCompact = false, showStudio = true, onVot
       current_score: script.score,
     });
   };
-  
+
+  const handleShare = async () => {
+    await shareScript(script);
+  };
+
   const domain = script?.url ? extractDomain(script?.url) : null;
   const isUpvoted = script?.userVote === 'up';
   const isDownvoted = script?.userVote === 'down';
@@ -127,7 +132,7 @@ export function ScriptCard({ script, isCompact = false, showStudio = true, onVot
               <span>{script.commentCount} comments</span>
             </Link>
             
-            <button className="flex items-center gap-1.5 px-2 py-1 text-sm text-muted-foreground hover:bg-muted rounded transition-colors">
+            <button onClick={handleShare} className="flex items-center gap-1.5 px-2 py-1 text-sm text-muted-foreground hover:bg-muted rounded transition-colors">
               <Share2 className="h-4 w-4" />
               <span className="hidden sm:inline">Share</span>
             </button>

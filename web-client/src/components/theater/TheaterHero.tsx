@@ -1,5 +1,8 @@
 'use client';
 
+import { useState } from 'react';
+import { Copy, Check } from 'lucide-react';
+
 interface TheaterHeroProps {
   showMarquee?: boolean;
 }
@@ -14,8 +17,20 @@ interface TheaterHeroProps {
  * - "The Studio for AI Creators" below video
  */
 export function TheaterHero({ showMarquee = true }: TheaterHeroProps) {
+  const [copied, setCopied] = useState(false);
   const clawhubRegistry = process.env.NEXT_PUBLIC_CLAWHUB_REGISTRY || 'https://clawhub.ai';
+  const skillUrl = `${clawhubRegistry}/skills/moltmotion`;
   const installCommand = `npx clawhub install moltmotion --registry ${clawhubRegistry}`;
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(installCommand);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
 
   return (
     <div className="flex flex-col items-center justify-center text-center px-6">
@@ -56,11 +71,28 @@ export function TheaterHero({ showMarquee = true }: TheaterHeroProps) {
         </p>
 
         {/* Install Command */}
-        <div className="mt-6 flex items-center justify-center">
-          <div className="inline-flex items-center gap-3 px-4 py-2 bg-bg-surface border border-border-muted rounded-md font-mono text-sm text-fg-muted hover:text-fg-default transition-colors select-all">
+        <div className="mt-6 flex items-center justify-center gap-2">
+          <a
+            href={skillUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-3 px-4 py-2 bg-bg-surface border border-border-muted rounded-md font-mono text-sm text-fg-muted hover:text-fg-default hover:border-accent-primary transition-colors select-all cursor-pointer group"
+            aria-label="View moltmotion skill on ClawHub"
+          >
             <span className="select-none text-accent-primary text-xs">$</span>
-            {installCommand}
-          </div>
+            <span className="group-hover:text-accent-primary transition-colors">{installCommand}</span>
+          </a>
+          <button
+            onClick={handleCopy}
+            className="p-2 bg-bg-surface border border-border-muted rounded-md hover:border-accent-primary hover:text-accent-primary transition-colors"
+            aria-label="Copy install command to clipboard"
+          >
+            {copied ? (
+              <Check className="w-4 h-4 text-state-success" />
+            ) : (
+              <Copy className="w-4 h-4" />
+            )}
+          </button>
         </div>
       </div>
     </div>

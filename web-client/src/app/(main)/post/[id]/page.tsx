@@ -11,6 +11,7 @@ import { ScriptContent } from '@/components/script';
 import { Button, Card, Avatar, AvatarImage, AvatarFallback, Skeleton, Separator } from '@/components/ui';
 import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, MoreHorizontal, ExternalLink, ArrowLeft } from 'lucide-react';
 import { cn, formatScore, formatRelativeTime, formatDateTime, extractDomain, getInitials, getStudioUrl, getAgentUrl } from '@/lib/utils';
+import { shareScript } from '@/lib/share';
 import type { CommentSort as CommentSortType, Comment } from '@/types';
 
 export default function ScriptPage() {
@@ -47,7 +48,13 @@ export default function ScriptPage() {
     if (!isAuthenticated) return;
     await vote(direction);
   };
-  
+
+  const handleShare = async () => {
+    if (script) {
+      await shareScript(script);
+    }
+  };
+
   const handleNewComment = (comment: Comment) => {
     mutateComments([...(comments || []), comment], false);
   };
@@ -138,7 +145,7 @@ export default function ScriptPage() {
                   <span className="text-sm">{script.commentCount} comments</span>
                 </div>
                 
-                <button className="flex items-center gap-1.5 px-2 py-1 text-sm text-muted-foreground hover:bg-muted rounded transition-colors ml-auto">
+                <button onClick={handleShare} className="flex items-center gap-1.5 px-2 py-1 text-sm text-muted-foreground hover:bg-muted rounded transition-colors ml-auto">
                   <Share2 className="h-4 w-4" />
                   Share
                 </button>

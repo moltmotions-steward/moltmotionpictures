@@ -15,6 +15,7 @@ import { promisify } from 'node:util';
 import { prisma } from '../lib/prisma';
 import { GradientClient, getGradientClient } from './GradientClient';
 import { SpacesClient, getSpacesClient } from './SpacesClient';
+import { capture } from '../utils/posthog';
 
 const execFileAsync = promisify(execFile);
 
@@ -24,12 +25,30 @@ export const AUDIO_QC = {
   maxRetries: 3,
 };
 
+export const AUTO_RETRY_CONFIG = {
+  enabled: true,
+  maxAutoRetries: 5, // Total auto-retry attempts
+  retryDelayHours: 24, // Wait 24 hours before first retry
+  backoffMultiplier: 1.5, // Exponential backoff (24h → 36h → 54h)
+  maxAgeDays: 30, // Stop retrying after 30 days
+  maxEpisodesPerTick: 10, // Process at most 10 auto-retries per cron tick
+};
+
+export type AutoRetryStats = {
+  eligible: number;
+  queued: number;
+  tooYoung: number;
+  maxRetriesReached: number;
+  tooOld: number;
+};
+
 export type AudioProductionStats = {
   processedEpisodes: number;
   completedEpisodes: number;
   failedEpisodes: number;
   completedSeries: number;
   skipped: boolean;
+  autoRetryStats: AutoRetryStats | null;
 };
 
 type EpisodeAudioLifecycle = {
@@ -93,8 +112,11 @@ export class AudioSeriesProductionService {
 
   async processPendingAudioProductions(): Promise<AudioProductionStats> {
     if (!this.isConfigured) {
-      return { processedEpisodes: 0, completedEpisodes: 0, failedEpisodes: 0, completedSeries: 0, skipped: true };
+      return { processedEpisodes: 0, completedEpisodes: 0, failedEpisodes: 0, completedSeries: 0, skipped: true, autoRetryStats: null };
     }
+
+    // Auto-retry failed episodes first (before processing new episodes)
+    const autoRetryStats = await this.autoRetryFailedEpisodes();
 
     const seriesList = await prisma.limitedSeries.findMany({
       where: {
@@ -149,7 +171,115 @@ export class AudioSeriesProductionService {
       }
     }
 
-    return { processedEpisodes, completedEpisodes, failedEpisodes, completedSeries, skipped: false };
+    return { processedEpisodes, completedEpisodes, failedEpisodes, completedSeries, skipped: false, autoRetryStats };
+  }
+
+  /**
+   * Auto-retry failed episodes that meet retry criteria.
+   * Called from cron tick to give old failures another chance.
+   */
+  async autoRetryFailedEpisodes(): Promise<AutoRetryStats> {
+    if (!AUTO_RETRY_CONFIG.enabled) {
+      return { eligible: 0, queued: 0, tooYoung: 0, maxRetriesReached: 0, tooOld: 0 };
+    }
+
+    const now = new Date();
+    const maxAge = new Date(now.getTime() - AUTO_RETRY_CONFIG.maxAgeDays * 24 * 60 * 60 * 1000);
+
+    // Find eligible failed episodes
+    const failedEpisodes = await prisma.episode.findMany({
+      where: {
+        status: 'failed',
+        tts_audio_url: null,
+        tts_auto_retry_enabled: true,
+        tts_auto_retry_count: { lt: AUTO_RETRY_CONFIG.maxAutoRetries },
+        created_at: { gte: maxAge },
+      },
+      include: {
+        series: { select: { id: true, status: true, medium: true } },
+      },
+      take: AUTO_RETRY_CONFIG.maxEpisodesPerTick,
+      orderBy: { tts_last_failed_at: 'asc' }, // Oldest failures first
+    });
+
+    let eligible = 0;
+    let queued = 0;
+    let tooYoung = 0;
+    let maxRetriesReached = 0;
+    let tooOld = 0;
+
+    for (const episode of failedEpisodes) {
+      // Skip if series is completed or not audio
+      if (episode.series.medium !== 'audio' || episode.series.status === 'completed') {
+        continue;
+      }
+
+      // Check max retries
+      if (episode.tts_auto_retry_count >= AUTO_RETRY_CONFIG.maxAutoRetries) {
+        maxRetriesReached++;
+        continue;
+      }
+
+      // Check age
+      const ageMs = now.getTime() - new Date(episode.created_at).getTime();
+      const ageDays = ageMs / (24 * 60 * 60 * 1000);
+      if (ageDays > AUTO_RETRY_CONFIG.maxAgeDays) {
+        tooOld++;
+        continue;
+      }
+
+      // Calculate backoff delay
+      const retryCount = episode.tts_auto_retry_count;
+      const backoffHours =
+        AUTO_RETRY_CONFIG.retryDelayHours * Math.pow(AUTO_RETRY_CONFIG.backoffMultiplier, retryCount);
+      const backoffMs = backoffHours * 60 * 60 * 1000;
+
+      // Check if enough time passed since last failure
+      const lastFailedAt = episode.tts_last_failed_at || episode.updated_at;
+      const timeSinceFailure = now.getTime() - new Date(lastFailedAt).getTime();
+
+      if (timeSinceFailure < backoffMs) {
+        tooYoung++;
+        continue;
+      }
+
+      eligible++;
+
+      // Reset episode for retry
+      await prisma.episode.update({
+        where: { id: episode.id },
+        data: {
+          status: 'pending',
+          tts_retry_count: 0, // Reset immediate retry counter
+          tts_auto_retry_count: retryCount + 1,
+          tts_error_message: null,
+        },
+      });
+
+      // Update series status if needed
+      if (episode.series.status === 'failed') {
+        await prisma.limitedSeries.update({
+          where: { id: episode.series.id },
+          data: { status: 'in_production' },
+        });
+      }
+
+      queued++;
+      console.log(
+        `[AudioProduction] Auto-retry queued: episode=${episode.id} ` +
+          `auto_retry=${retryCount + 1}/${AUTO_RETRY_CONFIG.maxAutoRetries} ` +
+          `backoff=${backoffHours.toFixed(1)}h`
+      );
+    }
+
+    if (queued > 0) {
+      console.log(
+        `[AudioProduction] Auto-retry summary: eligible=${eligible} queued=${queued} ` +
+          `tooYoung=${tooYoung} maxRetries=${maxRetriesReached} tooOld=${tooOld}`
+      );
+    }
+
+    return { eligible, queued, tooYoung, maxRetriesReached, tooOld };
   }
 
   private async processEpisode(
@@ -241,19 +371,47 @@ export class AudioSeriesProductionService {
         },
       });
 
+      // Track successful episode completion
+      capture('episode_audio_completed', seriesId, {
+        episodeId: episode.id,
+        episodeNumber: episode.episode_number,
+        seriesId,
+        attempt,
+        scriptLength: episode.audio_script_text.length,
+        durationSeconds: Math.round(durationSeconds),
+        voiceId: narrationVoiceId || 'default'
+      });
+
       console.log(`[AudioProduction] Episode TTS uploaded (series=${seriesId} ep=${episode.episode_number}) attempt=${attempt}`);
       return 'completed';
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       const nextRetryCount = episode.tts_retry_count + 1;
-
       const terminal = nextRetryCount >= AUDIO_QC.maxRetries;
+
+      // Track episode failure to PostHog with full context
+      capture('episode_audio_failed', seriesId, {
+        episodeId: episode.id,
+        episodeNumber: episode.episode_number,
+        seriesId,
+        attempt,
+        retryCount: episode.tts_retry_count,
+        nextRetryCount,
+        terminal,
+        error: message,
+        errorType: e instanceof Error ? e.constructor.name : typeof e,
+        scriptLength: episode.audio_script_text?.length || 0,
+        voiceId: narrationVoiceId || 'default'
+      });
+
       await prisma.episode.update({
         where: { id: episode.id },
         data: {
           tts_retry_count: nextRetryCount,
           tts_error_message: message,
           status: terminal ? 'failed' : 'pending',
+          // Track when episode became terminally failed for auto-retry
+          tts_last_failed_at: terminal ? new Date() : undefined,
         },
       });
 

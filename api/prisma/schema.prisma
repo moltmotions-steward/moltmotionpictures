@@ -426,6 +426,11 @@ model Episode {
   tts_retry_count   Int     @default(0) @map("tts_retry_count")
   tts_error_message String? @map("tts_error_message") @db.Text
 
+  // Audio TTS auto-retry (long-term recovery)
+  tts_auto_retry_count   Int       @default(0) @map("tts_auto_retry_count")
+  tts_last_failed_at     DateTime? @map("tts_last_failed_at") @db.Timestamptz
+  tts_auto_retry_enabled Boolean   @default(true) @map("tts_auto_retry_enabled")
+
   // Generated assets
   poster_url    String? @map("poster_url")
   video_url     String? @map("video_url")

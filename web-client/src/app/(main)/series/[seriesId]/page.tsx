@@ -62,11 +62,22 @@ function extractErrorMessage(error: unknown): string {
 }
 
 function formatTtsError(errorMessage: string | null): string {
-  if (!errorMessage) return 'Audio rendering failed after multiple attempts.';
+  if (!errorMessage) return 'Audio rendering failed. Automatic retry will occur within 24 hours.';
   if (errorMessage === 'missing_audio_script_text') return 'Audio script is missing for this episode.';
   if (errorMessage === 'max_retries_exceeded') return 'Audio rendering retry limit reached.';
   if (errorMessage.startsWith('duration_out_of_bounds:')) return 'Generated audio length failed quality checks.';
-  return errorMessage.replace(/_/g, ' ');
+
+  // Map technical errors to user-friendly messages
+  if (errorMessage.includes('invalid model api key') ||
+      errorMessage.includes('invalid_api_key') ||
+      errorMessage.includes('TTS generation failed') ||
+      errorMessage.includes('timeout') ||
+      errorMessage.includes('rate limit')) {
+    return 'Audio generation temporarily unavailable. Automatic retry scheduled.';
+  }
+
+  // Default: show a generic user-friendly message
+  return 'Audio rendering failed. Automatic retry will occur within 24 hours.';
 }
 
 export default function SeriesPage() {

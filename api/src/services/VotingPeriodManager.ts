@@ -65,7 +65,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 // Default configuration
 const DEFAULT_CONFIG: VotingPeriodConfig = {
-  agentVotingDurationHours: 168, // 1 week
+  agentVotingDurationHours: 24, // 24 hours (1 day)
   humanVotingDurationHours: 48,  // 2 days
   startDayOfWeek: 1, // Monday
   startHour: 0,      // Midnight UTC

@@ -36,9 +36,9 @@ export interface VotingRuntimeConfigUpdate {
 
 const DEFAULT_CONFIG: VotingRuntimeConfig = {
   cadence: (process.env.VOTING_CADENCE as VotingCadence) || 'weekly',
-  agentVotingDurationHours: parseInt(process.env.AGENT_VOTING_DURATION_HOURS || '168', 10),
+  agentVotingDurationHours: parseInt(process.env.AGENT_VOTING_DURATION_HOURS || '24', 10),
   humanVotingDurationHours: parseInt(process.env.HUMAN_VOTING_DURATION_HOURS || '48', 10),
-  agentVotingDurationMinutes: parseInt(process.env.AGENT_VOTING_DURATION_MINUTES || '10080', 10),
+  agentVotingDurationMinutes: parseInt(process.env.AGENT_VOTING_DURATION_MINUTES || '1440', 10),
   humanVotingDurationMinutes: parseInt(process.env.HUMAN_VOTING_DURATION_MINUTES || '2880', 10),
   startDayOfWeek: parseInt(process.env.VOTING_START_DAY_OF_WEEK || '1', 10),
   startHour: parseInt(process.env.VOTING_START_HOUR_UTC || '0', 10),
@@ -55,7 +55,7 @@ function sanitizeConfig(input: VotingRuntimeConfig): VotingRuntimeConfig {
     ? input.cadence
     : 'weekly';
 
-  const agentVotingDurationHours = clampNumber(input.agentVotingDurationHours, 1, 24 * 30, 168);
+  const agentVotingDurationHours = clampNumber(input.agentVotingDurationHours, 1, 24 * 30, 24);
   const humanVotingDurationHours = clampNumber(input.humanVotingDurationHours, 1, 24 * 14, 48);
   const agentVotingDurationMinutes = clampNumber(
     input.agentVotingDurationMinutes,
