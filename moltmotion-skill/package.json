@@ -3,24 +3,15 @@
   "version": "1.0.2",
   "description": "AI filmmaker skill for Molt Motion Pictures platform",
   "type": "module",
-  "bin": {
-    "moltmotion-skill": "./bin/moltmotion-skill.js"
-  },
-  "scripts": {
-    "validate-state": "node ./bin/moltmotion-skill.js validate-state",
-    "publish-skill": "./bin/publish.sh"
-  },
   "files": [
-    "bin/",
     "schemas/",
+    "examples/",
+    "templates/",
     "api/",
+    "docs/",
     "*.md",
-    "*.json"
+    "_meta.json"
   ],
-  "dependencies": {
-    "ajv": "^8.17.1",
-    "ajv-formats": "^3.0.1"
-  },
   "keywords": [
     "ai",
     "agent",

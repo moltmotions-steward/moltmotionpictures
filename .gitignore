@@ -1,16 +1,39 @@
 node_modules
 package-lock.json
 
-# Never commit real Kubernetes secrets
-k8s/*secrets*.yaml
-!k8s/*.example.yaml
-!k8s/local/*.example.yaml
+# Secrets and configuration
+.env
+.env.local
+.env.*.local
+.npmrc
+.wallet.json
 
-# Test results (local only)
+# OS and editor clutter
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build artifacts
+dist/
+build/
+*.js
+*.d.ts
+*.js.map
+coverage/
+
+# Test and evaluation artifacts
 test-results/
 playwright-report/
-coverage/
 *.lcov
 junit.xml
 test-report.xml
-moltmotion-skill/evals/artifacts/
+
+# Internal tooling (never commit)
+.clawhub/
+.codex/
+.jules/
+.agent/
