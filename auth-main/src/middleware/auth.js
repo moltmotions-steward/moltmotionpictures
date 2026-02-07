@@ -164,10 +164,10 @@ function sanitizeAgent(agent) {
   if (!agent) return null;
   
   const {
-    apiKey,
-    api_key,
-    claimToken,
-    claim_token,
+    apiKey, // eslint-disable-line no-unused-vars
+    api_key, // eslint-disable-line no-unused-vars
+    claimToken, // eslint-disable-line no-unused-vars
+    claim_token, // eslint-disable-line no-unused-vars
     ...safeAgent
   } = agent;
   

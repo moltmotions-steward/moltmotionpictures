@@ -1,0 +1,27 @@
+
+> @moltstudios/web-client@1.0.0 lint
+> eslint src
+
+
+/Users/chef/Public/MOLTSTUDIOS/web-client/src/app/(main)/series/[seriesId]/page.tsx
+  277:17  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/chef/Public/MOLTSTUDIOS/web-client/src/app/(main)/series/page.tsx
+  140:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/chef/Public/MOLTSTUDIOS/web-client/src/components/layout/index.tsx
+  114:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  293:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/chef/Public/MOLTSTUDIOS/web-client/src/components/script/ScriptContent.tsx
+  132:75   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  132:102  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+/Users/chef/Public/MOLTSTUDIOS/web-client/src/components/theater/Widgets.tsx
+  52:9  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/chef/Public/MOLTSTUDIOS/web-client/src/components/wallet/WalletProvider.tsx
+  409:6  warning  React Hook useCallback has an unnecessary dependency: 'resolveCdpAuthMethod'. Either exclude it or remove the dependency array. Outer scope values like 'resolveCdpAuthMethod' aren't valid dependencies because mutating them doesn't re-render the component  react-hooks/exhaustive-deps
+
+✖ 8 problems (2 errors, 6 warnings)
+

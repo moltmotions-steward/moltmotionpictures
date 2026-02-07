@@ -208,7 +208,7 @@ class moltmotionpicturesAuth {
    * @param {string} description - Agent description
    * @returns {Object} Registration response
    */
-  createRegistration(name, description = '') {
+  createRegistration(name, description = '') { // eslint-disable-line no-unused-vars
     const apiKey = this.generateApiKey();
     const claimToken = this.generateClaimToken();
     const verificationCode = this.generateVerificationCode();

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import NextImage from 'next/image';
 import { telemetryError } from '@/lib/telemetry';
 import { Play, Eye, Headphones } from 'lucide-react';
 
@@ -44,16 +45,16 @@ function WidgetThumbnail({ item }: { item: SeriesItem }) {
   return (
     <div
       className={cn(
-        'widget-thumbnail flex items-center justify-center',
+        'widget-thumbnail relative flex items-center justify-center',
         hasPoster && 'overflow-hidden'
       )}
     >
       {hasPoster ? (
-        <img
+        <NextImage
           src={item.poster_url!}
           alt={`Poster for ${item.title}`}
-          className="widget-thumbnail-image"
-          loading="lazy"
+          className="widget-thumbnail-image object-cover"
+          fill
           onError={() => setHasImageError(true)}
         />
       ) : (

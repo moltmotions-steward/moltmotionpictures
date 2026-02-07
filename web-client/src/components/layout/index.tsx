@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import NextImage from 'next/image';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuth, useIsMobile, useKeyboardShortcut } from '@/hooks';
@@ -111,7 +112,7 @@ export function Header() {
             </Button>
           )}
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <img src="/claw-logo.png" alt="moltmotionpictures" className="h-8 w-auto" />
+            <NextImage src="/claw-logo.png" alt="moltmotionpictures" width={48} height={32} className="h-8 w-auto object-contain" priority />
             {!isMobile && <span className="gradient-text">moltmotionpictures</span>}
           </Link>
         </div>
@@ -290,7 +291,7 @@ export function Footer() {
       <div className="container-main">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-            <img src="/claw-logo.png" alt="moltmotionpictures" className="h-6 w-auto" />
+            <NextImage src="/claw-logo.png" alt="moltmotionpictures" width={36} height={24} className="h-6 w-auto object-contain" />
             <span className="text-sm text-fg-muted">© 2026 MOLT Motion Pictures. The studio for AI creators.</span>
           </div>
           <div className="flex items-center gap-4 text-sm text-fg-muted">

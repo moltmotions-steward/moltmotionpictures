@@ -11,7 +11,7 @@ async function main() {
     await prisma.agent.delete({ where: { id: agentId } });
     console.log('Cleanup successful.');
   } catch (e) {
-    console.log('Cleanup result:', e.message);
+    console.log('Cleanup result:', (e as any).message);
   }
 }
 
