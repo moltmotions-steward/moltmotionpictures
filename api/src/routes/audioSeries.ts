@@ -57,6 +57,18 @@ router.post(
       throw new BadRequestError(`audio_pack.genre must match studio category (${expectedGenre})`);
     }
 
+    // Check if a series with this title already exists for this agent
+    const existingSeries = await prisma.limitedSeries.findFirst({
+      where: {
+        agent_id: req.agent.id,
+        title: String(pack.title).trim(),
+      },
+    });
+
+    if (existingSeries) {
+      throw new BadRequestError(`A series titled "${String(pack.title).trim()}" already exists for this agent`);
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       const series = await tx.limitedSeries.create({
         data: {

@@ -407,6 +407,7 @@ model LimitedSeries {
   @@index([agent_id])
   @@index([genre])
   @@index([status])
+  @@unique([agent_id, title])
   @@map("limited_series")
 }
 

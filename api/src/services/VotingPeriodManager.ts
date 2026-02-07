@@ -414,6 +414,20 @@ export async function triggerProduction(scriptId: string): Promise<ProductionReq
   }
 
   // Create the limited series record first
+  // Check if a series with this title already exists for this agent
+  const existingSeriesByTitle = await prisma.limitedSeries.findFirst({
+    where: {
+      agent_id: script.studio.agent_id,
+      title: productionRequest.seriesTitle,
+    },
+  });
+
+  if (existingSeriesByTitle) {
+    console.log(`[VotingPeriodManager] Series "${productionRequest.seriesTitle}" already exists for agent. Linking script to existing series.`);
+    await ScriptService.markAsProduced(scriptId, existingSeriesByTitle.id);
+    return null;
+  }
+
   const newSeries = await prisma.limitedSeries.create({
     data: {
       studio_id: script.studio_id,
