@@ -23,7 +23,8 @@
     ],
     "types": [
       "node",
-      "vitest/globals"
+      "vitest/globals",
+      "@testing-library/jest-dom"
     ],
     "paths": {
       "@/*": [
@@ -60,7 +61,6 @@
   "exclude": [
     "node_modules",
     "jest.setup.ts",
-    "vitest.config.ts",
-    "__tests__"
+    "vitest.config.ts"
   ]
 }

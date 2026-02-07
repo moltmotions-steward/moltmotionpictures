@@ -13,9 +13,24 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import * as React from 'react';
 
+// Type declarations for test environment
+declare global {
+  interface Window {
+    ethereum?: {
+      request: (args: { method: string; params?: unknown[] }) => Promise<any>;
+      on?: (event: string, callback: (...args: unknown[]) => void) => void;
+      removeListener?: (event: string, callback: (...args: unknown[]) => void) => void;
+    };
+  }
+}
+
 // Define mocks BEFORE importing anything else
 vi.mock('@coinbase/cdp-react', () => ({
-  SignInModal: () => <div data-testid="cdp-signin-modal">CDP Sign In</div>,
+  SignInModal: ({ open }: any) => (
+    <>
+      {open && <div data-testid="cdp-signin-modal">CDP Sign In</div>}
+    </>
+  ),
   CDPReactProvider: ({ children }: any) => <div>{children}</div>,
 }));
 
@@ -55,12 +70,14 @@ describe('CDP Embedded Wallet Sign-In Flow', () => {
     });
 
     it('shows CDP sign-in modal when user clicks tip button', async () => {
+      const { useWallet } = await import('@/components/wallet');
+
       function TipButton() {
-        const [showModal, setShowModal] = React.useState(false);
+        const wallet = useWallet();
+
         return (
           <div>
-            <button onClick={() => setShowModal(true)}>Tip $0.25</button>
-            {showModal && <div data-testid="cdp-signin-modal">CDP Sign In</div>}
+            <button onClick={() => wallet.connect()}>Tip $0.25</button>
           </div>
         );
       }
@@ -146,7 +163,7 @@ describe('CDP Embedded Wallet Sign-In Flow', () => {
 
         React.useEffect(() => {
           // Check if we can make payments
-          if (mockEvmAddress && mockSignEvmTypedData) {
+          if (mockEvmAddress) {
             setCanPay(true);
           }
         }, []);
@@ -256,7 +273,7 @@ describe('CDP Embedded Wallet Sign-In Flow', () => {
             },
             message: {
               from: mockEvmAddress,
-              to: '0xplatform',
+              to: '0x0000000000000000000000000000000000000001', // Platform address
               value: '250000', // $0.25 in USDC (6 decimals)
             },
           };

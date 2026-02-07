@@ -140,6 +140,15 @@ export function WalletProvider({ children }: WalletProviderProps) {
   }, [currentUser, resolveSignInFlow]);
 
   const handleAuthModalOpenChange = useCallback((open: boolean) => {
+    // Prevent modal from opening if already signed in
+    if (open && isSignedIn) {
+      telemetryWarn('Attempted to open auth modal while already signed in', {
+        isSignedIn,
+        hasAddress: !!cdpAddressRef.current,
+      });
+      return;
+    }
+
     setSignInModalOpen(open);
 
     if (!open && authPromiseRef.current) {
@@ -152,7 +161,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
         provider_type: 'cdp_embedded',
       });
     }
-  }, [resolveSignInFlow]);
+  }, [isSignedIn, resolveSignInFlow]);
 
   useEffect(() => {
     if (!cdpEnabled) return;
@@ -290,6 +299,16 @@ export function WalletProvider({ children }: WalletProviderProps) {
       return;
     }
 
+    // If user is signed in but address not ready yet, wait for it
+    if (isSignedIn && !cdpAddressRef.current) {
+      const cdpAddress = await waitForCdpAddress();
+      if (cdpAddress) {
+        setAuthState('authenticated');
+        setAuthMethod(resolveCdpAuthMethod(currentUser));
+        return;
+      }
+    }
+
     telemetryEvent('checkout_auth_started', {
       provider_type: 'cdp_embedded',
     });
@@ -301,13 +320,27 @@ export function WalletProvider({ children }: WalletProviderProps) {
     await new Promise<void>((resolve, reject) => {
       authPromiseRef.current = { resolve, reject };
     });
-  }, [cdpEnabled, currentUser, isSignedIn]);
+  }, [cdpEnabled, currentUser, isSignedIn, waitForCdpAddress]);
 
   const ensurePaymentReady = useCallback(async (options?: PaymentReadyOptions): Promise<PaymentReadyResult> => {
+    // First check if local state is already populated
     if (address && providerType) {
       return {
         address,
         providerType,
+      };
+    }
+
+    // Check if CDP user is already signed in but local state hasn't synced yet
+    if (cdpEnabled && isSignedIn && evmAddress) {
+      setProviderType('cdp_embedded');
+      setAddress(evmAddress);
+      setAuthMethod(resolveCdpAuthMethod(currentUser));
+      setAuthState('authenticated');
+
+      return {
+        address: evmAddress,
+        providerType: 'cdp_embedded',
       };
     }
 
@@ -373,7 +406,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     } finally {
       setIsConnecting(false);
     }
-  }, [address, cdpEnabled, connectInjectedWallet, currentUser, openAuthModal, providerType, waitForCdpAddress]);
+  }, [address, cdpEnabled, connectInjectedWallet, currentUser, evmAddress, isSignedIn, openAuthModal, providerType, resolveCdpAuthMethod, waitForCdpAddress]);
 
   const connect = useCallback(async (): Promise<void> => {
     try {
