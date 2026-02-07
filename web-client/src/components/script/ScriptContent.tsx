@@ -25,13 +25,13 @@ export function ScriptContent({ scriptData }: ScriptContentProps) {
         {scriptData.genre && (
           <div>
             <span className="font-semibold text-muted-foreground">Genre:</span>{' '}
-            <span className="text-foreground">{scriptData.genre}</span>
+            <span className="text-foreground capitalize">{scriptData.genre.replace(/_/g, ' ')}</span>
           </div>
         )}
         {scriptData.format && (
           <div>
             <span className="font-semibold text-muted-foreground">Format:</span>{' '}
-            <span className="text-foreground">{scriptData.format}</span>
+            <span className="text-foreground capitalize">{scriptData.format.replace(/_/g, ' ')}</span>
           </div>
         )}
       </div>
@@ -73,61 +73,78 @@ export function ScriptContent({ scriptData }: ScriptContentProps) {
           <div className="space-y-4">
             {scriptData.shots.map((shot, index) => (
               <Card key={index} className="p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <h3 className="text-lg font-semibold">
-                      {shot.scene_number}. {shot.title}
-                    </h3>
-                    {shot.location_id && (
-                      <p className="text-sm text-muted-foreground">Location: {shot.location_id}</p>
+                <div className="flex items-start justify-between mb-3">
+                  <h3 className="text-lg font-semibold">
+                    Shot {index + 1}
+                    {shot.audio?.type && (
+                      <span className="ml-2 text-xs px-2 py-1 rounded bg-muted text-muted-foreground uppercase">
+                        {shot.audio.type}
+                      </span>
                     )}
+                  </h3>
+                  <div className="text-xs text-muted-foreground">
+                    {shot.gen_clip_seconds}s gen / {shot.duration_seconds}s total
                   </div>
-                  {shot.audio_type && (
-                    <span className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground uppercase">
-                      {shot.audio_type}
-                    </span>
-                  )}
                 </div>
 
-                {shot.visual_prompt && (
-                  <div className="mt-3">
-                    <p className="text-sm font-semibold text-muted-foreground mb-1">Visual:</p>
-                    <p className="text-base leading-relaxed">{shot.visual_prompt}</p>
-                  </div>
-                )}
-
-                {shot.narration && (
-                  <div className="mt-3">
-                    <p className="text-sm font-semibold text-muted-foreground mb-1">Narration:</p>
-                    <p className="text-base leading-relaxed italic">{shot.narration}</p>
-                  </div>
-                )}
-
-                {shot.dialogue && (
-                  <div className="mt-3">
-                    <p className="text-sm font-semibold text-muted-foreground mb-1">Dialogue:</p>
-                    <div className="text-base leading-relaxed">
-                      {typeof shot.dialogue === 'string' ? (
-                        <p className="italic">{shot.dialogue}</p>
-                      ) : (
-                        <pre className="whitespace-pre-wrap font-sans italic">
-                          {JSON.stringify(shot.dialogue, null, 2)}
-                        </pre>
+                {/* Camera & Scene */}
+                {shot.prompt && (
+                  <div className="space-y-2">
+                    <div>
+                      <span className="text-sm font-semibold text-muted-foreground">Camera:</span>{' '}
+                      <span className="text-sm capitalize">{shot.prompt.camera.replace(/_/g, ' ')}</span>
+                      {shot.prompt.motion && (
+                        <>
+                          {' '}• <span className="text-sm capitalize">{shot.prompt.motion.replace(/_/g, ' ')}</span>
+                        </>
                       )}
                     </div>
+
+                    <div className="mt-2">
+                      <p className="text-sm font-semibold text-muted-foreground mb-1">Scene:</p>
+                      <p className="text-base leading-relaxed">{shot.prompt.scene}</p>
+                    </div>
+
+                    {shot.prompt.details && (
+                      <div className="mt-2">
+                        <p className="text-sm font-semibold text-muted-foreground mb-1">Details:</p>
+                        <p className="text-base leading-relaxed text-muted-foreground">{shot.prompt.details}</p>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {shot.character_ids && shot.character_ids.length > 0 && (
-                  <div className="mt-3">
-                    <p className="text-sm font-semibold text-muted-foreground mb-1">Characters:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {shot.character_ids.map((charId, i) => (
-                        <span key={i} className="text-xs px-2 py-1 rounded bg-primary/10 text-primary">
-                          {charId}
-                        </span>
-                      ))}
-                    </div>
+                {/* Audio */}
+                {shot.audio && (
+                  <div className="mt-3 pt-3 border-t">
+                    {shot.audio.description && (
+                      <div>
+                        <p className="text-sm font-semibold text-muted-foreground mb-1">Audio:</p>
+                        <p className="text-base leading-relaxed italic">{shot.audio.description}</p>
+                      </div>
+                    )}
+
+                    {shot.audio.dialogue && (
+                      <div className="mt-2">
+                        <p className="text-sm font-semibold text-muted-foreground mb-1">Dialogue:</p>
+                        <div className="pl-4 border-l-2 border-primary">
+                          <p className="text-sm font-semibold">{shot.audio.dialogue.speaker}</p>
+                          <p className="text-base leading-relaxed italic">"{shot.audio.dialogue.line}"</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {shot.audio.voice_id && (
+                      <p className="text-xs text-muted-foreground mt-2">Voice: {shot.audio.voice_id}</p>
+                    )}
+                  </div>
+                )}
+
+                {shot.edit_extend_strategy && shot.duration_seconds > shot.gen_clip_seconds && (
+                  <div className="mt-3 pt-3 border-t">
+                    <p className="text-xs text-muted-foreground">
+                      Extension: {shot.edit_extend_strategy} ({shot.duration_seconds - shot.gen_clip_seconds}s)
+                    </p>
                   </div>
                 )}
               </Card>
@@ -142,55 +159,63 @@ export function ScriptContent({ scriptData }: ScriptContentProps) {
           <Separator />
           <h2 className="text-xl font-bold">Series Bible</h2>
 
-          {/* Characters */}
-          {scriptData.series_bible.characters && Object.keys(scriptData.series_bible.characters).length > 0 && (
+          {/* Global Style Bible */}
+          {scriptData.series_bible.global_style_bible && (
+            <Card className="p-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                Global Style
+              </h3>
+              <p className="text-base leading-relaxed">{scriptData.series_bible.global_style_bible}</p>
+            </Card>
+          )}
+
+          {/* Character Anchors */}
+          {scriptData.series_bible.character_anchors && scriptData.series_bible.character_anchors.length > 0 && (
             <Card className="p-4">
               <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-                Characters
+                Character Anchors
               </h3>
               <div className="space-y-3">
-                {Object.entries(scriptData.series_bible.characters).map(([id, char]: [string, any]) => (
-                  <div key={id} className="border-l-2 border-primary pl-3">
-                    <p className="font-semibold">{id}</p>
-                    {char.name && <p className="text-sm">Name: {char.name}</p>}
+                {scriptData.series_bible.character_anchors.map((char: any, i: number) => (
+                  <div key={i} className="border-l-2 border-primary pl-3">
+                    <p className="font-semibold">{char.name || char.id || `Character ${i + 1}`}</p>
                     {char.description && <p className="text-sm text-muted-foreground">{char.description}</p>}
+                    {char.visual_anchor && <p className="text-sm mt-1">Visual: {char.visual_anchor}</p>}
                   </div>
                 ))}
               </div>
             </Card>
           )}
 
-          {/* Locations */}
-          {scriptData.series_bible.locations && Object.keys(scriptData.series_bible.locations).length > 0 && (
+          {/* Location Anchors */}
+          {scriptData.series_bible.location_anchors && scriptData.series_bible.location_anchors.length > 0 && (
             <Card className="p-4">
               <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-                Locations
+                Location Anchors
               </h3>
               <div className="space-y-3">
-                {Object.entries(scriptData.series_bible.locations).map(([id, loc]: [string, any]) => (
-                  <div key={id} className="border-l-2 border-accent-primary pl-3">
-                    <p className="font-semibold">{id}</p>
-                    {loc.name && <p className="text-sm">Name: {loc.name}</p>}
+                {scriptData.series_bible.location_anchors.map((loc: any, i: number) => (
+                  <div key={i} className="border-l-2 border-accent-primary pl-3">
+                    <p className="font-semibold">{loc.name || loc.id || `Location ${i + 1}`}</p>
                     {loc.description && <p className="text-sm text-muted-foreground">{loc.description}</p>}
+                    {loc.visual_anchor && <p className="text-sm mt-1">Visual: {loc.visual_anchor}</p>}
                   </div>
                 ))}
               </div>
             </Card>
           )}
 
-          {/* Themes */}
-          {scriptData.series_bible.themes && scriptData.series_bible.themes.length > 0 && (
+          {/* Do Not Change */}
+          {scriptData.series_bible.do_not_change && scriptData.series_bible.do_not_change.length > 0 && (
             <Card className="p-4">
               <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-                Themes
+                Continuity Rules
               </h3>
-              <div className="flex flex-wrap gap-2">
-                {scriptData.series_bible.themes.map((theme, i) => (
-                  <span key={i} className="text-sm px-3 py-1 rounded-full bg-muted text-foreground">
-                    {theme}
-                  </span>
+              <ul className="list-disc list-inside space-y-1">
+                {scriptData.series_bible.do_not_change.map((rule, i) => (
+                  <li key={i} className="text-sm">{rule}</li>
                 ))}
-              </div>
+              </ul>
             </Card>
           )}
         </div>

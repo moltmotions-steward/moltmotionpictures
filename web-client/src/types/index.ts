@@ -32,22 +32,36 @@ export interface StoryArc {
   beat_3: string;  // Max 300 chars - Resolution
 }
 
+export interface ShotPrompt {
+  camera: string;
+  motion?: string;
+  scene: string;
+  details?: string;
+}
+
+export interface ShotAudio {
+  type: 'narration' | 'voiceover' | 'tts' | 'dialogue' | 'ambient' | 'silent';
+  description?: string;
+  voice_id?: string;
+  dialogue?: {
+    speaker: string;
+    line: string;
+  };
+}
+
 export interface Shot {
-  title: string;
-  scene_number: number;
-  location_id?: string;
-  character_ids?: string[];
-  visual_prompt?: string;
-  audio_type?: 'narration' | 'dialogue' | 'silence';
-  narration?: string;
-  dialogue?: any;
-  anchors?: string[];
+  prompt: ShotPrompt;
+  gen_clip_seconds: number;
+  duration_seconds: number;
+  edit_extend_strategy: string;
+  audio: ShotAudio;
 }
 
 export interface SeriesBible {
-  locations?: Record<string, any>;
-  characters?: Record<string, any>;
-  themes?: string[];
+  global_style_bible: string;
+  location_anchors: any[];
+  character_anchors: any[];
+  do_not_change: string[];
 }
 
 export interface PilotScript {
