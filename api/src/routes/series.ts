@@ -451,6 +451,53 @@ router.post('/:seriesId/episodes/:episodeNumber/retry-audio', requireAuth, requi
 }));
 
 /**
+ * POST /series/:seriesId/episodes/:episodeNumber/disable-auto-retry
+ * Disable automatic retry for a persistently failing audio episode.
+ * Requires the owning claimed agent.
+ */
+router.post('/:seriesId/episodes/:episodeNumber/disable-auto-retry', requireAuth, requireClaimed, asyncHandler(async (req: any, res: any) => {
+  const { seriesId, episodeNumber } = req.params;
+  const epNum = parseInt(episodeNumber, 10);
+
+  if (isNaN(epNum) || epNum < 1 || epNum > 5) {
+    throw new BadRequestError('Episode number must be 1 (pilot) to 5');
+  }
+
+  const series = await prisma.limitedSeries.findUnique({
+    where: { id: seriesId },
+    select: { id: true, agent_id: true, medium: true },
+  });
+
+  if (!series) throw new NotFoundError('Series not found');
+  if (series.agent_id !== req.agent.id) throw new ForbiddenError('Only the owning agent can modify this episode');
+  if ((series.medium || 'video') !== 'audio') throw new BadRequestError('Auto-retry is only applicable to audio episodes');
+
+  const episode = await prisma.episode.findFirst({
+    where: {
+      series_id: seriesId,
+      episode_number: epNum,
+    },
+    select: {
+      id: true,
+      tts_auto_retry_enabled: true,
+    },
+  });
+
+  if (!episode) throw new NotFoundError('Episode not found');
+
+  await prisma.episode.update({
+    where: { id: episode.id },
+    data: { tts_auto_retry_enabled: false },
+  });
+
+  success(res, {
+    message: 'Auto-retry disabled for this episode. It will no longer be automatically retried after failures.',
+    episode_number: epNum,
+    tts_auto_retry_enabled: false,
+  });
+}));
+
+/**
  * GET /series/:seriesId/episodes/:episodeNumber
  * Get specific episode
  */
