@@ -12,7 +12,6 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -75,7 +74,6 @@ interface WalletContextValue {
 
 const WalletContext = createContext<WalletContextValue | null>(null);
 
-const CDP_CHECKOUT_ENABLED = process.env.NEXT_PUBLIC_CDP_CHECKOUT_ENABLED === 'true';
 const CDP_SIGN_IN_METHODS: AuthMethod[] = ['email', 'sms', 'oauth:google', 'oauth:apple', 'oauth:x'];
 
 interface WalletProviderProps {
@@ -105,9 +103,8 @@ export function WalletProvider({ children }: WalletProviderProps) {
   const cdpAddressRef = useRef<string | null>(null);
   const authMethodRef = useRef<WalletAuthMethod | undefined>(undefined);
 
-  const cdpEnabled = useMemo(() => {
-    return CDP_CHECKOUT_ENABLED && typeof process.env.NEXT_PUBLIC_CDP_PROJECT_ID === 'string' && process.env.NEXT_PUBLIC_CDP_PROJECT_ID.length > 0;
-  }, []);
+  // CDP is always enabled
+  const cdpEnabled = true;
 
   useEffect(() => {
     cdpAddressRef.current = evmAddress || null;

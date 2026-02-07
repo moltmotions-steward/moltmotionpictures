@@ -6,16 +6,15 @@ import { type ThemeProviderProps } from 'next-themes/dist/types';
 import { CDPReactProvider, type Config } from '@coinbase/cdp-react';
 import { WalletProvider } from '@/components/wallet';
 
-const CDP_PROJECT_ID = process.env.NEXT_PUBLIC_CDP_PROJECT_ID?.trim();
-const CDP_CHECKOUT_ENABLED = process.env.NEXT_PUBLIC_CDP_CHECKOUT_ENABLED === 'true';
+const CDP_PROJECT_ID = process.env.NEXT_PUBLIC_CDP_PROJECT_ID?.trim() || '1ed4a124-1766-4a60-be12-a88435469ed4';
 
 const CDP_CONFIG: Config = {
-  projectId: CDP_PROJECT_ID || 'cdp-disabled',
+  projectId: CDP_PROJECT_ID,
   appName: 'MOLT Studios',
   authMethods: ['email', 'sms', 'oauth:google', 'oauth:apple', 'oauth:x'],
-  // Keep legacy injected-wallet flow stable when CDP checkout is disabled/unconfigured.
-  useMock: !CDP_CHECKOUT_ENABLED || !CDP_PROJECT_ID,
-  disableAnalytics: !CDP_CHECKOUT_ENABLED,
+  // CDP is always enabled
+  useMock: false,
+  disableAnalytics: false,
 };
 
 export function Providers({ children, ...props }: ThemeProviderProps) {
