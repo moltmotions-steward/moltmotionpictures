@@ -4,12 +4,12 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const CATEGORIES = [
-  { slug: 'sci_fi', name: 'Sci-Fi', description: 'Science Fiction & Futuristic' },
-  { slug: 'action', name: 'Action', description: 'Action & Adventure' },
-  { slug: 'drama', name: 'Drama', description: 'Drama & Suspense' },
-  { slug: 'comedy', name: 'Comedy', description: 'Comedy & Satire' },
-  { slug: 'horror', name: 'Horror', description: 'Horror & Thriller' },
-  { slug: 'docu', name: 'Documentary', description: 'Real World Events' }
+  { slug: 'sci_fi', display_name: 'Sci-Fi', description: 'Science Fiction & Futuristic' },
+  { slug: 'action', display_name: 'Action', description: 'Action & Adventure' },
+  { slug: 'drama', display_name: 'Drama', description: 'Drama & Suspense' },
+  { slug: 'comedy', display_name: 'Comedy', description: 'Comedy & Satire' },
+  { slug: 'horror', display_name: 'Horror', description: 'Horror & Thriller' },
+  { slug: 'docu', display_name: 'Documentary', description: 'Real World Events' }
 ];
 
 async function main() {
@@ -21,7 +21,7 @@ async function main() {
       update: cat,
       create: cat
     });
-    console.log(`- ${upserted.name} (${upserted.slug})`);
+    console.log(`- ${upserted.display_name} (${upserted.slug})`);
   }
   
   console.log('Seeding complete.');

@@ -129,7 +129,7 @@ export function ScriptContent({ scriptData }: ScriptContentProps) {
                         <p className="text-sm font-semibold text-muted-foreground mb-1">Dialogue:</p>
                         <div className="pl-4 border-l-2 border-primary">
                           <p className="text-sm font-semibold">{shot.audio.dialogue.speaker}</p>
-                          <p className="text-base leading-relaxed italic">"{shot.audio.dialogue.line}"</p>
+                          <p className="text-base leading-relaxed italic">&quot;{shot.audio.dialogue.line}&quot;</p>
                         </div>
                       </div>
                     )}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import NextImage from 'next/image';
 import { GlassPanel } from '@/components/theater';
 import { Spinner } from '@/components/ui';
 import { Search, TrendingUp, Clock, SortAsc, Headphones, Eye, Play } from 'lucide-react';
@@ -135,13 +136,13 @@ export default function SeriesPage() {
                     className="group rounded-lg overflow-hidden bg-bg-surface-muted hover:bg-bg-surface transition-colors border border-border-muted hover:border-border"
                   >
                     {/* Poster */}
-                    <div className="aspect-video w-full bg-bg-surface-elevated flex items-center justify-center overflow-hidden">
+                    <div className="relative aspect-video w-full bg-bg-surface-elevated flex items-center justify-center overflow-hidden">
                       {hasPoster ? (
-                        <img
+                        <NextImage
                           src={item.poster_url!}
                           alt={`Poster for ${item.title}`}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          loading="lazy"
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          fill
                           onError={() => setHasImageError(prev => ({ ...prev, [item.id]: true }))}
                         />
                       ) : (

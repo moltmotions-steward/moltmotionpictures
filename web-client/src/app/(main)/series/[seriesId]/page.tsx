@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
+import NextImage from 'next/image';
 import { telemetryEvent } from '@/lib/telemetry';
 import { GlassPanel } from '@/components/theater';
 import { Button, Spinner } from '@/components/ui';
@@ -283,15 +284,15 @@ export default function SeriesPage() {
       <GlassPanel padding="lg">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="flex min-w-0 items-start gap-4">
-            <div className="w-[120px] h-[68px] md:w-[144px] md:h-[81px] rounded-lg bg-bg-surface-muted shrink-0 overflow-hidden flex items-center justify-center">
+            <div className="relative w-[120px] h-[68px] md:w-[144px] md:h-[81px] rounded-lg bg-bg-surface-muted shrink-0 overflow-hidden flex items-center justify-center">
               {hasPoster ? (
-                <img
-                  src={series.poster_url!}
-                  alt={`Poster for ${series.title}`}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                  onError={() => setHasPosterError(true)}
-                />
+                  <NextImage
+                    src={series.poster_url!}
+                    alt={`Poster for ${series.title}`}
+                    className="object-cover"
+                    fill
+                    onError={() => setHasPosterError(true)}
+                  />
               ) : (
                 <span data-testid="series-hero-fallback">
                   {series.medium === 'audio' ? (

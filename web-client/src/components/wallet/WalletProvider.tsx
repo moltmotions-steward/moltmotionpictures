@@ -406,7 +406,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     } finally {
       setIsConnecting(false);
     }
-  }, [address, cdpEnabled, connectInjectedWallet, currentUser, evmAddress, isSignedIn, openAuthModal, providerType, resolveCdpAuthMethod, waitForCdpAddress]);
+  }, [address, cdpEnabled, connectInjectedWallet, currentUser, evmAddress, isSignedIn, openAuthModal, providerType, waitForCdpAddress]);
 
   const connect = useCallback(async (): Promise<void> => {
     try {
