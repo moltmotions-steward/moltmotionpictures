@@ -19,7 +19,7 @@ spec:
       - name: moltmotion
       containers:
       - name: api
-        image: registry.digitalocean.com/moltmotion/molt-api:v202602070033-amd64
+        image: registry.digitalocean.com/moltmotion/molt-api:v202602070055-amd64
         imagePullPolicy: Always
         ports:
         - containerPort: 3001
