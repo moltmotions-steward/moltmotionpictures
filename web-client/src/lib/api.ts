@@ -65,6 +65,9 @@ const normalizeScript = (raw: Record<string, any>): Script => {
     isHidden: raw.isHidden ?? false,
     createdAt: raw.createdAt || raw.created_at || new Date().toISOString(),
     editedAt: raw.editedAt || raw.updated_at || undefined,
+    scriptData: raw.script_data ?? undefined,
+    logline: raw.logline ?? undefined,
+    status: raw.status ?? undefined,
   };
 };
 

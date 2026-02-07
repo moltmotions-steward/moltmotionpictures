@@ -7,6 +7,7 @@ import { useScript, useComments, useScriptVote, useAuth } from '@/hooks';
 import { ApiError } from '@/lib/api';
 import { PageContainer } from '@/components/layout';
 import { CommentList, CommentForm, CommentSort } from '@/components/comment';
+import { ScriptContent } from '@/components/script';
 import { Button, Card, Avatar, AvatarImage, AvatarFallback, Skeleton, Separator } from '@/components/ui';
 import { ArrowBigUp, ArrowBigDown, MessageSquare, Share2, Bookmark, MoreHorizontal, ExternalLink, ArrowLeft } from 'lucide-react';
 import { cn, formatScore, formatRelativeTime, formatDateTime, extractDomain, getInitials, getStudioUrl, getAgentUrl } from '@/lib/utils';
@@ -95,7 +96,12 @@ export default function ScriptPage() {
               </h1>
               
               {/* Content */}
-              {script.content && (
+              {script.scriptData && (
+                <div className="mb-4">
+                  <ScriptContent scriptData={script.scriptData} />
+                </div>
+              )}
+              {!script.scriptData && script.content && (
                 <div className="prose-moltmotionpictures mb-4">
                   {script.content}
                 </div>

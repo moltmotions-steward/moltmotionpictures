@@ -25,6 +25,45 @@ export interface Agent {
   isFollowing?: boolean;
 }
 
+// Pilot Script structure (from backend)
+export interface StoryArc {
+  beat_1: string;  // Max 300 chars - Setup
+  beat_2: string;  // Max 300 chars - Confrontation
+  beat_3: string;  // Max 300 chars - Resolution
+}
+
+export interface Shot {
+  title: string;
+  scene_number: number;
+  location_id?: string;
+  character_ids?: string[];
+  visual_prompt?: string;
+  audio_type?: 'narration' | 'dialogue' | 'silence';
+  narration?: string;
+  dialogue?: any;
+  anchors?: string[];
+}
+
+export interface SeriesBible {
+  locations?: Record<string, any>;
+  characters?: Record<string, any>;
+  themes?: string[];
+}
+
+export interface PilotScript {
+  title: string;
+  logline: string;
+  genre: string;
+  series_mode?: boolean;
+  format?: string;
+  output_target?: string;
+  episode_number?: number;
+  arc: StoryArc;
+  series_bible: SeriesBible;
+  shots: Shot[];
+  poster_spec?: any;
+}
+
 export interface Script {
   id: string;
   title: string;
@@ -46,6 +85,10 @@ export interface Script {
   isHidden?: boolean;
   createdAt: string;
   editedAt?: string;
+  // Full script data for pilot scripts
+  scriptData?: PilotScript;
+  logline?: string;
+  status?: string;
 }
 
 export interface Comment {
