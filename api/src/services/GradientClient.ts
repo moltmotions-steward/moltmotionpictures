@@ -24,6 +24,7 @@ import type {
   AudioGenerationResponse,
 } from '../types/gradient';
 import { GradientError } from '../types/gradient';
+import { capture } from '../utils/posthog';
 
 // =============================================================================
 // Configuration
@@ -82,6 +83,18 @@ export class GradientClient {
 
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({})) as GradientApiError;
+
+        // Track API errors to PostHog
+        capture('gradient_api_error', 'system', {
+          path,
+          status: response.status,
+          statusText: response.statusText,
+          errorCode: errorBody.error?.code || 'unknown',
+          errorType: errorBody.error?.type || 'api_error',
+          errorMessage: errorBody.error?.message || `HTTP ${response.status}`,
+          method: options.method || 'GET'
+        });
+
         throw new GradientError(
           errorBody.error?.message || `HTTP ${response.status}`,
           errorBody.error?.code || 'unknown_error',
@@ -95,6 +108,12 @@ export class GradientClient {
       clearTimeout(timeoutId);
       if (error instanceof GradientError) throw error;
       if (error instanceof Error && error.name === 'AbortError') {
+        capture('gradient_api_timeout', 'system', {
+          path,
+          timeout: this.timeout,
+          method: options.method || 'GET'
+        });
+
         throw new GradientError(
           'Request timed out',
           'timeout',
@@ -374,14 +393,34 @@ export class GradientClient {
     // Poll until complete
     while (Date.now() - startTime < timeout) {
       const status = await this.getAsyncJobStatus(job.request_id);
-      
+
       if (status.status === 'COMPLETE' || status.status === 'COMPLETED') {
         return this.getAsyncJobResult(job.request_id);
       }
-      
+
       if (status.status === 'FAILED') {
+        // Try to get detailed error from result
+        let detailedError = 'TTS generation failed';
+        try {
+          const result = await this.getAsyncJobResult(job.request_id);
+          if ((result as any).error) {
+            detailedError = (result as any).error;
+          }
+        } catch {
+          // Result fetch failed, use generic error
+        }
+
+        // Track TTS failure to PostHog with details
+        capture('tts_generation_failed', 'system', {
+          requestId: job.request_id,
+          textLength: text.length,
+          voiceId: options.voiceId || 'default',
+          error: detailedError,
+          elapsedMs: Date.now() - startTime
+        });
+
         throw new GradientError(
-          'TTS generation failed',
+          detailedError,
           'tts_failed',
           'generation_error',
           500
@@ -391,6 +430,15 @@ export class GradientClient {
       // Wait before next poll
       await new Promise(resolve => setTimeout(resolve, pollInterval));
     }
+
+    // Track timeout to PostHog
+    capture('tts_generation_timeout', 'system', {
+      requestId: job.request_id,
+      textLength: text.length,
+      voiceId: options.voiceId || 'default',
+      timeout,
+      elapsedMs: Date.now() - startTime
+    });
 
     throw new GradientError(
       'TTS generation timed out',

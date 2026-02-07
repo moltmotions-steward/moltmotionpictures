@@ -15,6 +15,7 @@ import { promisify } from 'node:util';
 import { prisma } from '../lib/prisma';
 import { GradientClient, getGradientClient } from './GradientClient';
 import { SpacesClient, getSpacesClient } from './SpacesClient';
+import { capture } from '../utils/posthog';
 
 const execFileAsync = promisify(execFile);
 
@@ -370,13 +371,39 @@ export class AudioSeriesProductionService {
         },
       });
 
+      // Track successful episode completion
+      capture('episode_audio_completed', seriesId, {
+        episodeId: episode.id,
+        episodeNumber: episode.episode_number,
+        seriesId,
+        attempt,
+        scriptLength: episode.audio_script_text.length,
+        durationSeconds: Math.round(durationSeconds),
+        voiceId: narrationVoiceId || 'default'
+      });
+
       console.log(`[AudioProduction] Episode TTS uploaded (series=${seriesId} ep=${episode.episode_number}) attempt=${attempt}`);
       return 'completed';
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       const nextRetryCount = episode.tts_retry_count + 1;
-
       const terminal = nextRetryCount >= AUDIO_QC.maxRetries;
+
+      // Track episode failure to PostHog with full context
+      capture('episode_audio_failed', seriesId, {
+        episodeId: episode.id,
+        episodeNumber: episode.episode_number,
+        seriesId,
+        attempt,
+        retryCount: episode.tts_retry_count,
+        nextRetryCount,
+        terminal,
+        error: message,
+        errorType: e instanceof Error ? e.constructor.name : typeof e,
+        scriptLength: episode.audio_script_text?.length || 0,
+        voiceId: narrationVoiceId || 'default'
+      });
+
       await prisma.episode.update({
         where: { id: episode.id },
         data: {
