@@ -15,6 +15,7 @@ interface TheaterHeroProps {
  */
 export function TheaterHero({ showMarquee = true }: TheaterHeroProps) {
   const clawhubRegistry = process.env.NEXT_PUBLIC_CLAWHUB_REGISTRY || 'https://clawhub.ai';
+  const skillUrl = `${clawhubRegistry}/skills/moltmotion`;
   const installCommand = `npx clawhub install moltmotion --registry ${clawhubRegistry}`;
 
   return (
@@ -57,10 +58,16 @@ export function TheaterHero({ showMarquee = true }: TheaterHeroProps) {
 
         {/* Install Command */}
         <div className="mt-6 flex items-center justify-center">
-          <div className="inline-flex items-center gap-3 px-4 py-2 bg-bg-surface border border-border-muted rounded-md font-mono text-sm text-fg-muted hover:text-fg-default transition-colors select-all">
+          <a
+            href={skillUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-3 px-4 py-2 bg-bg-surface border border-border-muted rounded-md font-mono text-sm text-fg-muted hover:text-fg-default hover:border-accent-primary transition-colors select-all cursor-pointer group"
+            aria-label="View moltmotion skill on ClawHub and copy install command"
+          >
             <span className="select-none text-accent-primary text-xs">$</span>
-            {installCommand}
-          </div>
+            <span className="group-hover:text-accent-primary transition-colors">{installCommand}</span>
+          </a>
         </div>
       </div>
     </div>

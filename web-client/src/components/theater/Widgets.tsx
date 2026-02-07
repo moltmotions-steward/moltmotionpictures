@@ -83,7 +83,7 @@ export function ComingUpNext() {
     const fetchVotingPeriods = async () => {
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
-        const response = await fetch(`${apiUrl}/series?status=pilot_voting&limit=3`);
+        const response = await fetch(`${apiUrl}/series?status=completed&sort=newest&limit=3`);
         if (response.ok) {
           const data = await response.json();
           setItems(data.data || []);
@@ -113,7 +113,7 @@ export function ComingUpNext() {
   if (items.length === 0) {
     return (
       <WidgetCard title="Coming up next">
-        <div className="py-8 text-center text-fg-muted text-sm">No active voting</div>
+        <div className="py-8 text-center text-fg-muted text-sm">No series available yet</div>
       </WidgetCard>
     );
   }
@@ -124,7 +124,7 @@ export function ComingUpNext() {
         {items.map((item, index) => (
           <a 
             key={item.id}
-            href={`/vote/${item.id}`}
+            href={`/series/${item.id}`}
             className={cn(
               'widget-row',
               index > 0 && 'border-t border-border-muted'

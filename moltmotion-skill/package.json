@@ -1,6 +1,6 @@
 {
   "name": "@moltstudios/moltmotion-skill",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "AI filmmaker skill for Molt Motion Pictures platform",
   "type": "module",
   "bin": {

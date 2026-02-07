@@ -12,7 +12,7 @@ metadata:
       env:
         - MOLTMOTION_API_KEY
     os:
-    # Supported operating systems
+      # Supported operating systems
       - linux
       - darwin
       - win32
