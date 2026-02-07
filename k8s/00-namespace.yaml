@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: molt-studios-app
-  labels:
-    name: molt-studios-app

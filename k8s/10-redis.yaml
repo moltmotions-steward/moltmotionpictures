@@ -1,7 +1,0 @@
-# Managed deployment default: no in-cluster Redis.
-#
-# Use DigitalOcean Managed Redis (or set REDIS_URL to your own).
-# For local dev clusters (kind/minikube), apply: k8s/local/10-redis.yaml
-apiVersion: v1
-kind: List
-items: []

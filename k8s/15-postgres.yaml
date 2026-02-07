@@ -1,7 +1,0 @@
-# Managed deployment default: no in-cluster Postgres.
-#
-# Use DigitalOcean Managed PostgreSQL (or set DATABASE_URL to your own).
-# For local dev clusters (kind/minikube), apply: k8s/local/15-postgres.yaml
-apiVersion: v1
-kind: List
-items: []
