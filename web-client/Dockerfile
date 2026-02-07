@@ -2,6 +2,11 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
+# CDP Configuration (build-time arguments)
+ARG NEXT_PUBLIC_CDP_PROJECT_ID
+ARG NEXT_PUBLIC_CDP_CHECKOUT_ENABLED=true
+ARG NEXT_PUBLIC_API_URL=/api/v1
+
 # Install native build dependencies for napi packages
 RUN apk add --no-cache python3 make g++
 
